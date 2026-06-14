@@ -130,17 +130,20 @@ def _send_animation(token, chat_id, file_path, caption=""):
         print(f"[bot] send_animation error: {e}")
         return False
 
-def _send_photo(token, chat_id, caption=""):
-    """Envía mascota.jpg con caption (fallback)."""
+def _send_photo(token, chat_id, caption="", file_path=None):
+    """Envía una imagen (file_path o mascota.jpg por defecto) con caption."""
     try:
         url = f"https://api.telegram.org/bot{token}/sendPhoto"
-        with open(MASCOTA_PATH, "rb") as f:
+        img_path = file_path if file_path and os.path.exists(file_path) else MASCOTA_PATH
+        with open(img_path, "rb") as f:
             photo_bytes = f.read()
+        fname = os.path.basename(img_path)
         boundary = "----ProGolBoundary2"
         body  = f"--{boundary}\r\nContent-Disposition: form-data; name=\"chat_id\"\r\n\r\n{chat_id}\r\n"
         body += f"--{boundary}\r\nContent-Disposition: form-data; name=\"parse_mode\"\r\n\r\nMarkdown\r\n"
         body += f"--{boundary}\r\nContent-Disposition: form-data; name=\"caption\"\r\n\r\n{caption}\r\n"
-        body += f"--{boundary}\r\nContent-Disposition: form-data; name=\"photo\"; filename=\"mascota.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n"
+        mime = "image/png" if fname.endswith(".png") else "image/jpeg"
+        body += f"--{boundary}\r\nContent-Disposition: form-data; name=\"photo\"; filename=\"{fname}\"\r\nContent-Type: {mime}\r\n\r\n"
         body_bytes = body.encode("utf-8") + photo_bytes + f"\r\n--{boundary}--\r\n".encode("utf-8")
         req = urllib.request.Request(url, data=body_bytes,
                                      headers={"Content-Type": f"multipart/form-data; boundary={boundary}",
@@ -366,59 +369,74 @@ def _get_informe():
         f"💚 ProGol CR · Queremos que todos ganen."
     )
 
-def _get_partidos_hoy():
-    """Lista los partidos de hoy con hora y predicción rápida."""
-    sys.path.insert(0, HERE)
+def _fetch_partidos_rows(limit=8):
+    """Devuelve lista de dicts con datos de partidos de hoy (sin terminados)."""
     import db, sqlite3
     db.init_db()
     today = datetime.date.today().isoformat()
-    conn = db.get_conn()
+    conn  = db.get_conn()
     conn.row_factory = sqlite3.Row
     cur = conn.execute(
-        "SELECT home, away, kickoff_utc, competition FROM matches "
-        "WHERE date=? AND home!='' AND away!='' "
+        "SELECT home, away, kickoff_utc, competition, home_badge, away_badge "
+        "FROM matches WHERE date=? AND home!='' AND away!='' "
         "AND NOT EXISTS ("
         "  SELECT 1 FROM matches m2 "
         "  WHERE m2.home=matches.home AND m2.away=matches.away "
         "  AND m2.status IN ('Finished','Live','FT','AET','PEN')"
-        ") GROUP BY home, away ORDER BY kickoff_utc",
-        (today,)
+        ") GROUP BY home, away ORDER BY kickoff_utc LIMIT ?",
+        (today, limit)
     )
-    rows = cur.fetchall()
-    conn.close()
-    if not rows:
-        return f"📅 No hay partidos programados para hoy ({today})."
-    import model
-    lines = [f"📅 *PARTIDOS DE HOY*", f"*{today} · Copa del Mundo 2026*\n"]
-    for r in rows:
-        h, a = es(r["home"]), es(r["away"])
-        # Hora local CR (UTC-6)
+    rows = []
+    for r in cur.fetchall():
+        d = dict(r)
+        d["home_es"] = es(d["home"])
+        d["away_es"] = es(d["away"])
         hora = ""
-        if r["kickoff_utc"]:
+        if d["kickoff_utc"]:
             try:
-                k = r["kickoff_utc"].replace("Z", "").replace("T", " ")[:16]
+                k  = d["kickoff_utc"].replace("Z", "").replace("T", " ")[:16]
                 dt = datetime.datetime.strptime(k, "%Y-%m-%d %H:%M")
                 dt_cr = dt - datetime.timedelta(hours=6)
-                hora = f" · {dt_cr.strftime('%I:%M %p')} CR"
+                hora  = dt_cr.strftime("%I:%M %p")
             except Exception:
                 pass
-        try:
-            p = model.predict(r["home"], r["away"])
-            prob = p["prob"]
-            if prob["home"] > prob["away"] and prob["home"] > prob["draw"]:
-                fav, pct = h, prob["home"]
-            elif prob["draw"] >= prob["home"] and prob["draw"] >= prob["away"]:
-                fav, pct = "Empate", prob["draw"]
-            else:
-                fav, pct = a, prob["away"]
-            lines.append(f"⚽ *{h} vs {a}*{hora}")
-            lines.append(f"   Ryder: *{fav}* ({pct/100:.0%})\n")
-        except Exception:
-            lines.append(f"⚽ *{h} vs {a}*{hora}\n")
-    lines.append("━━━━━━━━━━━━━━━━━━━━━━━")
-    lines.append("Para picks detallados escribí /comprar 👇")
-    lines.append("_ProGol CR · No es consejo financiero_")
-    return "\n".join(lines)
+        d["hora_cr"] = hora
+        rows.append(d)
+    conn.close()
+    return rows, today
+
+def _send_partidos_img(token, chat_id):
+    """Genera imagen de partidos y la envía como foto. Fallback a texto."""
+    rows, today = _fetch_partidos_rows()
+    if not rows:
+        _send(token, chat_id, f"📅 No hay partidos programados para hoy ({today}).")
+        return
+    img_path = None
+    try:
+        import importlib.util, os as _os
+        spec = importlib.util.spec_from_file_location(
+            "gen_partidos_img",
+            _os.path.join(HERE, "scripts", "gen_partidos_img.py")
+        )
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        img_path = mod.generar(rows, today)
+    except Exception as e:
+        print(f"[bot] gen_partidos_img error: {e}")
+    if img_path and os.path.exists(img_path):
+        caption = "⚽ *Partidos de hoy* · Para picks detallados: /comprar 👇\n_ProGol CR_"
+        ok = _send_photo(token, chat_id, caption, file_path=img_path)
+        if ok:
+            return
+    # Fallback texto
+    lines = [f"📅 *PARTIDOS DE HOY* — {today}\n"]
+    for r in rows:
+        lines.append(f"⚽ *{r['home_es']} vs {r['away_es']}*")
+        if r["hora_cr"]:
+            lines.append(f"   🕐 {r['hora_cr']} CR")
+        lines.append("")
+    lines.append("Para picks detallados: /comprar 👇")
+    _send(token, chat_id, "\n".join(lines))
 
 def _get_goleadores():
     rows, today = _today_matches(8)
@@ -522,6 +540,10 @@ def _handle_message(token, owner_chat_id, msg):
         state = _state.get(chat_id, {"step": "idle"})
 
     # Comandos principales
+    if text in ("/partidos", "/hoy"):
+        _send_partidos_img(token, chat_id)
+        return
+
     if text in ("/start", "/menu", "/comprar", "/picks"):
         with _lock:
             _state[chat_id] = {"step": "menu", "username": username or first}
@@ -581,7 +603,7 @@ def _handle_callback(token, owner_chat_id, cb):
     # Partidos de hoy
     if data == "partidos":
         _answer_callback(token, cb_id, "Cargando partidos...")
-        _send(token, chat_id, _get_partidos_hoy())
+        _send_partidos_img(token, chat_id)
         return
 
     # Donación
