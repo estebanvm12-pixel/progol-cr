@@ -4823,7 +4823,70 @@ def main():
     print("  Press Ctrl+C to stop.")
     print("=" * 56)
 
+    def _tunnel_watchdog(port, cfg, initial_proc):
+        """Monitorea el túnel cada 30s. Si cae, lo reinicia y avisa por Telegram."""
+        proc  = initial_proc
+        fails = 0
+        while True:
+            time.sleep(30)
+            # ¿Sigue vivo el proceso?
+            alive = proc is not None and proc.poll() is None
+            # ¿Responde el URL actual?
+            reachable = False
+            global _TUNNEL_URL
+            if _TUNNEL_URL:
+                try:
+                    req = urllib.request.Request(
+                        _TUNNEL_URL, headers={"User-Agent": "ProGolCR-watchdog/1.0"})
+                    with urllib.request.urlopen(req, timeout=8) as r:
+                        reachable = r.status < 500
+                except Exception:
+                    reachable = False
+
+            if alive and reachable:
+                fails = 0
+                continue  # todo bien
+
+            fails += 1
+            if fails < 2:
+                continue  # un fallo puntual, esperamos confirmación
+
+            # Túnel caído — reiniciar
+            print(f"[watchdog] Túnel caído (fails={fails}), reiniciando...")
+            if proc:
+                try: proc.terminate()
+                except Exception: pass
+
+            new_proc, new_url = None, None
+            for starter in [_start_ngrok, _start_cloudflared, _start_localtunnel]:
+                try:
+                    new_proc, new_url = starter(port)
+                    if new_url: break
+                except Exception:
+                    continue
+
+            if new_url:
+                _TUNNEL_URL = new_url
+                proc   = new_proc
+                fails  = 0
+                print(f"[watchdog] Túnel restaurado: {new_url}")
+                _send_telegram_notification(
+                    f"🔄 *Túnel reiniciado automáticamente*\n🔗 {new_url}", cfg)
+            else:
+                print("[watchdog] No se pudo reiniciar el túnel — reintentando en 30s")
+                _send_telegram_notification(
+                    "⚠️ *ProGol CR: túnel caído*\nNo se pudo reiniciar automáticamente.\nRevisa la PC.", cfg)
+                fails = 0  # reset para no spamear
+
     try:
+        if use_tunnel and tunnel_proc:
+            wdog = threading.Thread(
+                target=_tunnel_watchdog,
+                args=(PORT, cfg, tunnel_proc),
+                daemon=True)
+            wdog.start()
+            print("[watchdog] Monitor de túnel activo (revisa cada 30s)")
+
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
