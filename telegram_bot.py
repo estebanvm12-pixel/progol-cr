@@ -9,8 +9,9 @@ import json, os, sys, time, threading, urllib.request, urllib.parse, urllib.erro
 import datetime, io
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-CONFIG_PATH = os.path.join(HERE, "config.json")
-MASCOTA_PATH = os.path.join(HERE, "brand", "mascota.jpg")
+CONFIG_PATH   = os.path.join(HERE, "config.json")
+MASCOTA_PATH  = os.path.join(HERE, "brand", "mascota.jpg")
+WINNER_GIF    = os.path.join(HERE, "brand", "winner_announce.gif")
 
 # ── Nombres en español ─────────────────────────────────────────────────────────
 TEAM_ES = {
@@ -104,13 +105,38 @@ def _send(token, chat_id, text, reply_markup=None, parse_mode="Markdown"):
         p["reply_markup"] = reply_markup
     return _api(token, "sendMessage", p)
 
+def _send_animation(token, chat_id, file_path, caption=""):
+    """Envía un GIF animado (sendAnimation) con caption."""
+    try:
+        url = f"https://api.telegram.org/bot{token}/sendAnimation"
+        with open(file_path, "rb") as f:
+            file_bytes = f.read()
+        fname = os.path.basename(file_path)
+        boundary = "----ProGolBoundary"
+        body  = f"--{boundary}\r\nContent-Disposition: form-data; name=\"chat_id\"\r\n\r\n{chat_id}\r\n"
+        body += f"--{boundary}\r\nContent-Disposition: form-data; name=\"parse_mode\"\r\n\r\nMarkdown\r\n"
+        if caption:
+            body += f"--{boundary}\r\nContent-Disposition: form-data; name=\"caption\"\r\n\r\n{caption}\r\n"
+        body += (f"--{boundary}\r\nContent-Disposition: form-data; name=\"animation\"; "
+                 f"filename=\"{fname}\"\r\nContent-Type: image/gif\r\n\r\n")
+        body_bytes = body.encode("utf-8") + file_bytes + f"\r\n--{boundary}--\r\n".encode("utf-8")
+        req = urllib.request.Request(url, data=body_bytes,
+                                     headers={"Content-Type": f"multipart/form-data; boundary={boundary}",
+                                              "User-Agent": "ProGolCR/1.0"})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            result = json.loads(r.read().decode("utf-8"))
+            return result.get("ok", False)
+    except Exception as e:
+        print(f"[bot] send_animation error: {e}")
+        return False
+
 def _send_photo(token, chat_id, caption=""):
-    """Envía mascota.jpg con caption."""
+    """Envía mascota.jpg con caption (fallback)."""
     try:
         url = f"https://api.telegram.org/bot{token}/sendPhoto"
         with open(MASCOTA_PATH, "rb") as f:
             photo_bytes = f.read()
-        boundary = "----ProGolBoundary"
+        boundary = "----ProGolBoundary2"
         body  = f"--{boundary}\r\nContent-Disposition: form-data; name=\"chat_id\"\r\n\r\n{chat_id}\r\n"
         body += f"--{boundary}\r\nContent-Disposition: form-data; name=\"parse_mode\"\r\n\r\nMarkdown\r\n"
         body += f"--{boundary}\r\nContent-Disposition: form-data; name=\"caption\"\r\n\r\n{caption}\r\n"
@@ -143,9 +169,15 @@ def _today_matches(limit=8):
     today = datetime.date.today().isoformat()
     conn = db.get_conn()
     conn.row_factory = __import__("sqlite3").Row
+    # Excluye partidos donde ya existe alguna fila con status Finished/Live/FT
     cur = conn.execute(
         "SELECT DISTINCT home, away FROM matches "
-        "WHERE date=? AND status='Scheduled' AND home!='' AND away!='' LIMIT ?",
+        "WHERE date=? AND home!='' AND away!='' "
+        "AND NOT EXISTS ("
+        "  SELECT 1 FROM matches m2 "
+        "  WHERE m2.home=matches.home AND m2.away=matches.away "
+        "  AND m2.status IN ('Finished','Live','FT','AET','PEN')"
+        ") LIMIT ?",
         (today, limit)
     )
     rows = cur.fetchall()
@@ -177,8 +209,9 @@ def _get_free_pick():
         pick_text, pick_prob = "Empate", prob["draw"] / 100
     else:
         pick_text, pick_prob = f"{a_es} gana", prob["away"] / 100
-    conf = int(p.get("conf", 0) / 10)
+    conf = int(round(p.get("conf", 0)))
     fair = round(1 / pick_prob, 2) if pick_prob > 0 else 0
+    stars = "⭐" * min(conf, 10)
     return (
         f"🐕 *PICK GRATIS DEL DÍA*\n"
         f"📅 {today} · Copa del Mundo 2026\n\n"
@@ -186,7 +219,7 @@ def _get_free_pick():
         f"🎯 Pick: *{pick_text}*\n"
         f"📊 Probabilidad: *{pick_prob:.0%}*\n"
         f"💰 Cuota justa: *{fair}*\n"
-        f"🔥 Confianza Ryder: *{conf}/10*\n\n"
+        f"🔥 Confianza Ryder: *{conf}/10* {stars}\n\n"
         f"_Analizado por Ryder, el scout de ProGol CR 🐕_\n\n"
         f"¿Querés todos los picks del día? Escribí /comprar"
     )
@@ -405,10 +438,10 @@ def _approval_kb(buyer_chat_id, product_key):
 def send_winner_announcement(token, channel_or_chat, match, pick, result):
     """
     Llama esto cuando un pick gratis del día acertó.
-    Envía foto de Ryder con mensaje de celebración.
+    Envía GIF animado ProGol CR con mensaje de celebración.
     """
     caption = (
-        f"🎉🐕 *¡PICK GANADOR!*\n\n"
+        f"🎉 *¡PICK GANADOR!*\n\n"
         f"⚽ *{match}*\n"
         f"✅ Pick: *{pick}*\n"
         f"📊 Resultado: *{result}*\n\n"
@@ -417,7 +450,11 @@ def send_winner_announcement(token, channel_or_chat, match, pick, result):
         f"¿Querés los picks completos del día? Escribí /comprar\n"
         f"_ProGol CR · El análisis que te da ventaja_ 🐕"
     )
-    _send_photo(token, channel_or_chat, caption)
+    gif_path = WINNER_GIF if os.path.exists(WINNER_GIF) else None
+    if gif_path:
+        _send_animation(token, channel_or_chat, gif_path, caption)
+    else:
+        _send_photo(token, channel_or_chat, caption)
 
 # ── Handlers ───────────────────────────────────────────────────────────────────
 def _handle_message(token, owner_chat_id, msg):
