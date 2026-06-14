@@ -299,6 +299,7 @@ def _send_free_pick_img(token, chat_id):
             home_es=d["home_es"], away_es=d["away_es"],
             pick_text=d["pick_text"], prob_pct=d["prob_pct"],
             conf=d["conf"], fair=d["fair"],
+            home_name=d["home"], away_name=d["away"],
             hora_cr=d["hora_cr"], canal=d["canal"],
             home_badge_url=d["home_badge"], away_badge_url=d["away_badge"],
             today=d["today"]
@@ -707,9 +708,33 @@ def _handle_message(token, owner_chat_id, msg):
         state  = _state.get(chat_id, {"step": "idle"})
         is_new = not is_group and state.get("step") == "idle" and "welcomed" not in state
 
-    # /id — responde el chat_id (útil para configurar el grupo)
+    # /id — responde el chat_id (grupo o privado)
     if cmd == "/id":
-        _send(token, chat_id, f"🆔 Chat ID: `{chat_id}`\n_Copiá este número y pegalo en config.json como group\\_chat\\_id_")
+        tipo = "grupo" if is_group else "chat privado"
+        _send(token, chat_id, f"ID de este {tipo}: `{chat_id}`")
+        if is_group:
+            _save_group_chat_id(chat_id)
+            _send(token, chat_id, "Grupo registrado en ProGol CR.")
+        return
+
+    # /grupos — desde chat privado del owner, lista los chats donde esta el bot
+    if cmd == "/grupos" and chat_id == str(owner_chat_id):
+        gid = _group_chat_id or "no configurado"
+        _send(token, chat_id,
+              f"Group chat ID actual: `{gid}`\n\n"
+              f"Para configurar manualmente el grupo:\n"
+              f"1. Saca el bot del grupo\n"
+              f"2. Vuelve a agregarlo\n"
+              f"3. Escribe /id en el grupo\n\n"
+              f"O enviame el ID manualmente con:\n/setgrupo -1001234567890")
+        return
+
+    if cmd.startswith("/setgrupo") and chat_id == str(owner_chat_id):
+        parts = text.split()
+        if len(parts) == 2:
+            gid = parts[1]
+            _save_group_chat_id(gid)
+            _send(token, chat_id, f"Grupo configurado: `{gid}`")
         return
 
     # Comandos de info

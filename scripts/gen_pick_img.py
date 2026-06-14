@@ -1,142 +1,122 @@
 #!/usr/bin/env python3
-"""
-Genera brand/pick_gratis.png — imagen del pick gratis del día.
-"""
-import os, sys, math, datetime, io, urllib.request
+"""Genera brand/pick_gratis.png — imagen del pick gratis del dia."""
+import os, sys, math
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.dirname(__file__))
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
-sys.path.insert(0, ROOT)
 OUT  = os.path.join(ROOT, "brand", "pick_gratis.png")
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
+from img_utils import (BG, GREEN, GOLD, WHITE, GRAY, DKGREEN,
+                       font, emoji_font, paste_flag, draw_progol_logo, draw_footer)
 
-BG      = (8, 18, 12)
-GREEN   = (0, 210, 100)
-GOLD    = (255, 205, 50)
-WHITE   = (255, 255, 255)
-GRAY    = (150, 165, 158)
-DKGREEN = (0, 90, 40)
-MIDGREEN= (0, 140, 60)
-
-def _f(size, bold=False):
-    try:
-        return ImageFont.truetype("C:/Windows/Fonts/" + ("arialbd.ttf" if bold else "arial.ttf"), size)
-    except Exception:
-        return ImageFont.load_default()
-
-def _badge(url, size=80):
-    if not url: return None
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": "ProGolCR/1.0"})
-        with urllib.request.urlopen(req, timeout=8) as r:
-            data = r.read()
-        img = Image.open(io.BytesIO(data)).convert("RGBA").resize((size, size), Image.LANCZOS)
-        return img
-    except Exception:
-        return None
-
-def _paste_circle(canvas, badge, x, y, size):
-    mask = Image.new("L", (size, size), 0)
-    ImageDraw.Draw(mask).ellipse([0, 0, size, size], fill=255)
-    bg = Image.new("RGBA", (size, size), (14, 28, 18, 255))
-    if badge:
-        bg.paste(badge, (0, 0), badge)
-    else:
-        d = ImageDraw.Draw(bg)
-        d.ellipse([4, 4, size-4, size-4], fill=DKGREEN, outline=GREEN, width=2)
-        d.text((size//2, size//2), "⚽", fill=WHITE, font=_f(28), anchor="mm")
-    canvas.paste(bg, (x, y), mask)
+CHANNELS = {
+    "FIFA World Cup": "ESPN / Teletica",
+    "UEFA Champions": "ESPN",
+    "default":        "ESPN / Fox Sports",
+}
 
 def generar(home_es, away_es, pick_text, prob_pct, conf, fair,
-            hora_cr, canal, home_badge_url, away_badge_url, today):
-    W, H = 600, 460
+            hora_cr, canal, home_badge_url, away_badge_url, today,
+            home_name="", away_name=""):
+
+    W, H = 600, 480
     img  = Image.new("RGB", (W, H), BG)
     draw = ImageDraw.Draw(img)
 
-    # Fondo gradiente
+    # Fondo gradiente sutil
     for y in range(H):
-        shade = int(8 + 12 * math.sin(y * 0.012))
-        draw.line([(0, y), (W, y)], fill=(0, shade, shade // 3))
+        s = int(8 + 10 * math.sin(y * 0.013))
+        draw.line([(0, y), (W, y)], fill=(0, s, s//3))
 
-    # ── Header ProGol CR ──
-    # Escudo
-    sw, sh = 22, 28
-    sx, sy = 20, 18
-    pts = [(sx,sy),(sx+sw*2,sy),(sx+sw*2,sy+sh*.72),(sx+sw,sy+sh),(sx,sy+sh*.72)]
-    draw.polygon(pts, fill=DKGREEN, outline=GREEN)
-    draw.text((sx+sw, sy+3), "P", fill=GOLD, font=_f(18, True), anchor="mt")
-    draw.text((sx+sw*2+8, sy+2),  "ProGol", fill=WHITE, font=_f(20, True))
-    draw.text((sx+sw*2+8, sy+24), "CR",     fill=GREEN, font=_f(18, True))
+    # ── Header ──
+    draw_progol_logo(draw, 18, 18)
+    draw.text((W//2, 20), "PICK GRATIS DEL DIA", fill=GREEN,
+              font=font(28, True), anchor="mt", stroke_width=2, stroke_fill=(0,35,10))
+    draw.text((W//2, 56), f"Copa del Mundo 2026  |  {today}",
+              fill=GRAY, font=font(15), anchor="mt")
+    draw.line([(16, 82), (W-16, 82)], fill=DKGREEN, width=1)
 
-    # Título
-    draw.text((W//2, 22), "🐕 PICK GRATIS DEL DÍA", fill=GREEN,
-              font=_f(26, True), anchor="mt", stroke_width=2, stroke_fill=(0,40,10))
-    draw.text((W//2, 54), f"Copa del Mundo 2026 · {today}", fill=GRAY,
-              font=_f(15), anchor="mt")
+    # ── Banderas + nombres ──
+    FLAG_W, FLAG_H = 100, 66
+    flag_y = 96
 
-    draw.line([(20, 82), (W-20, 82)], fill=DKGREEN, width=1)
-
-    # ── Badges y equipos ──
-    badge_h = _badge(home_badge_url, 90)
-    badge_a = _badge(away_badge_url, 90)
-
-    # Local
-    _paste_circle(img, badge_h, 60, 100, 90)
-    draw.text((60+45, 200), home_es, fill=WHITE, font=_f(20, True), anchor="mt")
+    # Local — bandera izquierda
+    flag_x_h = W//2 - FLAG_W - 55
+    paste_flag(img, home_name or home_es, flag_x_h, flag_y, FLAG_W, FLAG_H)
+    draw.text((flag_x_h + FLAG_W//2, flag_y + FLAG_H + 8),
+              home_es, fill=WHITE, font=font(17, True), anchor="mt")
 
     # VS
-    draw.text((W//2, 138), "VS", fill=GOLD, font=_f(32, True), anchor="mm")
+    draw.text((W//2, flag_y + FLAG_H//2), "VS",
+              fill=GOLD, font=font(30, True), anchor="mm")
 
-    # Visitante
-    _paste_circle(img, badge_a, W-60-90, 100, 90)
-    draw.text((W-60-45, 200), away_es, fill=WHITE, font=_f(20, True), anchor="mt")
+    # Visitante — bandera derecha
+    flag_x_a = W//2 + 55
+    paste_flag(img, away_name or away_es, flag_x_a, flag_y, FLAG_W, FLAG_H)
+    draw.text((flag_x_a + FLAG_W//2, flag_y + FLAG_H + 8),
+              away_es, fill=WHITE, font=font(17, True), anchor="mt")
 
-    # ── Caja del pick ──
-    bx, by, bw, bh = 30, 225, W-60, 115
-    draw.rounded_rectangle([bx, by, bx+bw, by+bh], radius=12, fill=(0,50,25), outline=GREEN, width=2)
+    # ── Caja pick ──
+    bx, by, bw, bh = 24, 210, W-48, 120
+    draw.rounded_rectangle([bx, by, bx+bw, by+bh], radius=14,
+                           fill=(0, 45, 20), outline=GREEN, width=2)
 
-    draw.text((W//2, by+14), "🎯 PICK DE RYDER", fill=GREEN, font=_f(16, True), anchor="mt")
-    draw.text((W//2, by+38), pick_text, fill=WHITE,
-              font=_f(28, True), anchor="mt", stroke_width=1, stroke_fill=DKGREEN)
+    draw.text((W//2, by+12), "PICK DE RYDER", fill=GREEN,
+              font=font(16, True), anchor="mt")
+
+    draw.text((W//2, by+36), pick_text, fill=WHITE,
+              font=font(32, True), anchor="mt", stroke_width=1, stroke_fill=DKGREEN)
+
+    # Stars sin emoji — barras de confianza
+    bar_w_total = 200
+    bar_filled  = int(bar_w_total * conf / 10)
+    bbar_x = W//2 - bar_w_total//2
+    bbar_y = by + 82
+    draw.rounded_rectangle([bbar_x, bbar_y, bbar_x+bar_w_total, bbar_y+12],
+                           radius=6, fill=(0,40,18))
+    if bar_filled > 0:
+        draw.rounded_rectangle([bbar_x, bbar_y, bbar_x+bar_filled, bbar_y+12],
+                               radius=6, fill=GREEN)
+    draw.text((W//2, bbar_y+18), f"Confianza Ryder: {conf}/10",
+              fill=GRAY, font=font(13), anchor="mt")
 
     # Stats
-    stars = "⭐" * min(conf, 10)
-    draw.text((W//2, by+76), f"Probabilidad: {prob_pct}%   ·   Cuota justa: {fair}   ·   Confianza: {conf}/10",
-              fill=GRAY, font=_f(13), anchor="mt")
-    draw.text((W//2, by+96), stars[:conf], fill=GOLD, font=_f(14), anchor="mt")
+    draw.text((W//2, by+102),
+              f"Probabilidad: {prob_pct}%     Cuota justa: {fair}",
+              fill=GRAY, font=font(13), anchor="mt")
 
-    # ── Info partido ──
-    draw.line([(20, 354), (W-20, 354)], fill=DKGREEN, width=1)
+    # ── Info hora y canal ──
+    draw.line([(16, 346), (W-16, 346)], fill=DKGREEN, width=1)
 
-    info_y = 364
+    info_y = 358
     if hora_cr:
-        draw.text((W//2, info_y), f"🕐  {hora_cr} (hora Costa Rica)   ·   📺 {canal}",
-                  fill=WHITE, font=_f(16, True), anchor="mt")
-        info_y += 26
+        draw.text((W//2, info_y),
+                  f"Hora: {hora_cr} (Costa Rica)     Canal: {canal}",
+                  fill=WHITE, font=font(16, True), anchor="mt")
+        info_y += 30
 
-    draw.text((W//2, info_y), "Para picks completos: /comprar", fill=GREEN,
-              font=_f(15), anchor="mt")
+    draw.text((W//2, info_y),
+              "Analizado por Ryder, el scout de ProGol CR",
+              fill=GRAY, font=font(14), anchor="mt")
+    draw.text((W//2, info_y+22),
+              "Para picks completos escribe /comprar",
+              fill=GREEN, font=font(14, True), anchor="mt")
 
-    # ── Footer ──
-    draw.line([(20, H-52), (W-20, H-52)], fill=DKGREEN, width=1)
-    draw.text((W//2, H-44), "💚 Queremos que todos ganen", fill=GREEN,
-              font=_f(15, True), anchor="mt")
-    draw.text((W//2, H-22), "ProGol CR · Picks · Análisis · Copa del Mundo 2026",
-              fill=GRAY, font=_f(12), anchor="mt")
-
+    draw_footer(draw, W, H)
     img.save(OUT, "PNG", optimize=True)
     return OUT
 
 
 if __name__ == "__main__":
-    # Test con datos de ejemplo
-    generar(
-        home_es="Alemania", away_es="Curaçao",
+    out = generar(
+        home_es="Alemania", away_es="Curazao",
         pick_text="Gana Alemania",
         prob_pct=84, conf=9, fair=1.2,
         hora_cr="11:00 AM", canal="ESPN / Teletica",
-        home_badge_url="https://a.espncdn.com/i/teamlogos/countries/500/ger.png",
-        away_badge_url="https://r2.thesportsdb.com/images/media/team/badge/itygvb1600955363.png",
-        today=str(__import__("datetime").date.today())
+        home_badge_url="", away_badge_url="",
+        today="2026-06-14",
+        home_name="Germany", away_name="Curacao"
     )
-    print(f"Guardado: {OUT}")
+    print(f"Guardado: {out}")
