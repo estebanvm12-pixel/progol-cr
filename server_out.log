@@ -1,0 +1,13 @@
+[analyst-refresh] background context refresh started (every 15 min)
+========================================================
+  WORLD CUP 2026 -- WAR ROOM
+  This PC:  http://127.0.0.1:8765
+  Network:  http://192.168.100.10:8765  (same WiFi)
+  Anthropic key: set
+  Model: claude-sonnet-4-6
+  Database: C:\Users\esteb\worldcup-warroom\warroom.db
+  Doradobet: logged in as esteban_vm12@hotmail.com
+  Press Ctrl+C to stop.
+========================================================
+[analyst-refresh] context updated — 12 groups, 72 fixtures
+[analyst-refresh] context updated — 12 groups, 72 fixtures

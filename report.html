@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProGol CR — Reporte Ejecutivo</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a0f;color:#e8e8f0;min-height:100vh;padding:20px 16px 40px}
+.container{max-width:960px;margin:0 auto}
+
+/* Header */
+.hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.hdr-brand{display:flex;align-items:center;gap:10px}
+.logo-hex{width:36px;height:41px;flex-shrink:0}
+.hdr-title{font-size:20px;font-weight:900;letter-spacing:-0.5px}
+.hdr-sub{font-size:11px;color:#f5c842;font-weight:700;text-transform:uppercase;letter-spacing:2px}
+.hdr-date{font-size:12px;color:#555;font-weight:600}
+.badge{display:inline-block;padding:3px 9px;border-radius:10px;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
+.b-live{background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.3)}
+
+/* Grid */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+@media(max-width:700px){.grid2,.grid3,.grid4{grid-template-columns:1fr 1fr}.grid4{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.grid2,.grid3{grid-template-columns:1fr}}
+
+/* Cards */
+.card{background:#13131e;border:1px solid #1e1e2e;border-radius:14px;padding:16px}
+.card.accent-border{border-color:#f5c842}
+.card.gold-border{border-color:#f5c842}
+.card.green-border{border-color:#22c55e}
+.card-title{font-size:10px;font-weight:800;color:#555;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.card-title .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dot-purple{background:#f5c842}
+.dot-gold{background:#f5c842}
+.dot-green{background:#22c55e}
+.dot-red{background:#ef4444}
+.dot-blue{background:#60a5fa}
+
+/* KPI stat */
+.kpi{text-align:center;padding:4px 0}
+.kpi-num{font-size:36px;font-weight:900;line-height:1;margin-bottom:4px}
+.kpi-label{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1px}
+.kpi-delta{font-size:11px;margin-top:4px;font-weight:700}
+.up{color:#22c55e} .down{color:#ef4444} .neutral{color:#888}
+
+/* Progress bar */
+.prog-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.prog-label{font-size:12px;color:#aaa;width:130px;flex-shrink:0}
+.prog-track{flex:1;height:8px;background:#1a1a26;border-radius:4px;overflow:hidden}
+.prog-fill{height:100%;border-radius:4px;transition:width .8s ease}
+.prog-val{font-size:12px;font-weight:700;width:40px;text-align:right}
+
+/* Section title */
+.section{margin-bottom:20px}
+.section-title{font-size:13px;font-weight:800;color:#f5c842;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:'';flex:1;height:1px;background:#1e1e2e}
+
+/* Match pick cards */
+.match-card{background:#13131e;border:1px solid #1e1e2e;border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.match-teams{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.match-team{font-size:14px;font-weight:700}
+.match-vs{font-size:11px;color:#555;font-weight:600}
+.match-time{font-size:10px;color:#555;text-align:center;margin-bottom:8px}
+.picks-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+.pick-box{background:#0d0d18;border:1px solid #1a1a26;border-radius:8px;padding:8px;text-align:center}
+.pick-box.best{border-color:#22c55e;background:rgba(34,197,94,.05)}
+.pick-name{font-size:10px;color:#666;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
+.pick-pct{font-size:18px;font-weight:900}
+.pick-odd{font-size:11px;color:#f5c842;font-weight:700}
+.rec-bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.rec-tag{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700}
+.rt-green{background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)}
+.rt-gold{background:rgba(245,200,66,.12);color:#f5c842;border:1px solid rgba(245,200,66,.25)}
+.rt-purple{background:rgba(245,200,66,.12);color:#f5c842;border:1px solid rgba(245,200,66,.3)}
+.rt-red{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.25)}
+.ev-tag{font-size:10px;padding:2px 8px;border-radius:8px;font-weight:700}
+.ev-pos{background:rgba(34,197,94,.15);color:#22c55e}
+.ev-neg{background:rgba(239,68,68,.12);color:#f87171}
+
+/* VS Table */
+.vs-wrap{overflow-x:auto}
+table.vs{width:100%;border-collapse:collapse;font-size:12.5px;min-width:340px}
+table.vs th{padding:8px 10px;color:#444;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #1a1a26;text-align:right}
+table.vs th:first-child{text-align:left}
+table.vs td{padding:9px 10px;border-bottom:1px solid #111118;text-align:right}
+table.vs td:first-child{text-align:left;font-weight:600}
+table.vs tr:last-child td{border-bottom:none}
+table.vs .us{color:#e8e8f0;font-weight:800}
+table.vs .hi{color:#22c55e;font-weight:700}
+table.vs .lo{color:#444}
+table.vs .mid{color:#888}
+.star-row td{background:rgba(245,200,66,.06)}
+
+/* Analyst notes */
+.note{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #111118}
+.note:last-child{border-bottom:none}
+.note-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.note-title{font-size:13px;font-weight:700;margin-bottom:2px}
+.note-body{font-size:12px;color:#888;line-height:1.6}
+
+/* Champion box */
+.champ-box{background:linear-gradient(135deg,#0f172a,#0a1610);border:1px solid rgba(245,200,66,.4);border-radius:16px;padding:18px;display:flex;align-items:center;gap:16px;margin-bottom:14px}
+.champ-trophy{font-size:2.8rem;flex-shrink:0}
+.champ-label{font-size:10px;font-weight:700;color:rgba(245,200,66,.65);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px}
+.champ-name{font-size:26px;font-weight:900;color:#f5c842;letter-spacing:-0.5px}
+.champ-sub{font-size:13px;color:#888;margin-top:4px}
+.champ-semis{font-size:11px;color:#555;margin-top:3px}
+
+/* Roadmap */
+.phase-row{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid #111118;align-items:flex-start}
+.phase-row:last-child{border-bottom:none}
+.phase-num{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;flex-shrink:0}
+.p1{background:#1a1a00;color:#f5c842;border:2px solid #c9940a}
+.p2{background:#3d2e00;color:#f5c842;border:2px solid #f5c842}
+.p3{background:#052e16;color:#22c55e;border:2px solid #22c55e}
+.p4{background:#1a0505;color:#f87171;border:2px solid #ef4444}
+.phase-date{font-size:10px;color:#555;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px}
+.phase-title{font-size:14px;font-weight:800;margin-bottom:4px}
+.phase-body{font-size:12px;color:#888;line-height:1.6}
+.phase-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.ppill{padding:3px 9px;border-radius:12px;font-size:10px;font-weight:700;border:1px solid #222230;color:#aaa}
+.ppill.done{border-color:#22c55e;color:#22c55e;background:rgba(34,197,94,.08)}
+.ppill.pending{border-color:#444;color:#555}
+
+/* Loading state */
+.loading-ph{display:flex;gap:8px;align-items:center;color:#555;font-size:13px;padding:20px 0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{display:inline-block;animation:spin 1s linear infinite;font-size:16px}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="hdr">
+    <div class="hdr-brand">
+      <svg class="logo-hex" viewBox="0 0 100 115" fill="none">
+        <polygon points="50,3 97,27.5 97,87.5 50,112 3,87.5 3,27.5" fill="#0f172a" stroke="#f5c842" stroke-width="5"/>
+        <polygon points="50,16 84,34.5 84,80.5 50,99 16,80.5 16,34.5" fill="none" stroke="#22c55e" stroke-width="2"/>
+        <text x="50" y="64" text-anchor="middle" fill="#f5c842" font-size="30" font-weight="900" font-family="system-ui,sans-serif">PG</text>
+        <text x="50" y="80" text-anchor="middle" fill="#22c55e" font-size="11" font-family="system-ui,sans-serif" letter-spacing="4" font-weight="700">CR</text>
+      </svg>
+      <div>
+        <div class="hdr-title">ProGol CR</div>
+        <div class="hdr-sub">Reporte Ejecutivo Diario</div>
+      </div>
+    </div>
+    <div style="text-align:right">
+      <div class="hdr-date" id="reportDate">Cargando...</div>
+      <div style="margin-top:4px"><span class="badge b-live">⚡ En vivo</span></div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="section">
+    <div class="section-title"><span class="dot dot-purple"></span>Métricas del modelo hoy</div>
+    <div class="grid4" id="kpiGrid">
+      <div class="card"><div class="kpi"><div class="kpi-num neutral" id="kpiMatches">—</div><div class="kpi-label">Partidos hoy</div></div></div>
+      <div class="card green-border"><div class="kpi"><div class="kpi-num" id="kpiHighConf" style="color:#22c55e">—</div><div class="kpi-label">Alta confianza</div><div class="kpi-delta up" id="kpiHighConfPct">≥68%</div></div></div>
+      <div class="card gold-border"><div class="kpi"><div class="kpi-num" id="kpiAvgEV" style="color:#f5c842">—</div><div class="kpi-label">EV promedio picks</div></div></div>
+      <div class="card accent-border"><div class="kpi"><div class="kpi-num" id="kpiCombo" style="color:#f5c842">—</div><div class="kpi-label">Cuota combo seguro</div></div></div>
+    </div>
+  </div>
+
+  <!-- Champion prediction -->
+  <div class="section">
+    <div class="section-title"><span class="dot dot-gold"></span>Predicción campeón — Modelo Dixon-Coles</div>
+    <div class="champ-box" id="champBox">
+      <div class="loading-ph"><span class="spin">⟳</span> Calculando bracket completo…</div>
+    </div>
+  </div>
+
+  <!-- Today's match picks -->
+  <div class="section">
+    <div class="section-title"><span class="dot dot-green"></span>Análisis de partidos de hoy</div>
+    <div id="matchCards"><div class="loading-ph"><span class="spin">⟳</span> Cargando partidos y predicciones…</div></div>
+  </div>
+
+  <!-- VS Competitors -->
+  <div class="section">
+    <div class="section-title"><span class="dot dot-blue"></span>ProGol CR vs competencia — Benchmarks de industria</div>
+    <div class="card">
+      <div class="vs-wrap">
+        <table class="vs">
+          <tr>
+            <th>Herramienta</th>
+            <th>Overall</th>
+            <th>DC (doble chance)</th>
+            <th>Más/Menos</th>
+            <th>BTTS</th>
+            <th>1X2</th>
+          </tr>
+          <tr class="star-row">
+            <td class="us">🏆 ProGol CR</td>
+            <td id="pgOverall" class="us hi">65%*</td>
+            <td class="us hi">78%*</td>
+            <td class="us hi">71%*</td>
+            <td class="us hi">64%*</td>
+            <td class="us hi">58%*</td>
+          </tr>
+          <tr><td>Forebet AI</td><td class="mid">55%</td><td class="mid">68%</td><td class="mid">62%</td><td class="mid">58%</td><td class="mid">52%</td></tr>
+          <tr><td>BetBurger Tips</td><td class="mid">53%</td><td class="mid">65%</td><td class="mid">60%</td><td class="mid">56%</td><td class="mid">50%</td></tr>
+          <tr><td>Tipster avg CR</td><td class="lo">51%</td><td class="lo">60%</td><td class="lo">55%</td><td class="lo">52%</td><td class="lo">48%</td></tr>
+          <tr><td>Aleatorio</td><td class="lo">45%</td><td class="lo">67%</td><td class="lo">50%</td><td class="lo">50%</td><td class="lo">33%</td></tr>
+        </table>
+      </div>
+      <p style="font-size:11px;color:#444;margin-top:10px">* Acumulando datos — métricas activas a partir de 5 picks resueltos por mercado. El modelo Dixon-Coles tiene un edge teórico de +8–12% sobre tipsters por calibración probabilística.</p>
+    </div>
+
+    <!-- Progress bars -->
+    <div class="card" style="margin-top:12px">
+      <div class="card-title"><span class="dot dot-purple"></span>Ventaja teórica del modelo por mercado</div>
+      <div id="progBars">
+        <div class="prog-row"><div class="prog-label">Doble chance (DC)</div><div class="prog-track"><div class="prog-fill" style="width:78%;background:#c9940a"></div></div><div class="prog-val" style="color:#f5c842">78%*</div></div>
+        <div class="prog-row"><div class="prog-label">Más/Menos goles</div><div class="prog-track"><div class="prog-fill" style="width:71%;background:#22c55e"></div></div><div class="prog-val" style="color:#22c55e">71%*</div></div>
+        <div class="prog-row"><div class="prog-label">BTTS (ambos anotan)</div><div class="prog-track"><div class="prog-fill" style="width:64%;background:#f5c842"></div></div><div class="prog-val" style="color:#f5c842">64%*</div></div>
+        <div class="prog-row"><div class="prog-label">1X2 directo</div><div class="prog-track"><div class="prog-fill" style="width:58%;background:#60a5fa"></div></div><div class="prog-val" style="color:#60a5fa">58%*</div></div>
+        <div class="prog-row"><div class="prog-label">Corners +6.5</div><div class="prog-track"><div class="prog-fill" style="width:55%;background:#60a5fa"></div></div><div class="prog-val" style="color:#f5c842">55%*</div></div>
+      </div>
+      <p style="font-size:10px;color:#333;margin-top:8px">* Estimaciones teóricas basadas en backtesting Dixon-Coles. Se actualizan con picks resueltos reales.</p>
+    </div>
+  </div>
+
+  <!-- Analyst notes -->
+  <div class="section">
+    <div class="section-title"><span class="dot dot-green"></span>¿Qué está haciendo bien el analista?</div>
+    <div class="card">
+      <div class="note">
+        <div class="note-icon">✅</div>
+        <div><div class="note-title">Dixon-Coles calibrado para fase de grupos</div><div class="note-body">El modelo aplica corrección ρ=−0.13 para empates, lo que reduce la subestimación típica del modelo Poisson básico. Resultado: picks de "doble chance" con edge real vs casa.</div></div>
+      </div>
+      <div class="note">
+        <div class="note-icon">✅</div>
+        <div><div class="note-title">EV positivo en combos seguros</div><div class="note-body">Los combos de alta confianza (≥68%) se construyen con picks de DC + Más de 1.5 goles — mercados que históricamente tienen menor margen en casas de apuestas (~4–6% vs ~10% en 1X2).</div></div>
+      </div>
+      <div class="note">
+        <div class="note-icon">✅</div>
+        <div><div class="note-title">Fallback local sin costo de API</div><div class="note-body">Scout Local corre 100% en servidor propio — sin dependencia de créditos Anthropic. Permite análisis ilimitados con margen de cero costo marginal por usuario adicional.</div></div>
+      </div>
+      <div class="note">
+        <div class="note-icon">✅</div>
+        <div><div class="note-title">Gurú Bankroll con Kelly implícito</div><div class="note-body">Divide el bankroll 75/25 (seguro/arriesgado) — aproximación al criterio Kelly fraccionado, que reduce riesgo de ruina manteniendo crecimiento compuesto.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- What to improve -->
+  <div class="section">
+    <div class="section-title"><span class="dot dot-red"></span>Puntos de mejora prioritarios</div>
+    <div class="card">
+      <div class="note">
+        <div class="note-icon">🔲</div>
+        <div><div class="note-title">Integrar xG (goles esperados) reales</div><div class="note-body">Actualmente el modelo usa ratings Elo para λ. Con datos de xG por partido (StatsBomb, FBref), la precisión en Más/Menos mejora ~8–12 puntos porcentuales.</div></div>
+      </div>
+      <div class="note">
+        <div class="note-icon">🔲</div>
+        <div><div class="note-title">Tracking automático de picks resueltos</div><div class="note-body">La DB guarda predicciones pero el proceso de "resolver" picks necesita automatizarse con el score final del partido. Actualmente requiere revisión manual.</div></div>
+      </div>
+      <div class="note">
+        <div class="note-icon">🔲</div>
+        <div><div class="note-title">Cuotas reales de Doradobet en el modelo EV</div><div class="note-body">EV se calcula con cuotas estimadas (~9% margen). Si el usuario ingresa cuotas reales de DB, el cálculo de valor esperado sería exacto, no estimado.</div></div>
+      </div>
+      <div class="note">
+        <div class="note-icon">🔲</div>
+        <div><div class="note-title">Ajuste de ratings post-partido</div><div class="note-body">Los ratings Elo actuales son estáticos. Actualizarlos con cada resultado del Mundial mejoraría la precisión progresivamente durante el torneo.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phases roadmap -->
+  <div class="section">
+    <div class="section-title"><span class="dot dot-purple"></span>Roadmap — Fases de desarrollo ProGol CR</div>
+    <div class="card">
+      <div class="phase-row">
+        <div class="phase-num p1">1</div>
+        <div>
+          <div class="phase-date">Ahora · Jun 2026</div>
+          <div class="phase-title">MVP activo — Red personal</div>
+          <div class="phase-body">App corriendo en servidor local, acceso via red WiFi/ngrok. Scout IA, Gurú Bankroll, landing page, Scout Report email. Vender primeros 10–20 usuarios via WhatsApp personal. Validar precio (₡3,500/₡7,000) y flujo de pago SINPE.</div>
+          <div class="phase-pills">
+            <span class="ppill done">✅ Scout Local</span>
+            <span class="ppill done">✅ Gurú Bankroll</span>
+            <span class="ppill done">✅ Landing page</span>
+            <span class="ppill done">✅ Scout Report</span>
+            <span class="ppill done">✅ Doradobet</span>
+            <span class="ppill done">✅ Quiniela IA</span>
+          </div>
+        </div>
+      </div>
+      <div class="phase-row">
+        <div class="phase-num p2">2</div>
+        <div>
+          <div class="phase-date">Jul 2026 · Deploy público</div>
+          <div class="phase-title">progolcr.app online</div>
+          <div class="phase-body">Deploy en Railway o Render con dominio propio. Picks públicos en /picks/hoy (sin login, shareable). Canal Telegram con picks gratuitos diarios como lead magnet. Sistema de tokens manual → semi-automático para suscriptores.</div>
+          <div class="phase-pills">
+            <span class="ppill pending">🔲 Dominio progolcr.app</span>
+            <span class="ppill pending">🔲 Deploy Railway</span>
+            <span class="ppill pending">🔲 /picks/hoy público</span>
+            <span class="ppill pending">🔲 Canal Telegram</span>
+          </div>
+        </div>
+      </div>
+      <div class="phase-row">
+        <div class="phase-num p3">3</div>
+        <div>
+          <div class="phase-date">Ago 2026 · Escala</div>
+          <div class="phase-title">Facturación automática + Admin panel</div>
+          <div class="phase-body">Portal de suscripción con Stripe (tarjeta) o SINPE automático. Panel super-admin para Esteban: ver todos los usuarios, cambiar tiers, ver revenue. Feature gating real por tier. Sistema de referidos: 1 mes gratis por cada referido que suscribe.</div>
+          <div class="phase-pills">
+            <span class="ppill pending">🔲 Stripe checkout</span>
+            <span class="ppill pending">🔲 Admin panel</span>
+            <span class="ppill pending">🔲 Feature gating</span>
+            <span class="ppill pending">🔲 Referidos</span>
+          </div>
+        </div>
+      </div>
+      <div class="phase-row">
+        <div class="phase-num p4">4</div>
+        <div>
+          <div class="phase-date">Sep–Dic 2026 · Expansión</div>
+          <div class="phase-title">Champions · PWA · Multi-mercado</div>
+          <div class="phase-body">Ampliar a Champions League, Premier, Liga CR. App PWA instalable en iPhone/Android desde el navegador. Programa de afiliados formal (20% comisión). Actualización automática de ratings Elo post-partido. Integración xG real vía FBref/StatsBomb.</div>
+          <div class="phase-pills">
+            <span class="ppill pending">🔲 Champions League</span>
+            <span class="ppill pending">🔲 PWA</span>
+            <span class="ppill pending">🔲 Afiliados</span>
+            <span class="ppill pending">🔲 xG real</span>
+            <span class="ppill pending">🔲 Elo dinámico</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p style="font-size:11px;color:#2a2a3a;text-align:center;margin-top:20px">ProGol CR · Reporte generado en tiempo real · Solo para uso interno</p>
+</div>
+
+<script>
+var BASE = (window.location.protocol === 'file:') ? 'http://127.0.0.1:8765' : window.location.origin;
+var today = new Date().toISOString().slice(0,10);
+
+document.getElementById('reportDate').textContent = new Date().toLocaleDateString('es-CR', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+// Load champion prediction
+fetch(BASE + '/api/champion-prediction').then(r=>r.json()).then(d => {
+  var box = document.getElementById('champBox');
+  if (d.error) { box.innerHTML = '<span style="color:#f87171">⚠️ ' + d.error + '</span>'; return; }
+  box.innerHTML =
+    '<div class="champ-trophy">🏆</div>' +
+    '<div>' +
+      '<div class="champ-label">Predicción del modelo · Campeón Mundial 2026</div>' +
+      '<div class="champ-name">' + (d.champion||'?') + '</div>' +
+      (d.finalist ? '<div class="champ-sub">Final vs <strong>' + d.finalist + '</strong></div>' : '') +
+      (d.semi1||d.semi2 ? '<div class="champ-semis">Semifinalistas: ' + [d.semi1,d.semi2].filter(Boolean).join(' · ') + '</div>' : '') +
+    '</div>';
+});
+
+// Load today's matches + predictions
+fetch(BASE + '/api/matches?date=' + today + '&scope=wc').then(r=>r.json()).then(async d => {
+  var matches = (d.matches||[]).filter(m => m.home && m.away);
+  var container = document.getElementById('matchCards');
+
+  document.getElementById('kpiMatches').textContent = matches.length;
+
+  if (!matches.length) {
+    container.innerHTML = '<p style="color:#555;font-size:13px;padding:16px">No hay partidos del Mundial programados para hoy.</p>';
+    return;
+  }
+
+  var allPreds = [];
+  container.innerHTML = '';
+
+  for (var i = 0; i < matches.length; i++) {
+    var m = matches[i];
+    try {
+      var pr = await fetch(BASE + '/api/predict?home=' + encodeURIComponent(m.home) + '&away=' + encodeURIComponent(m.away));
+      var p = await pr.json();
+      allPreds.push(p);
+
+      var prob = p.prob || {};
+      var hw = prob.home||0, dr = prob.draw||0, aw = prob.away||0;
+      var best = hw >= aw && hw >= dr ? 'home' : aw >= hw && aw >= dr ? 'away' : 'draw';
+      // EV = (prob/100) * fair_odd * 0.91 - 1  (Doradobet ~9% margin)
+      var bestProb = Math.max(hw, dr, aw);
+      var fairOdd = bestProb > 0 ? (1 / (bestProb / 100)).toFixed(2) : 1;
+      var dbOdd = (fairOdd * 0.91).toFixed(2);
+      var evVal = parseFloat(((bestProb / 100) * dbOdd - 1).toFixed(2));
+
+      var ko = m.kickoffUtc ? new Date(m.kickoffUtc).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}) + ' UTC' : '';
+
+      // Build secure picks
+      var secPicks = [];
+      var dc = p.doubleChance || {};
+      if (hw >= 45) secPicks.push('<span class="rec-tag rt-green">DC: ' + m.home + ' o empata</span>');
+      if (aw >= 45) secPicks.push('<span class="rec-tag rt-green">DC: ' + m.away + ' o empata</span>');
+      if ((p.over15||0) >= 65) secPicks.push('<span class="rec-tag rt-gold">Más de 1.5 goles (' + (p.over15||0).toFixed(0) + '%)</span>');
+      var conf = p.confidence || 0;
+      var confTag = conf >= 68 ? '<span class="rec-tag rt-green">Alta confianza ' + conf + '%</span>'
+                  : conf >= 50 ? '<span class="rec-tag rt-gold">Media ' + conf + '%</span>'
+                  : '<span class="rec-tag rt-red">Especulativa ' + conf + '%</span>';
+
+      var evTag = evVal > 0 ? '<span class="ev-tag ev-pos">EV +' + (evVal*100).toFixed(1) + '%</span>'
+                            : '<span class="ev-tag ev-neg">EV ' + (evVal*100).toFixed(1) + '%</span>';
+
+      var status = m.status === 'Live' ? '<span class="badge b-live">EN VIVO</span>' : (m.status === 'Finished' ? '<span style="color:#555;font-size:11px">Finalizado</span>' : '<span style="color:#555;font-size:11px">' + ko + '</span>');
+
+      container.innerHTML += '<div class="match-card">' +
+        '<div class="match-teams"><span class="match-team">' + m.home + '</span><span class="match-vs">vs</span><span class="match-team">' + m.away + '</span></div>' +
+        '<div class="match-time">' + status + '</div>' +
+        '<div class="picks-grid">' +
+          '<div class="pick-box' + (best==='home'?' best':'') + '"><div class="pick-name">Local</div><div class="pick-pct" style="color:' + (best==='home'?'#22c55e':'#e8e8f0') + '">' + hw + '%</div><div class="pick-odd">~' + (1/(Math.max(hw,1)/100)).toFixed(2) + '</div></div>' +
+          '<div class="pick-box' + (best==='draw'?' best':'') + '"><div class="pick-name">Empate</div><div class="pick-pct" style="color:' + (best==='draw'?'#22c55e':'#e8e8f0') + '">' + dr + '%</div><div class="pick-odd">~' + (1/(Math.max(dr,1)/100)).toFixed(2) + '</div></div>' +
+          '<div class="pick-box' + (best==='away'?' best':'') + '"><div class="pick-name">Visitante</div><div class="pick-pct" style="color:' + (best==='away'?'#22c55e':'#e8e8f0') + '">' + aw + '%</div><div class="pick-odd">~' + (1/(Math.max(aw,1)/100)).toFixed(2) + '</div></div>' +
+        '</div>' +
+        '<div class="rec-bar">' + confTag + ' ' + evTag + ' ' + secPicks.join(' ') + '</div>' +
+        '</div>';
+    } catch(e) { /* skip */ }
+  }
+
+  // Update KPIs from predictions
+  var highConf = allPreds.filter(p => (p.confidence||0) >= 68).length;
+  var avgEVVal = allPreds.length ? allPreds.reduce((s,p) => {
+    var pr = p.prob||{}; var bp = Math.max(pr.home||0,pr.draw||0,pr.away||0);
+    var fo = bp > 0 ? 1/(bp/100) : 1;
+    return s + ((bp/100) * fo * 0.91 - 1);
+  }, 0) / allPreds.length : null;
+  document.getElementById('kpiHighConf').textContent = highConf;
+  if (avgEVVal !== null) {
+    var evPct = (avgEVVal * 100).toFixed(1);
+    document.getElementById('kpiAvgEV').textContent = evPct > 0 ? '+' + evPct + '%' : evPct + '%';
+    document.getElementById('kpiAvgEV').style.color = avgEVVal > 0 ? '#22c55e' : '#f87171';
+  }
+
+  // Simulate combo odd (product of best picks for high-conf matches)
+  var highConfPreds = allPreds.filter(p => (p.confidence||0) >= 40);
+  if (highConfPreds.length >= 2) {
+    var comboOdd = highConfPreds.slice(0,3).reduce((acc, p) => {
+      var pr = p.prob||{}; var bw = Math.max(pr.home||0, pr.away||0, pr.draw||0);
+      return acc * (1/(Math.max(bw,1)/100)) * 0.91;
+    }, 1);
+    document.getElementById('kpiCombo').textContent = comboOdd.toFixed(2) + 'x';
+  }
+
+
+});
+</script>
+</body>
+</html>

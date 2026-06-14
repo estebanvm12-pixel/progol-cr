@@ -1,0 +1,29 @@
+# Secrets & credentials — NUNCA al repo
+config.json
+data/users.json
+
+# Database
+warroom.db
+warroom.db-wal
+warroom.db-shm
+
+# Calibration & model data (se regenera sola)
+data/brier_scores.json
+data/calibration_log.json
+data/processed_matches.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# wa-bot dependencies & sessions
+wa-bot/node_modules/
+wa-bot/.wwebjs_auth/
+wa-bot/.wwebjs_cache/
+wa-bot/session2/
+
+# OS
+.DS_Store
+Thumbs.db

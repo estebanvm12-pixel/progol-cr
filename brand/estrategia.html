@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ProGol CR — Estrategia de Negocio 2026</title>
+<style>
+  :root {
+    --green: #22c55e; --green-dark: #16a34a; --green-dim: #166534;
+    --bg: #0f172a; --bg2: #1e293b; --bg3: #334155;
+    --text: #f8fafc; --text2: #94a3b8; --text3: #64748b;
+    --border: #334155; --yellow: #f59e0b; --red: #ef4444;
+    --blue: #3b82f6; --purple: #a855f7; --orange: #f97316;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 15px; line-height: 1.65; }
+
+  .header { background: var(--bg2); border-bottom: 2px solid var(--green); padding: 24px 40px; display: flex; align-items: center; gap: 20px; position: sticky; top: 0; z-index: 100; }
+  .header img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 3px solid var(--green); }
+  .header-text h1 { font-size: 20px; font-weight: 800; color: var(--green); }
+  .header-text p { color: var(--text2); font-size: 13px; margin-top: 2px; }
+  .badge { background: var(--green-dim); color: var(--green); font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 20px; border: 1px solid var(--green-dark); display: inline-block; margin-top: 4px; }
+
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar { width: 250px; background: var(--bg2); border-right: 1px solid var(--border); padding: 20px 0; position: sticky; top: 81px; height: calc(100vh - 81px); overflow-y: auto; flex-shrink: 0; }
+  .sidebar-section { padding: 8px 20px 4px; font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; }
+  .sidebar a { display: flex; align-items: center; gap: 10px; padding: 9px 20px; color: var(--text2); text-decoration: none; font-size: 13px; border-left: 3px solid transparent; transition: all 0.15s; }
+  .sidebar a:hover, .sidebar a.active { color: var(--green); border-left-color: var(--green); background: #0f172a44; }
+  .sidebar a .icon { font-size: 16px; width: 20px; text-align: center; }
+
+  .content { flex: 1; padding: 40px 52px; max-width: 900px; }
+  .section { margin-bottom: 72px; scroll-margin-top: 100px; }
+  .section-title { font-size: 22px; font-weight: 800; color: var(--text); border-bottom: 2px solid var(--green); padding-bottom: 12px; margin-bottom: 28px; display: flex; align-items: center; gap: 12px; }
+  h3 { font-size: 15px; font-weight: 700; color: var(--green); margin: 28px 0 10px; }
+  h4 { font-size: 13px; font-weight: 700; color: var(--text); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+  p { color: var(--text2); margin-bottom: 12px; }
+  strong { color: var(--text); }
+  hr { border: none; border-top: 1px solid var(--border); margin: 48px 0; }
+
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; margin-bottom: 14px; }
+  .card-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .card p { margin: 0; font-size: 13px; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+
+  .stat-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 18px; text-align: center; }
+  .stat-box .num { font-size: 26px; font-weight: 800; color: var(--green); }
+  .stat-box .lbl { font-size: 11px; color: var(--text2); margin-top: 4px; line-height: 1.4; }
+  .stat-box.yellow .num { color: var(--yellow); }
+  .stat-box.blue .num { color: var(--blue); }
+  .stat-box.purple .num { color: var(--purple); }
+  .stat-box.orange .num { color: var(--orange); }
+
+  .tip { background: #0f2d1a; border: 1px solid var(--green-dim); border-radius: 10px; padding: 14px 18px; margin: 16px 0; font-size: 13px; color: #86efac; display: flex; gap: 10px; }
+  .warn { background: #292500; border: 1px solid #a16207; border-radius: 10px; padding: 14px 18px; margin: 16px 0; font-size: 13px; color: #fde047; display: flex; gap: 10px; }
+  .info { background: #0c1a3d; border: 1px solid #1e40af; border-radius: 10px; padding: 14px 18px; margin: 16px 0; font-size: 13px; color: #93c5fd; display: flex; gap: 10px; }
+  .danger { background: #2d0000; border: 1px solid #7f1d1d; border-radius: 10px; padding: 14px 18px; margin: 16px 0; font-size: 13px; color: #fca5a5; display: flex; gap: 10px; }
+  .tip .i, .warn .i, .info .i, .danger .i { font-size: 18px; flex-shrink: 0; }
+
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+  th { background: var(--bg3); color: var(--text); padding: 10px 14px; text-align: left; font-weight: 600; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text2); vertical-align: top; }
+  tr:hover td { background: #1e293b55; }
+
+  .pill { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; margin: 2px; }
+  .pill-green { background: #0f2d1a; color: var(--green); border: 1px solid var(--green-dark); }
+  .pill-yellow { background: #292500; color: var(--yellow); border: 1px solid #a16207; }
+  .pill-red { background: #2d0000; color: var(--red); border: 1px solid #7f1d1d; }
+  .pill-blue { background: #0c1a3d; color: var(--blue); border: 1px solid #1e40af; }
+  .pill-purple { background: #2d0d4a; color: var(--purple); border: 1px solid #7e22ce; }
+  .pill-orange { background: #2d1200; color: var(--orange); border: 1px solid #9a3412; }
+
+  .steps { list-style: none; counter-reset: step; }
+  .steps li { counter-increment: step; padding: 12px 16px 12px 48px; position: relative; border-left: 2px solid var(--border); margin-left: 16px; margin-bottom: 4px; color: var(--text2); font-size: 13px; }
+  .steps li:last-child { border-left-color: transparent; }
+  .steps li::before { content: counter(step); position: absolute; left: -16px; top: 10px; width: 28px; height: 28px; background: var(--green-dim); border-radius: 50%; color: var(--green); font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+
+  .phase { border-left: 3px solid var(--green); padding-left: 20px; margin-bottom: 28px; }
+  .phase-label { font-size: 11px; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .phase-title { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+
+  .kanban { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 20px 0; }
+  .kanban-col { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .kanban-col-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .kanban-col-title.done { color: var(--green); }
+  .kanban-col-title.wip { color: var(--yellow); }
+  .kanban-col-title.todo { color: var(--text3); }
+  .kanban-item { background: var(--bg3); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; font-size: 12px; color: var(--text2); line-height: 1.5; }
+  .kanban-item strong { color: var(--text); display: block; margin-bottom: 2px; }
+
+  .revenue-bar { display: flex; align-items: stretch; border-radius: 8px; overflow: hidden; height: 44px; margin: 12px 0; }
+  .revenue-seg { display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; padding: 0 10px; }
+
+  .msg-box { background: #0f2d1a; border: 1px solid var(--green-dim); border-radius: 10px; padding: 16px 20px; font-size: 13px; color: var(--text); line-height: 1.8; font-family: 'Segoe UI', sans-serif; margin: 16px 0; }
+  .msg-box .lbl { font-size: 10px; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+
+  @media (max-width: 800px) {
+    .sidebar { display: none; }
+    .content { padding: 20px 16px; }
+    .grid2, .grid3, .grid4, .kanban { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <img src="/brand/mascota.jpg" alt="Gol"/>
+  <div class="header-text">
+    <h1>ProGol CR — Estrategia de Negocio 2026</h1>
+    <p>Posicionamiento · Planes · Ventas · Roadmap · Qué falta</p>
+    <span class="badge">🔒 Confidencial — Esteban Venegas</span>
+  </div>
+</div>
+
+<div class="layout">
+  <nav class="sidebar">
+    <div class="sidebar-section">El Negocio</div>
+    <a href="#oportunidad" class="active"><span class="icon">🎯</span> La Oportunidad</a>
+    <a href="#posicionamiento"><span class="icon">🏆</span> Posicionamiento</a>
+    <a href="#diferenciadores"><span class="icon">⚡</span> Por qué somos diferentes</a>
+
+    <div class="sidebar-section">Modelo de Ingresos</div>
+    <a href="#planes"><span class="icon">💎</span> Los 4 Planes</a>
+    <a href="#proyeccion"><span class="icon">📈</span> Proyección de ingresos</a>
+
+    <div class="sidebar-section">Ir al Mercado</div>
+    <a href="#canales"><span class="icon">📣</span> Canales de venta</a>
+    <a href="#mensajes"><span class="icon">💬</span> Mensajes clave</a>
+    <a href="#onboarding"><span class="icon">🚀</span> Flujo de onboarding</a>
+
+    <div class="sidebar-section">Lo que falta</div>
+    <a href="#falta"><span class="icon">🛠️</span> Pendientes técnicos</a>
+    <a href="#roadmap"><span class="icon">🗺️</span> Roadmap</a>
+    <a href="#riesgos"><span class="icon">⚠️</span> Riesgos</a>
+  </nav>
+
+  <main class="content">
+
+    <!-- OPORTUNIDAD -->
+    <section class="section" id="oportunidad">
+      <div class="section-title">🎯 La Oportunidad</div>
+
+      <p>El Mundial 2026 es <strong>el evento deportivo más grande de la historia en América</strong> — 48 selecciones, 104 partidos, sede en USA/Canadá/México. Para Costa Rica, es un evento de apuestas masivo en Doradobet con una ventana de hype que no se repite hasta 2030.</p>
+
+      <div class="grid4">
+        <div class="stat-box"><div class="num">104</div><div class="lbl">Partidos del Mundial 2026</div></div>
+        <div class="stat-box yellow"><div class="num">~8 sem</div><div class="lbl">Duración del torneo (junio–julio 2026)</div></div>
+        <div class="stat-box blue"><div class="num">CR #1</div><div class="lbl">Doradobet como casa dominante en Costa Rica</div></div>
+        <div class="stat-box purple"><div class="num">0</div><div class="lbl">Competidores directos locales con modelo propio</div></div>
+      </div>
+
+      <div class="tip">
+        <span class="i">💡</span>
+        <span><strong>La oportunidad real:</strong> Hay miles de costarricenses que apuestan en Doradobet sin ninguna metodología. Grupos de WhatsApp que venden "seguros" sin base matemática. ProGol CR es la primera plataforma local con modelo estadístico real para este mercado.</span>
+      </div>
+
+      <h3>El problema que resolvemos</h3>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">😤 Sin ProGol CR</div>
+          <p>El apostador típico usa intuición, canales de YouTube genéricos, o paga ₡5,000+ a algún "tipster" de Instagram que no tiene ningún modelo. Pierde consistentemente porque las cuotas ya incluyen el margen de la casa.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">✅ Con ProGol CR</div>
+          <p>Tiene un modelo matemático (Dixon-Coles + Elo) que calcula el valor real de cada cuota, un asistente IA que explica cada pick, y seguimiento en vivo automático. Por ₡3,500 al mes — menos de lo que pierde en una apuesta mala.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- POSICIONAMIENTO -->
+    <section class="section" id="posicionamiento">
+      <div class="section-title">🏆 Posicionamiento de Marca</div>
+
+      <div class="card">
+        <div class="card-title">🎙️ Declaración de posicionamiento</div>
+        <p style="font-size:14px; line-height:1.7; color: var(--text); margin-top:8px;">
+          "ProGol CR es la <strong>plataforma de inteligencia deportiva</strong> para el apostador costarricense que quiere dejar de apostar con el estómago y empezar a apostar con matemática. No somos un tipster, no vendemos 'seguros'. Somos el modelo."
+        </p>
+      </div>
+
+      <h3>Los 3 ejes de posicionamiento</h3>
+      <div class="grid3">
+        <div class="card">
+          <div class="card-title">🧠 Inteligencia, no tips</div>
+          <p>Nuestro diferenciador #1. Cualquiera puede decir "aposte a Brasil". Solo ProGol CR te dice por qué, con qué probabilidad exacta, cuánto vale la cuota y si tiene ventaja matemática.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">🇨🇷 Local y específico</div>
+          <p>Calibrado para Doradobet CR. No es una app genérica de Europa — es una plataforma hecha para el mercado costarricense, en español, con los partidos y las cuotas que el tico usa.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">🐾 Personalidad propia</div>
+          <p>Gol, la mascota. Un tono directo, sin drama, sin promesas de "hacerte rico". Somos el analista inteligente que tenés a la mano, no un vendedor de ilusiones.</p>
+        </div>
+      </div>
+
+      <h3>Nombre, tono y mensaje</h3>
+      <table>
+        <tr><th>Elemento</th><th>Decisión</th><th>Razón</th></tr>
+        <tr><td>Nombre</td><td><strong>ProGol CR</strong></td><td>"Pro" = profesional/ventaja. "Gol" = fútbol. "CR" = Costa Rica. Memorable, local, claro.</td></tr>
+        <tr><td>Mascota</td><td><strong>Gol</strong> (tu perro dorado)</td><td>Humaniza la marca, genera conexión. Es auténtico — es real.</td></tr>
+        <tr><td>Tono</td><td>Directo, inteligente, sin hype</td><td>El apostador serio desconfía del hype. La seriedad vende confianza.</td></tr>
+        <tr><td>Color principal</td><td>Verde #22c55e</td><td>Dinero, fútbol, Costa Rica. Contrasta bien en dark mode.</td></tr>
+        <tr><td>Anti-mensaje</td><td>NUNCA decir "ganá seguro"</td><td>Legal + ético + credibilidad a largo plazo.</td></tr>
+      </table>
+    </section>
+
+    <!-- DIFERENCIADORES -->
+    <section class="section" id="diferenciadores">
+      <div class="section-title">⚡ Por Qué Somos Diferentes</div>
+
+      <table>
+        <tr>
+          <th>Competidor</th>
+          <th>Qué ofrecen</th>
+          <th>Por qué ProGol CR gana</th>
+        </tr>
+        <tr>
+          <td>Tipsters de Instagram/TikTok CR</td>
+          <td>"Tips seguros del día", sin metodología</td>
+          <td>Nosotros mostramos el modelo, la probabilidad, el valor esperado. Es verificable.</td>
+        </tr>
+        <tr>
+          <td>Grupos de WhatsApp de picks</td>
+          <td>Picks compartidos por "expertos"</td>
+          <td>No tienen modelo matemático. Nosotros calculamos valor — ellos opinan.</td>
+        </tr>
+        <tr>
+          <td>Apps internacionales (Sofascore, etc.)</td>
+          <td>Estadísticas, no picks ni modelo propio</td>
+          <td>No están calibrados para CR ni para Doradobet. No dan recomendaciones de valor.</td>
+        </tr>
+        <tr>
+          <td>Canales de YouTube de análisis</td>
+          <td>Análisis táctico general</td>
+          <td>No tienen datos en tiempo real, ni cálculo de valor, ni IA conectada al modelo.</td>
+        </tr>
+      </table>
+
+      <div class="tip">
+        <span class="i">🏆</span>
+        <span><strong>Ventaja defensiva:</strong> El modelo Dixon-Coles + Elo calibrado para Mundial 2026, la integración con API de fútbol en vivo, y el Gurú IA conectado al modelo propio son difíciles de copiar rápidamente. Un tipster puede copiar el nombre, no puede copiar el modelo en semanas.</span>
+      </div>
+    </section>
+
+    <hr/>
+
+    <!-- PLANES -->
+    <section class="section" id="planes">
+      <div class="section-title">💎 Los 4 Planes — Estrategia de Precios</div>
+
+      <p>La estrategia es <strong>freemium con upsell claro</strong>. El plan gratuito engancha, Scout es el volumen, Pro es el sweet spot de margen, Élite es el VIP.</p>
+
+      <div class="grid4">
+        <div class="stat-box">
+          <div class="num">₡0</div>
+          <div class="lbl">🆓 Fanático<br/>Gancho gratuito</div>
+        </div>
+        <div class="stat-box yellow">
+          <div class="num">₡3,500</div>
+          <div class="lbl">🎯 Scout<br/>Volumen principal</div>
+        </div>
+        <div class="stat-box blue">
+          <div class="num">₡6,000</div>
+          <div class="lbl">⚡ Pro<br/>Sweet spot de margen</div>
+        </div>
+        <div class="stat-box purple">
+          <div class="num">₡12,000</div>
+          <div class="lbl">👑 Élite<br/>VIP personalizado</div>
+        </div>
+      </div>
+
+      <h3>¿Por qué estos precios?</h3>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">🎯 Scout a ₡3,500 — el precio psicológico correcto</div>
+          <p>Es menos de $7 USD. Menos que una apuesta mala. Menos que una pizza. El apostador promedio que pierde ₡5,000 en una quiniela mal hecha ve ₡3,500 como algo trivial frente al valor potencial. La fricción de compra es casi cero.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">⚡ Pro a ₡6,000 — el upgrade natural</div>
+          <p>Para quien ya usa Scout y quiere el widget EN VIVO y alertas automáticas. El salto de ₡3,500 a ₡6,000 es razonable cuando ya ve el valor de la plataforma. Este plan tiene el mejor margen unitario.</p>
+        </div>
+      </div>
+
+      <h3>Qué incluye cada plan (detalle real)</h3>
+      <table>
+        <tr>
+          <th>Función</th>
+          <th>🆓 Fanático</th>
+          <th>🎯 Scout ₡3,500</th>
+          <th>⚡ Pro ₡6,000</th>
+          <th>👑 Élite ₡12,000</th>
+        </tr>
+        <tr><td>Lista de partidos del día</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        <tr><td>Pick del día (top 1)</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        <tr><td>Top 5 Picks con valor esperado</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        <tr><td>Modal análisis completo (probabilidades, xG, marcadores, combos)</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        <tr><td>Gurú IA (mensajes/día)</td><td>3</td><td>10</td><td>Ilimitado</td><td>Ilimitado</td></tr>
+        <tr><td>Scout / Analista Probabilístico (IA en cada modal)</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        <tr><td>Seguimiento EN VIVO automático</td><td>❌</td><td>❌</td><td>✅</td><td>✅</td></tr>
+        <tr><td>Quiniela con modelo matemático</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        <tr><td>Notas personales</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        <tr><td>Alertas de valor en tiempo real</td><td>❌</td><td>❌</td><td>✅</td><td>✅</td></tr>
+        <tr><td>Acceso anticipado a funciones nuevas</td><td>❌</td><td>❌</td><td>✅</td><td>✅</td></tr>
+        <tr><td>Asesoría 1:1 con Esteban</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td></tr>
+        <tr><td>Revisión de historial apostador</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td></tr>
+        <tr><td>Grupo VIP WhatsApp</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td></tr>
+      </table>
+
+      <div class="warn">
+        <span class="i">⚠️</span>
+        <span><strong>Pendiente crítico:</strong> La restricción por plan aún NO está implementada en código. Actualmente todos ven todo. Antes de lanzar con usuarios reales hay que implementar auth + enforcement de plan. Ver sección "Qué falta".</span>
+      </div>
+    </section>
+
+    <!-- PROYECCION -->
+    <section class="section" id="proyeccion">
+      <div class="section-title">📈 Proyección de Ingresos — Mundial 2026</div>
+
+      <p>El torneo dura ~8 semanas (junio–julio 2026). La oportunidad es concentrada — un sprint, no un maratón.</p>
+
+      <h3>Escenario conservador (meta mínima)</h3>
+      <div class="grid3">
+        <div class="stat-box yellow"><div class="num">30</div><div class="lbl">usuarios Scout (₡3,500 c/u)</div></div>
+        <div class="stat-box blue"><div class="num">10</div><div class="lbl">usuarios Pro (₡6,000 c/u)</div></div>
+        <div class="stat-box purple"><div class="num">3</div><div class="lbl">usuarios Élite (₡12,000 c/u)</div></div>
+      </div>
+      <div class="stat-box" style="margin-bottom:20px">
+        <div class="num" style="font-size:36px">₡201,000</div>
+        <div class="lbl">Ingreso mensual conservador · ~$390 USD</div>
+      </div>
+
+      <h3>Escenario objetivo (meta real del Mundial)</h3>
+      <div class="grid3">
+        <div class="stat-box yellow"><div class="num">80</div><div class="lbl">usuarios Scout</div></div>
+        <div class="stat-box blue"><div class="num">30</div><div class="lbl">usuarios Pro</div></div>
+        <div class="stat-box purple"><div class="num">8</div><div class="lbl">usuarios Élite</div></div>
+      </div>
+      <div class="stat-box" style="margin-bottom:20px">
+        <div class="num" style="font-size:36px">₡556,000</div>
+        <div class="lbl">Ingreso mensual objetivo · ~$1,080 USD · por 2 meses del torneo = ~$2,160</div>
+      </div>
+
+      <h3>Escenario viral (si despega en redes)</h3>
+      <div class="stat-box orange" style="margin-bottom:20px">
+        <div class="num" style="font-size:36px">₡1.2M+</div>
+        <div class="lbl">Si llegás a 200 Scout + 60 Pro + 15 Élite = ~$2,300/mes · por 2 meses = ~$4,600</div>
+      </div>
+
+      <div class="tip">
+        <span class="i">💡</span>
+        <span>Después del Mundial: la plataforma queda lista para ligas regulares (Premier, La Liga, Champions). El modelo funciona igual. El ingreso recurrente post-torneo depende de cómo de bien quede posicionada la marca en las 8 semanas del torneo.</span>
+      </div>
+    </section>
+
+    <hr/>
+
+    <!-- CANALES -->
+    <section class="section" id="canales">
+      <div class="section-title">📣 Canales de Venta — Cómo Llegar al Usuario</div>
+
+      <h3>Canal #1 — WhatsApp (el más poderoso para CR)</h3>
+      <div class="card">
+        <div class="card-title">📲 Por qué WhatsApp primero</div>
+        <p>El apostador costarricense opera en WhatsApp. Los grupos de picks, los "tips del día", las quinielas — todo pasa por ahí. No podés ignorar el canal donde vive tu cliente.</p>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">Táctica 1 — Broadcast diario</div>
+          <p>Lista de difusión con el pick del día, partido, probabilidad y cuota objetivo. Breve, concreto, con enlace a la app. Meta: que el usuario abra la app para el análisis completo.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">Táctica 2 — Grupo gratuito</div>
+          <p>Grupo público "ProGol CR — Picks Gratis" con el pick del día. Sirve como captación. El análisis completo solo en la app (upsell natural a Scout).</p>
+        </div>
+        <div class="card">
+          <div class="card-title">Táctica 3 — Grupo VIP Élite</div>
+          <p>Grupo privado para usuarios Élite donde Esteban comparte análisis extra, responde preguntas en tiempo real durante partidos clave.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">Táctica 4 — Bot automático (futuro)</div>
+          <p>Bot de WhatsApp que responde preguntas sobre partidos, envía picks automáticos, onboarding de nuevos usuarios. Pendiente de desarrollo.</p>
+        </div>
+      </div>
+
+      <h3>Canal #2 — TikTok / Instagram Reels</h3>
+      <div class="card">
+        <div class="card-title">🎥 Formato que funciona</div>
+        <p>Video corto (30-45 seg): "El modelo dice que Brasil tiene 67% de ganar. Doradobet paga 1.85 — eso implica 54%. Hay 13 puntos de valor. Así calcula ProGol CR." Mostrar la pantalla de la app. CTA: link en bio → app.</p>
+      </div>
+      <table>
+        <tr><th>Tipo de contenido</th><th>Frecuencia</th><th>Objetivo</th></tr>
+        <tr><td>Pick del día con explicación del modelo</td><td>Diario durante el Mundial</td><td>Awareness + credibilidad</td></tr>
+        <tr><td>"Post-mortem" de un partido</td><td>2-3 veces por semana</td><td>Mostrar que el modelo funciona/explica resultados</td></tr>
+        <tr><td>Explicación de conceptos (xG, Elo, valor esperado)</td><td>1 vez por semana</td><td>Educar al usuario + posicionarse como experto</td></tr>
+        <tr><td>Behind the scenes de la app</td><td>Ocasional</td><td>Humanizar + curiosidad</td></tr>
+      </table>
+
+      <h3>Canal #3 — Red personal + boca a boca</h3>
+      <div class="card">
+        <div class="card-title">👥 Los primeros 20 usuarios son siempre conocidos</div>
+        <p>No intentes escalar antes de tener 20 usuarios satisfechos de tu red personal. Son los más fáciles de conseguir, te dan feedback real, y si quedan contentos se convierten en embajadores naturales. Dale acceso gratis o descuento a los primeros 5 — busca testimonios y casos reales de valor.</p>
+      </div>
+
+      <h3>Canal #4 — SEO / Web (mediano plazo)</h3>
+      <div class="info">
+        <span class="i">ℹ️</span>
+        <span>Pendiente: crear landing page pública con el pitch, planes y botón de pago. Actualmente la app vive en localhost — necesita dominio + VPS para que el usuario pueda acceder. Ver "Qué falta".</span>
+      </div>
+    </section>
+
+    <!-- MENSAJES -->
+    <section class="section" id="mensajes">
+      <div class="section-title">💬 Mensajes Clave — Qué Decir y Cómo</div>
+
+      <h3>Pitch principal (15 segundos)</h3>
+      <div class="msg-box">
+        <div class="lbl">Pitch verbal o en redes</div>
+        "ProGol CR es una plataforma que usa matemática real para analizar partidos del Mundial. Te dice cuándo una cuota de Doradobet paga más de lo que debería — y eso es la ventaja que buscás. Por ₡3,500 al mes."
+      </div>
+
+      <h3>Objeciones y respuestas</h3>
+      <table>
+        <tr><th>Objeción</th><th>Respuesta</th></tr>
+        <tr>
+          <td>"¿Es lo mismo que los tipsters de Instagram?"</td>
+          <td>"No. Ellos te dan opiniones. Nosotros te damos el modelo matemático que calcula la probabilidad exacta y la compara con la cuota. Podés ver los números vos mismo."</td>
+        </tr>
+        <tr>
+          <td>"¿Garantizan ganancias?"</td>
+          <td>"No. Nadie debería garantizarlo — eso es una mentira. Lo que garantizamos es que vas a apostar con ventaja matemática real, no con el estómago. A largo plazo eso es lo que importa."</td>
+        </tr>
+        <tr>
+          <td>"₡3,500 es caro para una app"</td>
+          <td>"Es menos de $7. Si perdés ₡5,000 en una apuesta sin metodología, ₡3,500 por el modelo que te ayuda a no perder así es una inversión, no un gasto."</td>
+        </tr>
+        <tr>
+          <td>"¿Por qué no usás la app gratis?"</td>
+          <td>"La gratis te da el pick del día. Si querés ver por qué el modelo recomienda ese pick, las probabilidades exactas, el análisis completo y el asistente IA — eso es Scout."</td>
+        </tr>
+        <tr>
+          <td>"¿Cómo sé que el modelo funciona?"</td>
+          <td>"El modelo Dixon-Coles es ampliamente usado en análisis deportivo académico. Publicamos los picks del día ANTES del partido — podés rastrear el historial vos mismo."</td>
+        </tr>
+      </table>
+
+      <h3>Mensajes por segmento</h3>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">👤 Apostador casual (target Scout)</div>
+          <p>"Apostás en Doradobet durante el Mundial pero no tenés claro cuándo una cuota tiene valor real. ProGol CR te lo calcula. ₡3,500 al mes — lo que perdés en una apuesta mala."</p>
+        </div>
+        <div class="card">
+          <div class="card-title">📊 Apostador serio (target Pro/Élite)</div>
+          <p>"Si ya apostás con metodología y querés un segundo modelo para validar tus picks, análisis en vivo durante los partidos y alertas de valor en tiempo real — esto es Pro."</p>
+        </div>
+      </div>
+
+      <h3>Mensajes de WhatsApp — Templates</h3>
+      <div class="msg-box">
+        <div class="lbl">Pick diario (Broadcast)</div>
+        ⚽ <strong>Pick del día · ProGol CR</strong><br/><br/>
+        🔵 Brasil vs Marruecos · 4:00 PM<br/>
+        📊 Modelo: Brasil gana 67% · cuota justa 1.49<br/>
+        💰 Doradobet paga 1.85 → <strong>+24% de valor</strong><br/><br/>
+        Análisis completo con el Gurú IA 👉 [link app]<br/>
+        <span style="font-size:11px;color:var(--text3)">⚠️ ProGol CR analiza. Vos decidís y apostás.</span>
+      </div>
+
+      <div class="msg-box">
+        <div class="lbl">Mensaje de venta directa</div>
+        Hola [nombre] 👋<br/><br/>
+        ¿Estás apostando en Doradobet para el Mundial?<br/><br/>
+        Lancé <strong>ProGol CR</strong> — una plataforma que usa modelo matemático real (Dixon-Coles + IA) para analizar cada partido y decirte cuándo una cuota tiene ventaja matemática real.<br/><br/>
+        Plan Scout · ₡3,500/mes · incluye:<br/>
+        ✅ Análisis completo de cada partido<br/>
+        ✅ Top 5 picks con valor esperado<br/>
+        ✅ Gurú IA para hacer preguntas<br/>
+        ✅ Quiniela con modelo matemático<br/><br/>
+        ¿Te interesa? Te mando el link 🟢
+      </div>
+    </section>
+
+    <!-- ONBOARDING -->
+    <section class="section" id="onboarding">
+      <div class="section-title">🚀 Flujo de Onboarding</div>
+
+      <p>Cada usuario nuevo que paga Scout debe pasar por este flujo para activarse correctamente y reducir el churn.</p>
+
+      <ol class="steps">
+        <li><strong>Pago confirmado</strong> → Esteban recibe notificación (SINPE, tarjeta, etc.)</li>
+        <li><strong>Mensaje de bienvenida por WhatsApp</strong> → Template personalizado con nombre + link a la app + link a la guía</li>
+        <li><strong>Activación de plan</strong> → Se le asigna rol Scout en la plataforma (pendiente: sistema de auth)</li>
+        <li><strong>Check-in a las 48h</strong> → "¿Pudiste entrar? ¿Alguna duda?" — humaniza el servicio y reduce churn</li>
+        <li><strong>Pick del primer partido grande</strong> → Si hay un partido importante ese día, enviarle el análisis personalizado para ese partido específico</li>
+        <li><strong>Invitación al broadcast diario</strong> → Para recibir el pick del día automáticamente</li>
+      </ol>
+
+      <div class="tip">
+        <span class="i">🐾</span>
+        <span>La guía completa de la app está en <strong>/brand/guia-app.html</strong> desde el servidor local. Cuando tengas dominio, este link se convierte en <code>progolcr.com/guia</code> y lo compartís con cada nuevo usuario.</span>
+      </div>
+    </section>
+
+    <hr/>
+
+    <!-- QUE FALTA -->
+    <section class="section" id="falta">
+      <div class="section-title">🛠️ Qué Falta — Estado Actual</div>
+
+      <div class="kanban">
+        <div class="kanban-col">
+          <div class="kanban-col-title done">✅ Listo</div>
+          <div class="kanban-item"><strong>Motor del modelo</strong>Dixon-Coles + Poisson + Elo, calibrado WC2026</div>
+          <div class="kanban-item"><strong>Todas las pestañas</strong>Quiniela, Picks, Gurú, Scout, Notas, LIVE, Apoya</div>
+          <div class="kanban-item"><strong>Gurú IA</strong>Claude conectado al modelo real</div>
+          <div class="kanban-item"><strong>Scout / Analista IA</strong>Auto-corre al abrir modal, renderiza formateado</div>
+          <div class="kanban-item"><strong>Widget EN VIVO automático</strong>API de marcadores en tiempo real, sin entrada manual</div>
+          <div class="kanban-item"><strong>Actualización Elo automática</strong>Post-partido, cada 5 min</div>
+          <div class="kanban-item"><strong>Mascota + Branding</strong>Gol, paleta de colores, identidad visual</div>
+          <div class="kanban-item"><strong>Guía interna</strong>guia-app.html completa con changelog</div>
+          <div class="kanban-item"><strong>Multiidioma</strong>ES / EN funcionando</div>
+        </div>
+
+        <div class="kanban-col">
+          <div class="kanban-col-title wip">🔄 En progreso / parcial</div>
+          <div class="kanban-item"><strong>API de stats en vivo</strong>Score automático OK. Posesión, tiros, córneres pendiente (necesita suscripción API-Football o equivalente)</div>
+          <div class="kanban-item"><strong>Restricción por plan</strong>Los planes están definidos pero NO se aplican en código — todos ven todo actualmente</div>
+          <div class="kanban-item"><strong>GitHub backup</strong>Repositorio privado pendiente de crear</div>
+        </div>
+
+        <div class="kanban-col">
+          <div class="kanban-col-title todo">📋 Pendiente para lanzar</div>
+          <div class="kanban-item"><strong>🔴 CRÍTICO: Autenticación</strong>Login de usuarios, sesiones, roles por plan. Sin esto no se puede cobrar.</div>
+          <div class="kanban-item"><strong>🔴 CRÍTICO: Cobro</strong>Integración SINPE móvil o Stripe/tarjeta. Flujo de pago real.</div>
+          <div class="kanban-item"><strong>🔴 CRÍTICO: VPS + Dominio</strong>El servidor corre en localhost. Necesitás VPS ($5-10/mes) + dominio (progolcr.com ~$12/año).</div>
+          <div class="kanban-item"><strong>Landing page pública</strong>Página de ventas con pitch, planes, botón de compra. Diferente a la app.</div>
+          <div class="kanban-item"><strong>Bot WhatsApp</strong>Automatizar pick diario, onboarding, respuestas básicas.</div>
+          <div class="kanban-item"><strong>Historial de picks</strong>Registro de picks pasados con resultado para mostrar track record.</div>
+          <div class="kanban-item"><strong>Stats en vivo completas</strong>Posesión, tiros, córneres, tarjetas en tiempo real (requiere API paga ~$10-20/mes).</div>
+          <div class="kanban-item"><strong>Notificaciones push / alertas</strong>Avisar al usuario cuando hay partido de valor en 1 hora.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROADMAP -->
+    <section class="section" id="roadmap">
+      <div class="section-title">🗺️ Roadmap — Plan de Lanzamiento</div>
+
+      <div class="phase">
+        <div class="phase-label">Fase 0 — Esta semana</div>
+        <div class="phase-title">Cerrar los bugs y estabilizar</div>
+        <p>Los tres fixes del modal (LIVE automático, Analista formateado, sin panel DoradoBet) están listos. Probar con partidos reales del día. Confirmar que el Scout corre limpio. Crear el repo privado en GitHub para backup.</p>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">Fase 1 — Próximos 7-14 días</div>
+        <div class="phase-title">Infraestructura para cobrar</div>
+        <ol class="steps">
+          <li>Contratar VPS (DigitalOcean / Hetzner ~$6/mes) + dominio <strong>progolcr.com</strong></li>
+          <li>Deploy del servidor Python en producción (nginx + systemd)</li>
+          <li>Sistema de auth básico: token por usuario, roles por plan</li>
+          <li>Flujo de cobro manual: SINPE → Esteban activa manualmente el plan → escala después</li>
+          <li>Beta cerrada: 5-10 usuarios de confianza, gratis o descuento, para feedback real</li>
+        </ol>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">Fase 2 — Semana del primer partido del Mundial</div>
+        <div class="phase-title">Lanzamiento oficial</div>
+        <ol class="steps">
+          <li>Landing page pública: pitch, planes, botón "Pagar SINPE"</li>
+          <li>Campaña inicial: TikTok/IG con picks del día + link en bio</li>
+          <li>Broadcast de WhatsApp a red personal (mínimo 50 contactos)</li>
+          <li>Meta: 20 usuarios Scout pagos en la primera semana</li>
+        </ol>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">Fase 3 — Durante el torneo (8 semanas)</div>
+        <div class="phase-title">Crecer y retener</div>
+        <ol class="steps">
+          <li>Pick diario en WhatsApp broadcast + TikTok/IG</li>
+          <li>Post-mortem de partidos importantes para mostrar track record</li>
+          <li>Upsell a Pro/Élite a usuarios Scout que lleven 2+ semanas</li>
+          <li>Implementar historial de picks para credibilidad</li>
+          <li>Stats en vivo completas (si la API lo permite)</li>
+        </ol>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">Fase 4 — Post-Mundial (agosto 2026+)</div>
+        <div class="phase-title">Ingresos recurrentes con ligas regulares</div>
+        <ol class="steps">
+          <li>Ampliar a Premier League, La Liga, Champions (el modelo ya funciona)</li>
+          <li>Bot de WhatsApp automatizado para picks y onboarding</li>
+          <li>Cobro automático (Stripe o equivalente)</li>
+          <li>Partnerships con comunidades de apostadores en CR</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- RIESGOS -->
+    <section class="section" id="riesgos">
+      <div class="section-title">⚠️ Riesgos y Cómo Mitigarlos</div>
+
+      <table>
+        <tr><th>Riesgo</th><th>Probabilidad</th><th>Impacto</th><th>Mitigación</th></tr>
+        <tr>
+          <td>El servidor cae durante un partido importante</td>
+          <td><span class="pill pill-yellow">Media</span></td>
+          <td><span class="pill pill-red">Alto</span></td>
+          <td>VPS con uptime garantizado (99.9%). Backup manual en GitHub. Monitoreo básico con alerta por email/WA.</td>
+        </tr>
+        <tr>
+          <td>La API de fútbol en vivo falla o sube de precio</td>
+          <td><span class="pill pill-yellow">Media</span></td>
+          <td><span class="pill pill-yellow">Medio</span></td>
+          <td>El modelo funciona sin la API (solo sin marcador automático). Tener 2 fuentes de datos alternativas identificadas.</td>
+        </tr>
+        <tr>
+          <td>Usuario insatisfecho pide devolución</td>
+          <td><span class="pill pill-green">Baja</span></td>
+          <td><span class="pill pill-yellow">Medio</span></td>
+          <td>Política clara: "ProGol CR analiza, vos decidís". No prometemos ganancias. Si hay insatisfacción legítima, devolver sin drama — la reputación vale más.</td>
+        </tr>
+        <tr>
+          <td>Regulación / restricciones de apuestas en CR</td>
+          <td><span class="pill pill-green">Baja</span></td>
+          <td><span class="pill pill-red">Alto</span></td>
+          <td>ProGol CR es herramienta de análisis (como ESPN pero con modelo). No operamos apuestas. Cumplimiento es inherente al diseño.</td>
+        </tr>
+        <tr>
+          <td>Clave API de Anthropic (Claude) se agota o sube de precio</td>
+          <td><span class="pill pill-yellow">Media</span></td>
+          <td><span class="pill pill-yellow">Medio</span></td>
+          <td>El modelo local funciona sin IA. El Gurú y Scout se degradan graciosamente (muestra el fallback local). Monitorear uso mensual.</td>
+        </tr>
+        <tr>
+          <td>Competidor copia la idea rápido</td>
+          <td><span class="pill pill-green">Baja (corto plazo)</span></td>
+          <td><span class="pill pill-yellow">Medio</span></td>
+          <td>El modelo calibrado + la ejecución + el track record son la ventaja. Moverse rápido y construir reputación antes de que alguien lo intente.</td>
+        </tr>
+      </table>
+
+      <div class="danger">
+        <span class="i">🚨</span>
+        <span><strong>El riesgo #1 real:</strong> No lanzar antes de que el Mundial termine. La ventana es junio–julio 2026. Cada semana sin estar en producción es oportunidad perdida. La infraestructura (VPS + auth + cobro) tiene que estar lista antes del primer partido.</span>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  const links = document.querySelectorAll('.sidebar a');
+  const sections = document.querySelectorAll('.section');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`.sidebar a[href="#${e.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { threshold: 0.25 });
+  sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

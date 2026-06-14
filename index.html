@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>ProGol CR — Inteligencia Deportiva</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 115'><polygon points='50,3 97,27.5 97,87.5 50,112 3,87.5 3,27.5' fill='%230f172a' stroke='%23f5c842' stroke-width='5'/><polygon points='50,16 84,34.5 84,80.5 50,99 16,80.5 16,34.5' fill='none' stroke='%2322c55e' stroke-width='2'/><text x='50' y='64' text-anchor='middle' fill='%23f5c842' font-size='30' font-weight='900' font-family='system-ui'>PG</text><text x='50' y='80' text-anchor='middle' fill='%2322c55e' font-size='11' font-family='system-ui' letter-spacing='4'>CR</text></svg>" />
+</head>
+<body>
+<div class="bg-fx"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <svg class="logo progol-logo" viewBox="0 0 100 115" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ProGol CR">
+      <polygon points="50,3 97,27.5 97,87.5 50,112 3,87.5 3,27.5" fill="#0f172a" stroke="#f5c842" stroke-width="5"/>
+      <polygon points="50,16 84,34.5 84,80.5 50,99 16,80.5 16,34.5" fill="none" stroke="#22c55e" stroke-width="2"/>
+      <text x="50" y="64" text-anchor="middle" fill="#f5c842" font-size="30" font-weight="900" font-family="system-ui,sans-serif">PG</text>
+      <text x="50" y="80" text-anchor="middle" fill="#22c55e" font-size="11" font-family="system-ui,sans-serif" letter-spacing="4" font-weight="700">CR</text>
+    </svg>
+    <div>
+      <h1><span class="brand-pro">ProGol</span><span class="brand-gol"> CR</span></h1>
+      <p class="tag">Inteligencia deportiva · picks con IA · análisis en tiempo real</p>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <button id="investBtn" class="icon-btn invest-btn" title="Investment Analyst" style="display:none">💹</button>
+    <button id="langBtn" class="icon-btn lang-btn" title="Switch language / Cambiar idioma">ES</button>
+    <div id="userBadge" class="user-chip hidden">
+      <span id="userBadgeRole" class="user-chip-role"></span>
+      <span id="userBadgeName" class="user-chip-name"></span>
+      <button class="user-chip-logout" onclick="doLogout()" title="Cerrar sesión">✕</button>
+    </div>
+    <button id="settingsBtn" class="icon-btn settings-only" data-i18n-title="settingsBtnTitle" title="Settings">⚙</button>
+  </div>
+</header>
+
+<!-- FEATURE RAIL -->
+<nav class="feature-rail" id="featureRail" aria-label="Herramientas">
+  <button id="quinielaBtn" class="feat-btn" title="Quiniela — predicciones por grupo">
+    <span class="feat-icon">🏆</span><span class="feat-label">Quiniela</span>
+  </button>
+  <button id="topPicksBtn" class="feat-btn" data-i18n-title="topPicksBtnTitle" title="Top 10 picks hoy">
+    <span class="feat-icon">🎯</span><span class="feat-label">Picks</span>
+  </button>
+  <button id="guruBtn" class="feat-btn feat-guru" title="Gurú — consejero de bankroll (Premium)">
+    <span class="feat-icon">🧿</span><span class="feat-label">Gurú</span>
+  </button>
+  <button id="scoutReportBtn" class="feat-btn" title="Scout Report — auto-análisis">
+    <span class="feat-icon">📊</span><span class="feat-label">Scout</span>
+  </button>
+  <button id="notesBtn" class="feat-btn" data-i18n-title="notesBtnTitle" title="Analyst notes">
+    <span class="feat-icon">📝</span><span class="feat-label">Notas</span>
+  </button>
+  <button id="liveBtn" class="feat-btn feat-live" title="Live — partidos en vivo" onclick="openLiveModal()">
+    <span class="feat-icon">🔴</span><span class="feat-label">Live</span>
+  </button>
+  <div class="feat-sep"></div>
+  <button id="apoyoBtn" class="feat-btn feat-apoyo" title="Apoya ProGol CR" onclick="openApoyoModal()">
+    <span class="feat-icon">💚</span><span class="feat-label">Apoya</span>
+  </button>
+</nav>
+
+<!-- Support/Apoyo Modal -->
+<div id="apoyoModal" class="modal-overlay hidden" onclick="if(event.target===this)closeApoyoModal()">
+  <div class="modal-box apoyo-modal-box">
+    <div class="modal-header">
+      <span class="modal-title">💚 Apoya ProGol CR</span>
+      <button class="modal-close" onclick="closeApoyoModal()">✕</button>
+    </div>
+    <div class="apoyo-modal-body">
+      <p class="apoyo-tagline">Tu apoyo voluntario mantiene vivo el análisis.<br>Cualquier monto suma — sin obligación.</p>
+
+      <div class="apoyo-sinpe-card">
+        <div class="apoyo-sinpe-label">📱 SINPE Móvil</div>
+        <div class="apoyo-sinpe-num">8561-0677</div>
+        <div class="apoyo-sinpe-name">Esteban Venegas · ProGol CR</div>
+        <button class="apoyo-copy-btn" id="modalCopyBtn" onclick="apoyoCopy()">📋 Copiar número</button>
+      </div>
+
+      <div class="apoyo-amounts">
+        <button class="apoyo-amt" onclick="apoyoSetAmt('500')">₡500</button>
+        <button class="apoyo-amt" onclick="apoyoSetAmt('1000')">₡1,000</button>
+        <button class="apoyo-amt" onclick="apoyoSetAmt('2500')">₡2,500</button>
+        <button class="apoyo-amt" onclick="apoyoSetAmt('5000')">₡5,000</button>
+      </div>
+
+      <div class="apoyo-form">
+        <input type="text" id="apoyoName" maxlength="40" placeholder="Tu nombre o alias (opcional)">
+        <input type="text" id="apoyoAmount" maxlength="20" placeholder="Monto enviado (ej. ₡1,000)">
+        <input type="text" id="apoyoMsg" maxlength="120" placeholder="Mensaje para la comunidad (opcional)">
+        <div id="apoyoSuccess" class="apoyo-success hidden">¡Gracias! Ya apareces en el Muro de Campeones 🎉</div>
+        <button class="apoyo-submit-btn" id="apoyoSubmitBtn" onclick="apoyoSubmit()">Registrar mi apoyo →</button>
+      </div>
+
+      <div id="apoyoWall" class="apoyo-wall">
+        <div class="apoyo-wall-title">🏆 Muro de Campeones</div>
+        <div id="apoyoWallList" class="apoyo-wall-list"></div>
+      </div>
+
+      <div class="apoyo-legal">
+        Contribución voluntaria. No es deducible de impuestos. Ingreso declarado ante Hacienda CR.
+        <a href="/apoyo" target="_blank" class="apoyo-full-link">Ver página completa →</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toolbar">
+  <div class="date-nav">
+    <button id="prevDay" class="nav-btn" data-i18n-title="prevDay" title="Previous day">◀</button>
+    <input type="date" id="datePicker" />
+    <button id="todayBtn" class="ghost-btn" data-i18n="today">Today</button>
+    <button id="nextDay" class="nav-btn" data-i18n-title="nextDay" title="Next day">▶</button>
+  </div>
+  <div class="segmented" id="scopeSeg">
+    <button class="seg-opt active" data-scope="worldcup" data-i18n="scopeWC">🏆 World Cup</button>
+    <button class="seg-opt" data-scope="international" data-i18n="scopeIntl">🌍 International</button>
+    <button class="seg-opt" data-scope="clubs" data-i18n="scopeClubs">⚽ Top Leagues</button>
+    <button class="seg-opt" data-scope="all">🔥 Todas</button>
+  </div>
+  <div class="refresh-wrap">
+    <button id="sendPicksEmailBtn" class="ghost-btn email-picks-btn" title="Enviar picks del día por email">📧 Picks</button>
+    <button id="refreshBtn" class="ghost-btn" data-i18n="refresh" title="Refresh now">⟳ Refresh</button>
+    <label class="auto-toggle"><input type="checkbox" id="autoRefresh" checked /> <span>Auto</span></label>
+  </div>
+</div>
+
+<!-- Mobile bottom tab bar (Partidos + Quiniela only) -->
+<nav class="mobile-tabs" id="mobileTabs">
+  <button class="mobile-tab active" data-tab="matches" onclick="switchMobileTab('matches')">
+    <span class="tab-icon">⚽</span>Partidos
+  </button>
+  <button class="mobile-tab" data-tab="quiniela" onclick="switchMobileTab('quiniela')">
+    <span class="tab-icon">🏆</span>Quiniela
+  </button>
+</nav>
+
+<main class="layout layout-full" id="mainLayout">
+  <!-- MATCHES — full width -->
+  <section class="pane matches-pane mobile-active" id="paneMatches">
+    <div class="pane-head">
+      <h2 id="dateHeading">Matches</h2>
+      <span id="matchCount" class="count"></span>
+      <span id="offlineBadge" class="offline-badge hidden" data-i18n="offlineBadge">offline · cached</span>
+    </div>
+    <div id="matchList" class="match-list"></div>
+  </section>
+</main>
+
+<!-- FLOATING CHAT BUBBLE -->
+<button id="chatBubble" class="chat-bubble" onclick="toggleChatPopup()" title="Analyst Chat">
+  <img src="/brand/mascota.jpg" class="chat-bubble-mascot" alt="Ryder" />
+  <span id="chatBubbleBadge" class="chat-bubble-badge hidden"></span>
+</button>
+
+<!-- CHAT POPUP -->
+<div id="chatPopup" class="chat-popup hidden">
+  <div class="chat-popup-header">
+    <div class="chat-popup-title">
+      <div class="chat-scout-avatar"><img src="/brand/mascota.jpg" alt="Ryder" /></div>
+      <div class="chat-scout-info">
+        <span class="chat-scout-name">Ryder</span>
+        <span class="chat-scout-sub">Analista · ProGol CR · Dixon-Coles + Elo</span>
+      </div>
+      <span class="chat-popup-dot" id="chatStatus"></span>
+    </div>
+    <div class="chat-header-actions">
+      <button class="chat-maestro-btn" onclick="activateMaestro()" title="Modo análisis ultra-profundo (clasificado)">MAESTRO</button>
+      <button class="chat-popup-close" onclick="toggleChatPopup()">✕</button>
+    </div>
+  </div>
+  <div id="maestroBanner" class="maestro-banner" style="display:none">
+    <span class="maestro-banner-icon">🔐</span>
+    <span>PROTOCOLO MAESTRO ACTIVO — análisis ultra-profundo desbloqueado</span>
+  </div>
+  <div id="chatLog" class="chat-log chat-popup-log">
+    <div class="msg assistant intro" data-i18n-html="chatIntro">
+      <p>Soy Ryder, tu analista cuantitativo. <strong>Toca cualquier partido</strong> para análisis completo — o pregúntame lo que quieras.</p>
+      <p class="muted">Consulto standings en vivo y el modelo Dixon-Coles antes de responder.</p>
+    </div>
+  </div>
+  <div class="suggestions chat-popup-chips" id="suggestions">
+    <button class="chip chip-bets" onclick="sendBetRecommendations()">📋 Apuestas del día</button>
+    <button class="chip" data-i18n="chip1">Preview today's games</button>
+    <button class="chip" data-i18n="chip3">Corner &amp; card outlook</button>
+    <button class="chip" data-i18n="chip4">Who should I watch?</button>
+  </div>
+  <form id="chatForm" class="chat-input chat-popup-input">
+    <textarea id="chatInput" rows="1" data-i18n-ph="chatPlaceholder" placeholder="Pregunta por alineaciones, tácticas, córneres, predicciones…"></textarea>
+    <button type="submit" id="sendBtn">↑</button>
+  </form>
+</div>
+
+<!-- QUINIELA INLINE PANE (mobile tab + desktop modal source) -->
+<section class="quiniela-pane" id="paneQuiniela">
+  <div class="quiniela-pane-head">
+    <h2>🏆 Quiniela — Mundial 2026</h2>
+    <button class="quiniela-refresh-btn" onclick="loadQuiniela(true)" title="Actualizar análisis">⟳ Actualizar</button>
+  </div>
+  <p class="muted small q-hint">El analista predice quién clasifica de cada grupo según forma, resultados y estadísticas. Toca un partido para ver el análisis completo.</p>
+  <div id="quinielaGroups" class="quiniela-groups-inline"></div>
+</section>
+
+<!-- INSIGHTS MODAL -->
+<div id="insightsModal" class="modal hidden">
+  <div class="modal-card insights-card">
+    <button id="closeInsights" class="modal-x" title="Close">✕</button>
+    <div id="insightsHeader" class="insights-header"></div>
+    <div id="insightsBody" class="insights-body"></div>
+  </div>
+</div>
+
+<!-- TOP PICKS MODAL -->
+<div id="topPicksModal" class="modal hidden">
+  <div class="modal-card">
+    <button id="closeTopPicks" class="modal-x" title="Close">✕</button>
+    <div class="picks-header">
+      <h2 data-i18n="topPicksHeader">🎯 Top 10 Confident Picks</h2>
+      <p class="muted small" data-i18n="topPicksSub">Today's matches ranked by model confidence — highest predictability first. Click any pick for the full breakdown.</p>
+    </div>
+    <div id="picksList" class="picks-list">
+      <p class="muted small">Loading…</p>
+    </div>
+  </div>
+</div>
+
+<!-- SCOUT REPORT MODAL -->
+<div id="guruModal" class="modal hidden">
+  <div class="modal-card guru-card">
+    <button onclick="closeGuruModal()" class="modal-x" title="Cerrar">✕</button>
+    <div class="guru-header">
+      <h2>🧿 Gurú — Consejero de Bankroll</h2>
+      <p class="muted small">Decile cuánto tenés y el Gurú arma el plan óptimo con los picks de hoy</p>
+    </div>
+    <div class="guru-suggestions">
+      <button class="guru-sugg" onclick="sendGuruMsg('Tengo ₡5,000 para invertir hoy')">₡5,000</button>
+      <button class="guru-sugg" onclick="sendGuruMsg('Tengo ₡10,000 para invertir hoy')">₡10,000</button>
+      <button class="guru-sugg" onclick="sendGuruMsg('Tengo ₡20,000 para invertir hoy')">₡20,000</button>
+      <button class="guru-sugg" onclick="sendGuruMsg('Tengo ₡50,000, quiero combo seguro solamente')">₡50k seguro</button>
+      <button class="guru-sugg" onclick="sendGuruMsg('Tengo ₡10,000, todo en el parlay más arriesgado que pague bien')">₡10k YOLO</button>
+    </div>
+    <div class="guru-chat" id="guruChat">
+      <div class="guru-welcome">
+        <div class="guru-icon">🧿</div>
+        <p>Contame tu presupuesto y el Gurú diseña el plan de apuestas óptimo para hoy — combo seguro, apuesta atrevida o todo al parlay.</p>
+      </div>
+    </div>
+    <div class="guru-input-row">
+      <input id="guruInput" type="text" placeholder="Ej: Tengo ₡15,000 para invertir hoy…" autocomplete="off">
+      <button id="guruSendBtn" onclick="sendGuruMsg()">Consultar →</button>
+    </div>
+  </div>
+</div>
+
+<div id="scoutReportModal" class="modal hidden">
+  <div class="modal-card scout-report-card">
+    <button id="closeScoutReport" class="modal-x" title="Cerrar">✕</button>
+    <div class="scout-report-header">
+      <h2>📊 Scout Report — ProGol CR</h2>
+      <p class="muted small">Auto-análisis diario de precisión vs benchmarks de la industria</p>
+      <button id="refreshScoutReport" class="ghost-btn small-btn" onclick="loadScoutReport(true)">⟳ Regenerar</button>
+    </div>
+    <div id="scoutReportBody" class="scout-report-body">
+      <p class="muted small">Cargando reporte…</p>
+    </div>
+  </div>
+</div>
+
+<!-- NOTES MODAL -->
+<div id="notesModal" class="modal hidden">
+  <div class="modal-card">
+    <button id="closeNotes" class="modal-x" title="Close">✕</button>
+    <h2><span data-i18n="notesHeader">📝 Analyst Notes</span> <span id="notesDateLabel" class="muted small"></span></h2>
+    <p class="muted small" data-i18n="notesDesc">Saved in your local database (<code>warroom.db</code>), tied to the selected date. The start of your running analyst log.</p>
+    <form id="noteForm" class="note-form">
+      <input type="text" id="noteTitle" data-i18n-ph="noteTitlePh" placeholder="Title (optional) — e.g. 'Mexico press weakness'" />
+      <textarea id="noteBody" rows="3" data-i18n-ph="noteBodyPh" placeholder="Observation, tactical note, injury intel, prediction…"></textarea>
+      <div class="modal-actions">
+        <button type="submit" class="primary-btn" data-i18n="saveNote">Save note</button>
+      </div>
+    </form>
+    <div id="notesList" class="notes-list"></div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div id="settingsModal" class="modal hidden">
+  <div class="modal-card">
+    <button id="cancelSettings" class="modal-x" title="Close">✕</button>
+    <h2 data-i18n="settingsHeader">Settings</h2>
+    <p class="muted small" data-i18n="settingsDesc">Stored locally on your PC in <code>config.json</code>. Nothing is uploaded except direct calls to Anthropic when you chat.</p>
+
+    <label class="field">
+      <span><span data-i18n="apiKeyLabel">Anthropic API key</span> <span id="keyState" class="pill"></span></span>
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-..." autocomplete="off" />
+      <small data-i18n="apiKeyHint">Get one at <strong>console.anthropic.com</strong> → API Keys. Leave blank to keep the existing key.</small>
+    </label>
+
+    <label class="field">
+      <span data-i18n="modelLabel">Model</span>
+      <select id="modelInput">
+        <option value="claude-sonnet-4-6">claude-sonnet-4-6 (balanced — recommended)</option>
+        <option value="claude-opus-4-8">claude-opus-4-8 (smartest, pricier)</option>
+        <option value="claude-haiku-4-5-20251001">claude-haiku-4-5 (fastest, cheapest)</option>
+      </select>
+    </label>
+
+    <label class="field">
+      <span data-i18n="sportsLabel">Sports data key (TheSportsDB)</span>
+      <input type="text" id="sportsdbInput" placeholder="3" />
+      <small data-i18n="sportsHint">Default <code>3</code> is a free public key. Add your own premium key for faster live updates.</small>
+    </label>
+
+    <label class="field">
+      <span><span>API-Football key</span> <span id="apifootballState" class="pill"></span></span>
+      <input type="password" id="apifootballInput" placeholder="Get free key at api-football.com (100 calls/day)" autocomplete="off" />
+      <small>Enables live player stats (shots on target, goals). Free tier: 100 calls/day. Leave blank to keep existing.</small>
+    </label>
+
+    <hr style="border-color:#ffffff18;margin:16px 0" />
+    <div id="networkInfoBox" style="background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12.5px">
+      <div id="publicUrlRow" style="display:none;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(34,197,94,.2)">
+        <div style="font-weight:700;color:#f59e0b;margin-bottom:5px">🌐 Acceso público (cualquier red)</div>
+        <div id="publicUrlDisplay" style="color:#94a3b8"></div>
+        <div style="color:#64748b;margin-top:4px;font-size:11px">Comparte este link — funciona desde cualquier celular, cualquier red</div>
+      </div>
+      <div style="font-weight:700;color:#22c55e;margin-bottom:6px">📱 Acceso WiFi local</div>
+      <div id="lanUrlDisplay" style="color:#94a3b8">Cargando IP local…</div>
+      <div style="color:#64748b;margin-top:4px;font-size:11px">Solo funciona conectado a la misma WiFi. Para acceso público: <strong>python server.py --tunnel</strong></div>
+    </div>
+
+    <hr style="border-color:#ffffff18;margin:16px 0" />
+    <p class="muted small" style="margin-bottom:8px">📲 <strong>Telegram — Ryder te avisa cuando la app arranca</strong></p>
+    <label class="field">
+      <span>Telegram Bot Token <span id="tgTokenState" class="pill"></span></span>
+      <input type="text" id="tgTokenInput" placeholder="7123456789:AAHxxxxxxxxxxxxxx" autocomplete="off" />
+      <small>Crea tu bot en Telegram: busca <strong>@BotFather</strong> → <code>/newbot</code> → copia el token</small>
+    </label>
+    <label class="field">
+      <span>Telegram Chat ID <span id="tgChatState" class="pill"></span></span>
+      <input type="text" id="tgChatInput" placeholder="Tu chat ID numérico (ej: 123456789)" autocomplete="off" />
+      <small>Después de crear el bot: abre tu bot en Telegram → presiona Start → ve a <code>api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code> y copia el <code>"id"</code></small>
+    </label>
+
+    <hr style="border-color:#ffffff18;margin:16px 0" />
+    <p class="muted small" style="margin-bottom:8px">📧 <strong>Email de apuestas diarias</strong> — recibe las top 10 picks del día</p>
+
+    <label class="field">
+      <span>Email remitente <span id="emailSenderState" class="pill"></span></span>
+      <input type="email" id="emailSenderInput" placeholder="tucorreo@hotmail.com (el que envía)" autocomplete="off" />
+      <small>Usa Hotmail/Outlook. Necesita una <strong>contraseña de aplicación</strong> (no tu contraseña normal) — ver instrucciones abajo.</small>
+    </label>
+
+    <label class="field">
+      <span>Contraseña de aplicación <span id="emailPassState" class="pill"></span></span>
+      <input type="password" id="emailPassInput" placeholder="Contraseña de app de Outlook" autocomplete="off" />
+      <small>En Outlook: Cuenta → Seguridad → Contraseñas de aplicación → Crear nueva. Copia y pega aquí.</small>
+    </label>
+
+    <label class="field">
+      <span>Email destinatario</span>
+      <input type="email" id="emailRecipientInput" placeholder="Esteban_vm12@hotmail.com" autocomplete="off" />
+    </label>
+
+    <label class="field">
+      <span><span data-i18n="tokenLabel">Remote access token</span> <span id="remoteTokenState" class="pill"></span></span>
+      <input type="text" id="remoteTokenInput" data-i18n-ph="tokenPh" placeholder="Set a password for tunnel access" autocomplete="off" />
+      <small data-i18n="tokenHint">Required when running <code>python server.py --tunnel</code>. Anyone with the tunnel URL will need this token. Leave blank to clear.</small>
+    </label>
+
+    <div class="modal-actions">
+      <button id="saveSettings" class="primary-btn" data-i18n="save">Save</button>
+      <button id="sendPicksEmailBtn" class="ghost-btn" title="Enviar top 10 picks del día por email">📧 Enviar picks por email</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIVE MODAL -->
+<div id="liveModal" class="modal-overlay hidden" onclick="if(event.target===this)closeLiveModal()">
+  <div class="modal-box live-modal-box">
+    <div class="live-modal-header">
+      <div class="live-modal-title">
+        <span class="live-dot-pulse"></span>
+        <span>Partidos en Vivo</span>
+      </div>
+      <div class="live-modal-meta" id="liveLastUpdate"></div>
+      <button class="modal-close-btn" onclick="closeLiveModal()">✕</button>
+    </div>
+    <div id="liveSetupBanner" class="live-setup-banner hidden">
+      <div class="live-setup-icon">🔑</div>
+      <div>
+        <div class="live-setup-title">API key requerida</div>
+        <div class="live-setup-desc">Agrega tu clave de <strong>api-football.com</strong> (free tier) en <code>server.py</code> — variable <code>FOOTBALL_API_KEY</code>. <a href="https://dashboard.api-football.com/register" target="_blank">Registrarse gratis →</a></div>
+      </div>
+    </div>
+    <div id="liveContent" class="live-content">
+      <div class="live-loading" id="liveLoading">
+        <div class="live-spinner"></div>
+        <span>Cargando partidos en vivo…</span>
+      </div>
+      <div id="liveMatchList" class="live-match-list"></div>
+      <div id="liveEmpty" class="live-empty hidden">
+        <div style="font-size:2rem">⏱️</div>
+        <div>No hay partidos en vivo ahora mismo</div>
+        <div class="live-empty-sub">El panel se actualiza automáticamente cada 60 segundos</div>
+      </div>
+    </div>
+    <div class="live-modal-footer">
+      <span id="liveApiCredit">Datos: api-football.com</span>
+      <button class="live-refresh-btn" onclick="loadLiveMatches()">⟳ Actualizar</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUINIELA MODAL (desktop only — mobile uses inline pane tab) -->
+<div id="quinielaModal" class="modal hidden desktop-only-modal">
+  <div class="modal-card quiniela-card">
+    <button id="closeQuiniela" class="modal-x" title="Cerrar">✕</button>
+    <div class="quiniela-header">
+      <h2>🏆 Quiniela — Mundial 2026</h2>
+      <p class="muted small">El analista predice quién clasifica de cada grupo. Toca un partido para el análisis completo.</p>
+    </div>
+    <div id="quinielaGroupsModal" class="quiniela-groups-modal">
+      <p class="muted small">Cargando…</p>
+    </div>
+  </div>
+</div>
+
+<!-- INVESTMENT MODAL -->
+<div id="investModal" class="modal hidden">
+  <div class="modal-card invest-card">
+    <button id="closeInvest" class="modal-x" title="Close">✕</button>
+    <div class="invest-header">
+      <span class="invest-logo">💹</span>
+      <div>
+        <h2 class="invest-title">Investment Analyst</h2>
+        <p class="invest-sub">Markets · Stocks · Crypto · ETFs · Macro</p>
+      </div>
+    </div>
+    <div class="invest-tabs" id="investTabs">
+      <button class="invest-tab active" data-itab="dashboard">📊 Dashboard</button>
+      <button class="invest-tab" data-itab="chat">💬 Analyst Chat</button>
+      <button class="invest-tab" data-itab="apps">📱 iPhone Apps</button>
+    </div>
+
+    <!-- DASHBOARD TAB -->
+    <div id="investPaneDashboard" class="invest-pane">
+      <div class="invest-disclaimer">
+        ⚠️ <strong>Not financial advice.</strong> All analysis is educational. Always verify live prices. Never invest more than you can afford to lose.
+      </div>
+      <div class="invest-sections" id="investDashboard"></div>
+    </div>
+
+    <!-- CHAT TAB -->
+    <div id="investPaneChat" class="invest-pane hidden">
+      <div class="invest-disclaimer">
+        ⚠️ Analysis based on training knowledge (cutoff Aug 2025). Verify live prices on TradingView, Yahoo Finance, or CoinGecko before acting.
+      </div>
+      <div id="investChatLog" class="invest-chat-log">
+        <div class="invest-msg assistant">
+          <p>I'm your elite investment analyst. Ask me about stocks, crypto, ETFs, macro trends, risk management, or request a daily market briefing.</p>
+          <p class="muted small">I separate fact from opinion, always flag uncertainty, and include risk analysis on every idea.</p>
+        </div>
+      </div>
+      <div class="invest-chips" id="investChips">
+        <button class="chip" onclick="investChip('Give me a full daily market briefing for today')">📰 Daily Briefing</button>
+        <button class="chip" onclick="investChip('What are the best investment opportunities right now?')">🔍 Best Opportunities</button>
+        <button class="chip" onclick="investChip('Analyze Bitcoin and the top 5 crypto coins')">₿ Crypto Analysis</button>
+        <button class="chip" onclick="investChip('What are the best ETFs to invest in long term?')">📦 Best ETFs</button>
+        <button class="chip" onclick="investChip('What are the main macro risks in the market right now?')">⚠️ Macro Risks</button>
+        <button class="chip" onclick="investChip('Build me a diversified portfolio for a moderate risk investor')">🗂 Build Portfolio</button>
+      </div>
+      <form id="investChatForm" class="invest-chat-input">
+        <textarea id="investChatInput" rows="2" placeholder="Ask about stocks, crypto, ETFs, market outlook, risk…"></textarea>
+        <button type="submit" id="investSendBtn">Send</button>
+      </form>
+    </div>
+
+    <!-- APPS TAB -->
+    <div id="investPaneApps" class="invest-pane hidden">
+      <div id="investAppsContent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN / REGISTER MODAL -->
+<div id="loginModal" class="modal hidden">
+  <div class="modal-card login-modal">
+    <button class="modal-x" onclick="closeLoginModal()" title="Cerrar">✕</button>
+    <div class="auth-logo">👤</div>
+    <h2 style="margin:0 0 16px;text-align:center">ProGol CR</h2>
+    <div class="auth-tabs" id="authTabs">
+      <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Iniciar sesión</button>
+      <button class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">Registrarse</button>
+    </div>
+
+    <!-- Login form -->
+    <div id="authPaneLogin">
+      <label class="field">
+        <span>Email</span>
+        <input type="email" id="loginEmail" placeholder="tucorreo@ejemplo.com" autocomplete="email" />
+      </label>
+      <label class="field">
+        <span>Contraseña</span>
+        <input type="password" id="loginPassword" placeholder="Tu contraseña" autocomplete="current-password" />
+      </label>
+      <div class="modal-actions">
+        <button id="loginSubmitBtn" class="primary-btn" onclick="loginUser()">Iniciar sesión</button>
+      </div>
+    </div>
+
+    <!-- Register form -->
+    <div id="authPaneRegister" class="hidden">
+      <label class="field">
+        <span>Email</span>
+        <input type="email" id="regEmail" placeholder="tucorreo@ejemplo.com" autocomplete="email" />
+      </label>
+      <label class="field">
+        <span>Contraseña</span>
+        <input type="password" id="regPassword" placeholder="Elige una contraseña" autocomplete="new-password" />
+      </label>
+      <div class="modal-actions">
+        <button id="registerSubmitBtn" class="primary-btn" onclick="registerUser()">Crear cuenta</button>
+      </div>
+    </div>
+
+    <div id="loginError" class="auth-error hidden"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

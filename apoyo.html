@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apoya ProGol CR 💚</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#060c0f;color:#eaf5ee;min-height:100vh}
+.bg-fx{position:fixed;inset:0;z-index:-1;background:radial-gradient(800px 500px at 10% -10%,rgba(34,197,94,.12),transparent 60%),radial-gradient(900px 600px at 90% 0%,rgba(245,158,11,.08),transparent 55%),#060c0f}
+
+.container{max-width:600px;margin:0 auto;padding:20px 16px 60px}
+
+/* Header */
+.hdr{text-align:center;padding:32px 0 24px}
+.hdr-logo{font-size:48px;margin-bottom:8px;filter:drop-shadow(0 4px 16px rgba(34,197,94,.5))}
+.hdr h1{font-size:28px;font-weight:900;letter-spacing:-0.5px;margin-bottom:6px}
+.hdr h1 span{color:#22c55e}
+.hdr p{color:#7aad8a;font-size:14px;line-height:1.5}
+
+/* SINPE card */
+.sinpe-card{background:linear-gradient(135deg,#0a2010,#0d1a0a);border:1.5px solid rgba(34,197,94,.4);border-radius:20px;padding:24px;margin-bottom:20px;text-align:center}
+.sinpe-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#7aad8a;margin-bottom:10px}
+.sinpe-number{font-size:42px;font-weight:900;color:#22c55e;letter-spacing:2px;margin:8px 0;font-variant-numeric:tabular-nums}
+.sinpe-name{font-size:14px;color:#eaf5ee;margin-bottom:4px;font-weight:600}
+.sinpe-bank{font-size:12px;color:#7aad8a}
+.copy-btn{display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:9px 20px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.35);border-radius:30px;color:#22c55e;font-size:13px;font-weight:700;cursor:pointer;transition:.18s}
+.copy-btn:hover{background:rgba(34,197,94,.25)}
+.copy-btn.copied{color:#86efac;background:rgba(34,197,94,.25)}
+
+/* How to */
+.steps-card{background:#0a1610;border:1px solid rgba(46,200,100,.14);border-radius:16px;padding:20px;margin-bottom:20px}
+.steps-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:#7aad8a;margin-bottom:14px}
+.step{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}
+.step:last-child{margin-bottom:0}
+.step-num{width:24px;height:24px;border-radius:50%;background:rgba(34,197,94,.2);border:1px solid rgba(34,197,94,.4);color:#22c55e;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step p{font-size:13px;color:#b8d4c0;line-height:1.5}
+.step p strong{color:#eaf5ee}
+
+/* Amounts */
+.amounts-section{margin-bottom:20px}
+.amounts-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#7aad8a;margin-bottom:12px;text-align:center}
+.amounts-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.amount-btn{background:#0a1610;border:1px solid rgba(46,200,100,.2);border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;transition:.18s;color:#eaf5ee;font-size:13px;font-weight:700}
+.amount-btn:hover{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.4)}
+.amount-btn .amt-sub{font-size:10px;color:#7aad8a;font-weight:400;margin-top:2px}
+@media(max-width:400px){.amounts-grid{grid-template-columns:repeat(2,1fr)}}
+
+/* Form */
+.form-card{background:#0a1610;border:1px solid rgba(46,200,100,.14);border-radius:16px;padding:20px;margin-bottom:20px}
+.form-card h3{font-size:14px;font-weight:800;margin-bottom:14px;color:#22c55e}
+.form-row{margin-bottom:12px}
+.form-row label{display:block;font-size:11px;font-weight:700;color:#7aad8a;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
+.form-row input,.form-row textarea,.form-row select{width:100%;background:#060c0f;border:1px solid rgba(46,200,100,.2);border-radius:10px;padding:10px 12px;color:#eaf5ee;font-size:13px;font-family:inherit;outline:none;transition:.18s}
+.form-row input:focus,.form-row textarea:focus,.form-row select:focus{border-color:rgba(34,197,94,.5);box-shadow:0 0 0 2px rgba(34,197,94,.08)}
+.form-row textarea{resize:vertical;min-height:60px}
+.submit-btn{width:100%;padding:13px;background:linear-gradient(90deg,#15803d,#22c55e);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:800;cursor:pointer;transition:.18s;margin-top:4px}
+.submit-btn:hover{opacity:.9}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed}
+.form-note{font-size:11px;color:#7aad8a;text-align:center;margin-top:10px;line-height:1.5}
+
+/* Success */
+.success-banner{display:none;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);border-radius:12px;padding:14px;text-align:center;color:#86efac;font-size:13px;font-weight:700;margin-bottom:16px}
+
+/* Wall */
+.wall-section{margin-bottom:20px}
+.wall-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#7aad8a;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.wall-title span{flex:1;height:1px;background:rgba(46,200,100,.14)}
+.wall-list{display:flex;flex-direction:column;gap:8px}
+.wall-item{background:#0a1610;border:1px solid rgba(46,200,100,.14);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px}
+.wall-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#15803d,#22c55e);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:#fff;flex-shrink:0}
+.wall-name{font-size:13px;font-weight:700;color:#eaf5ee}
+.wall-msg{font-size:11px;color:#7aad8a;margin-top:2px}
+.wall-amount{margin-left:auto;font-size:13px;font-weight:800;color:#22c55e;flex-shrink:0}
+.wall-date{font-size:10px;color:#556;margin-top:2px;text-align:right}
+.wall-empty{text-align:center;color:#556;font-size:13px;padding:20px 0}
+
+/* Legal */
+.legal{background:#0a0d0b;border:1px solid rgba(46,200,100,.1);border-radius:12px;padding:14px 16px;margin-bottom:20px}
+.legal p{font-size:11px;color:#556;line-height:1.6}
+.legal strong{color:#7aad8a}
+
+/* Back */
+.back-link{display:block;text-align:center;color:#7aad8a;font-size:13px;text-decoration:none;padding:8px}
+.back-link:hover{color:#22c55e}
+</style>
+</head>
+<body>
+<div class="bg-fx"></div>
+<div class="container">
+
+  <div class="hdr">
+    <svg class="hdr-logo" viewBox="0 0 100 115" fill="none" style="width:56px;height:64px;filter:drop-shadow(0 4px 16px rgba(245,200,66,.4))">
+      <polygon points="50,3 97,27.5 97,87.5 50,112 3,87.5 3,27.5" fill="#0f172a" stroke="#f5c842" stroke-width="5"/>
+      <polygon points="50,16 84,34.5 84,80.5 50,99 16,80.5 16,34.5" fill="none" stroke="#22c55e" stroke-width="2"/>
+      <text x="50" y="64" text-anchor="middle" fill="#f5c842" font-size="30" font-weight="900" font-family="system-ui,sans-serif">PG</text>
+      <text x="50" y="80" text-anchor="middle" fill="#22c55e" font-size="11" font-family="system-ui,sans-serif" letter-spacing="4" font-weight="700">CR</text>
+    </svg>
+    <h1>Apoya <span>ProGol CR</span></h1>
+    <p>Tu apoyo voluntario mantiene vivo el mejor análisis futbolístico de Costa Rica.<br>Sin obligación. Sin contrato. Cualquier monto suma.</p>
+  </div>
+
+  <!-- SINPE Card -->
+  <div class="sinpe-card">
+    <div class="sinpe-label">📱 SINPE Móvil</div>
+    <div class="sinpe-number" id="sinpeNum">8561-0677</div>
+    <div class="sinpe-name">Esteban Venegas</div>
+    <div class="sinpe-bank">ProGol CR · Costa Rica</div>
+    <button class="copy-btn" id="copyBtn" onclick="copyNum()">
+      📋 Copiar número
+    </button>
+  </div>
+
+  <!-- Cómo hacerlo -->
+  <div class="steps-card">
+    <div class="steps-title">📲 Cómo apoyar con SINPE</div>
+    <div class="step">
+      <div class="step-num">1</div>
+      <p>Abre tu app bancaria → <strong>SINPE Móvil</strong></p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <p>Ingresa el número <strong>8561-0677</strong> · Nombre: Esteban Venegas</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <p>Envía <strong>el monto que quieras</strong> — no hay mínimo ni máximo</p>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <p>En el mensaje de SINPE puedes poner tu nombre o alias para aparecer en el muro 🏆</p>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <p>Regístralo abajo y aparecerás en el Muro de Campeones</p>
+    </div>
+  </div>
+
+  <!-- Montos sugeridos -->
+  <div class="amounts-section">
+    <div class="amounts-title">Montos sugeridos</div>
+    <div class="amounts-grid">
+      <div class="amount-btn" onclick="setAmount('500')">₡500<div class="amt-sub">Cafecito ☕</div></div>
+      <div class="amount-btn" onclick="setAmount('1000')">₡1,000<div class="amt-sub">Pick del día</div></div>
+      <div class="amount-btn" onclick="setAmount('2500')">₡2,500<div class="amt-sub">Fan semanal</div></div>
+      <div class="amount-btn" onclick="setAmount('5000')">₡5,000<div class="amt-sub">Hincha VIP 🌟</div></div>
+    </div>
+  </div>
+
+  <!-- Registro en muro -->
+  <div class="form-card">
+    <h3>🏆 Registrar mi apoyo</h3>
+    <div id="successBanner" class="success-banner">¡Gracias! Ya apareces en el Muro de Campeones 🎉</div>
+    <div class="form-row">
+      <label>Tu nombre o alias (opcional)</label>
+      <input type="text" id="fName" maxlength="40" placeholder="Anónimo está bien también">
+    </div>
+    <div class="form-row">
+      <label>Monto enviado por SINPE</label>
+      <input type="text" id="fAmount" maxlength="20" placeholder="₡1,000">
+    </div>
+    <div class="form-row">
+      <label>Mensaje para la comunidad (opcional)</label>
+      <textarea id="fMsg" maxlength="120" placeholder="¡Arriba la Sele! 🇨🇷"></textarea>
+    </div>
+    <button class="submit-btn" id="submitBtn" onclick="submitSupport()">Registrar mi apoyo →</button>
+    <div class="form-note">Solo registra después de enviar el SINPE. No se almacenan datos bancarios ni personales.</div>
+  </div>
+
+  <!-- Wall -->
+  <div class="wall-section">
+    <div class="wall-title"><span></span>Muro de Campeones<span></span></div>
+    <div class="wall-list" id="wallList">
+      <div class="wall-empty">Cargando…</div>
+    </div>
+  </div>
+
+  <!-- Legal -->
+  <div class="legal">
+    <p>
+      <strong>Aviso legal:</strong> Esta es una contribución voluntaria para apoyar el desarrollo de ProGol CR.
+      No constituye una donación deducible de impuestos. No otorga derechos, acciones ni participación en ninguna empresa.
+      Todos los ingresos son declarados ante el Ministerio de Hacienda de Costa Rica conforme a la normativa vigente.
+      ProGol CR no solicita, almacena ni procesa datos bancarios en ningún momento.
+    </p>
+  </div>
+
+  <a href="/" class="back-link">← Volver a ProGol CR</a>
+</div>
+
+<script>
+function copyNum() {
+  var n = '85610677';
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(n).then(function() {
+      var btn = document.getElementById('copyBtn');
+      btn.textContent = '✅ Copiado';
+      btn.classList.add('copied');
+      setTimeout(function() { btn.innerHTML = '📋 Copiar número'; btn.classList.remove('copied'); }, 2000);
+    });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = n; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    var btn = document.getElementById('copyBtn');
+    btn.textContent = '✅ Copiado'; btn.classList.add('copied');
+    setTimeout(function() { btn.innerHTML = '📋 Copiar número'; btn.classList.remove('copied'); }, 2000);
+  }
+}
+
+function setAmount(v) {
+  document.getElementById('fAmount').value = '₡' + parseInt(v).toLocaleString('es-CR');
+}
+
+function submitSupport() {
+  var name = document.getElementById('fName').value.trim();
+  var amount = document.getElementById('fAmount').value.trim();
+  var msg = document.getElementById('fMsg').value.trim();
+  if (!amount) { alert('Por favor ingresa el monto que enviaste por SINPE.'); return; }
+  var btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = 'Registrando…';
+  fetch('/api/supporters', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({name: name, amount: amount, message: msg})
+  }).then(function(r){ return r.json(); }).then(function(d) {
+    if (d.ok) {
+      document.getElementById('successBanner').style.display = 'block';
+      document.getElementById('fName').value = '';
+      document.getElementById('fAmount').value = '';
+      document.getElementById('fMsg').value = '';
+      loadWall();
+    } else {
+      alert('Error al registrar: ' + (d.error || 'intenta de nuevo'));
+    }
+    btn.disabled = false; btn.textContent = 'Registrar mi apoyo →';
+  }).catch(function() {
+    alert('Error de conexión. Intenta de nuevo.');
+    btn.disabled = false; btn.textContent = 'Registrar mi apoyo →';
+  });
+}
+
+function loadWall() {
+  fetch('/api/supporters').then(function(r){ return r.json(); }).then(function(d) {
+    var list = document.getElementById('wallList');
+    var supporters = d.supporters || [];
+    if (!supporters.length) {
+      list.innerHTML = '<div class="wall-empty">Sé el primero en apoyar ProGol CR 💚</div>';
+      return;
+    }
+    var reversed = supporters.slice().reverse();
+    list.innerHTML = reversed.map(function(s) {
+      var initials = (s.name || 'A').trim().split(' ').map(function(w){ return w[0]; }).join('').toUpperCase().slice(0,2);
+      return '<div class="wall-item">'
+        + '<div class="wall-avatar">' + initials + '</div>'
+        + '<div style="flex:1;min-width:0">'
+        + '<div class="wall-name">' + escHtml(s.name || 'Anónimo') + '</div>'
+        + (s.message ? '<div class="wall-msg">"' + escHtml(s.message) + '"</div>' : '')
+        + '<div class="wall-date">' + escHtml(s.date || '') + '</div>'
+        + '</div>'
+        + '<div style="text-align:right;flex-shrink:0">'
+        + '<div class="wall-amount">' + escHtml(s.amount || '') + '</div>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+  }).catch(function() {
+    document.getElementById('wallList').innerHTML = '<div class="wall-empty">No se pudo cargar el muro.</div>';
+  });
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+loadWall();
+</script>
+</body>
+</html>

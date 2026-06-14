@@ -1,0 +1,161 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 480" width="400" height="480">
+  <defs>
+    <!-- Fur gradients matching the golden/caramel coat -->
+    <radialGradient id="headGrad" cx="50%" cy="45%" r="52%">
+      <stop offset="0%" stop-color="#E8A84A"/>
+      <stop offset="60%" stop-color="#C8780E"/>
+      <stop offset="100%" stop-color="#A05C08"/>
+    </radialGradient>
+    <radialGradient id="bodyGrad" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#D4924A"/>
+      <stop offset="70%" stop-color="#B86E0A"/>
+      <stop offset="100%" stop-color="#9A5C08"/>
+    </radialGradient>
+    <radialGradient id="faceGrad" cx="50%" cy="60%" r="50%">
+      <stop offset="0%" stop-color="#F0D090"/>
+      <stop offset="100%" stop-color="#E0A84A"/>
+    </radialGradient>
+    <radialGradient id="eyeGrad" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#8B5E1A"/>
+      <stop offset="100%" stop-color="#4A2800"/>
+    </radialGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#00000033"/>
+    </filter>
+    <linearGradient id="collarGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2d3748"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Drop shadow base -->
+  <ellipse cx="200" cy="462" rx="90" ry="14" fill="#0f172a" opacity="0.25"/>
+
+  <!-- ══ BODY ══ -->
+  <!-- Back right leg -->
+  <ellipse cx="248" cy="400" rx="22" ry="44" fill="#A86010" transform="rotate(8 248 400)"/>
+  <ellipse cx="252" cy="440" rx="20" ry="12" fill="#C87818"/>
+  <!-- Back left leg -->
+  <ellipse cx="152" cy="400" rx="22" ry="44" fill="#A86010" transform="rotate(-8 152 400)"/>
+  <ellipse cx="148" cy="440" rx="20" ry="12" fill="#C87818"/>
+
+  <!-- Main body -->
+  <ellipse cx="200" cy="340" rx="80" ry="90" fill="url(#bodyGrad)" filter="url(#softShadow)"/>
+
+  <!-- Chest / belly lighter patch -->
+  <ellipse cx="200" cy="360" rx="46" ry="62" fill="#EEC470" opacity="0.55"/>
+
+  <!-- Front right leg -->
+  <rect x="224" y="370" width="34" height="62" rx="17" fill="#C07810"/>
+  <ellipse cx="241" cy="432" rx="20" ry="11" fill="#B06808"/>
+  <!-- Front left leg -->
+  <rect x="142" y="370" width="34" height="62" rx="17" fill="#C07810"/>
+  <ellipse cx="159" cy="432" rx="20" ry="11" fill="#B06808"/>
+
+  <!-- Tail -->
+  <path d="M278 295 Q320 260 338 230 Q350 208 336 200 Q318 193 306 218 Q288 248 274 285"
+        fill="#B06808" stroke="#9A5608" stroke-width="1"/>
+
+  <!-- Neck -->
+  <ellipse cx="200" cy="242" rx="46" ry="38" fill="url(#bodyGrad)"/>
+
+  <!-- ══ HEAD ══ -->
+  <!-- Left ear (floppy, hanging) -->
+  <path d="M138 168 Q118 155 112 175 Q106 200 118 228 Q128 252 148 252 Q162 252 168 240 Q158 212 148 188 Q142 178 138 168Z"
+        fill="#8A4E08"/>
+  <!-- Right ear (floppy, hanging) -->
+  <path d="M262 168 Q282 155 288 175 Q294 200 282 228 Q272 252 252 252 Q238 252 232 240 Q242 212 252 188 Q258 178 262 168Z"
+        fill="#8A4E08"/>
+
+  <!-- Main head circle -->
+  <circle cx="200" cy="175" r="76" fill="url(#headGrad)" filter="url(#softShadow)"/>
+
+  <!-- Forehead lighter tone -->
+  <ellipse cx="200" cy="155" rx="52" ry="38" fill="#E8A84A" opacity="0.4"/>
+
+  <!-- Muzzle / face lighter area -->
+  <ellipse cx="200" cy="198" rx="38" ry="30" fill="url(#faceGrad)"/>
+
+  <!-- ══ EYES ══ -->
+  <!-- Eye whites -->
+  <ellipse cx="175" cy="168" rx="16" ry="14" fill="#fff"/>
+  <ellipse cx="225" cy="168" rx="16" ry="14" fill="#fff"/>
+  <!-- Iris -->
+  <circle cx="178" cy="170" r="10" fill="url(#eyeGrad)"/>
+  <circle cx="222" cy="170" r="10" fill="url(#eyeGrad)"/>
+  <!-- Pupils -->
+  <circle cx="179" cy="171" r="6" fill="#1a0800"/>
+  <circle cx="223" cy="171" r="6" fill="#1a0800"/>
+  <!-- Eye shine -->
+  <circle cx="182" cy="167" r="2.5" fill="#ffffff" opacity="0.9"/>
+  <circle cx="226" cy="167" r="2.5" fill="#ffffff" opacity="0.9"/>
+  <!-- Second small shine -->
+  <circle cx="177" cy="174" r="1.2" fill="#ffffff" opacity="0.5"/>
+  <circle cx="221" cy="174" r="1.2" fill="#ffffff" opacity="0.5"/>
+
+  <!-- Eyebrows (expressive) -->
+  <path d="M164 153 Q175 146 187 150" stroke="#7A3E04" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M213 150 Q225 146 236 153" stroke="#7A3E04" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+  <!-- ══ NOSE ══ -->
+  <ellipse cx="200" cy="195" rx="15" ry="11" fill="#1a0800"/>
+  <!-- Nose highlight -->
+  <ellipse cx="195" cy="192" rx="5" ry="3.5" fill="#3d1800" opacity="0.6"/>
+  <ellipse cx="203" cy="190" rx="2.5" ry="1.8" fill="#ffffff" opacity="0.3"/>
+  <!-- Nose bridge line -->
+  <line x1="200" y1="206" x2="200" y2="213" stroke="#c8860a" stroke-width="1.5"/>
+
+  <!-- Mouth -->
+  <path d="M188 213 Q200 226 212 213" stroke="#7A3E04" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- Tongue peek -->
+  <ellipse cx="200" cy="220" rx="8" ry="5" fill="#e74c6a" opacity="0.8"/>
+
+  <!-- Cheek blush -->
+  <ellipse cx="162" cy="183" rx="10" ry="7" fill="#e07830" opacity="0.2"/>
+  <ellipse cx="238" cy="183" rx="10" ry="7" fill="#e07830" opacity="0.2"/>
+
+  <!-- ══ BLACK COLLAR (like the real dog) ══ -->
+  <rect x="158" y="252" width="84" height="18" rx="9" fill="url(#collarGrad)"/>
+  <!-- Collar stitch detail -->
+  <rect x="158" y="252" width="84" height="18" rx="9" fill="none" stroke="#374151" stroke-width="1" opacity="0.5"/>
+  <!-- Collar buckle -->
+  <rect x="194" y="254" width="12" height="14" rx="3" fill="#4B5563"/>
+  <!-- Dog tag — gold, ProGol -->
+  <circle cx="200" cy="274" r="11" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+  <text x="200" y="278" text-anchor="middle" font-family="Arial,sans-serif" font-size="7" font-weight="900" fill="#0f172a">PG</text>
+
+  <!-- ══ ANALYTICS VISOR (green, ProGol brand) ══ -->
+  <!-- Visor frame -->
+  <rect x="160" y="157" width="34" height="22" rx="10" fill="none" stroke="#22c55e" stroke-width="2.8"/>
+  <rect x="206" y="157" width="34" height="22" rx="10" fill="none" stroke="#22c55e" stroke-width="2.8"/>
+  <!-- Bridge -->
+  <path d="M194 168 Q200 165 206 168" stroke="#22c55e" stroke-width="2.5" fill="none"/>
+  <!-- Tinted lenses -->
+  <rect x="160" y="157" width="34" height="22" rx="10" fill="#22c55e" opacity="0.12"/>
+  <rect x="206" y="157" width="34" height="22" rx="10" fill="#22c55e" opacity="0.12"/>
+  <!-- Lens shine -->
+  <line x1="165" y1="162" x2="172" y2="169" stroke="#ffffff" stroke-width="1" opacity="0.4"/>
+  <line x1="211" y1="162" x2="218" y2="169" stroke="#ffffff" stroke-width="1" opacity="0.4"/>
+  <!-- Temple arms -->
+  <line x1="160" y1="168" x2="148" y2="162" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="240" y1="168" x2="252" y2="162" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- ══ SOCCER BALL in paw ══ -->
+  <!-- Right paw holds the ball -->
+  <circle cx="260" cy="400" r="30" fill="#f8f8f8" stroke="#1e293b" stroke-width="1.5" filter="url(#softShadow)"/>
+  <!-- Pentagon patches -->
+  <polygon points="260,374 271,381 268,394 252,394 249,381" fill="#1e293b"/>
+  <polygon points="231,388 241,381 252,394 248,404 235,404" fill="#1e293b"/>
+  <polygon points="289,388 279,381 268,394 272,404 285,404" fill="#1e293b"/>
+  <!-- Ball highlight -->
+  <ellipse cx="250" cy="382" rx="7" ry="5" fill="#ffffff" opacity="0.5"/>
+
+  <!-- ══ PROGOL CR LOGO BADGE (chest) ══ -->
+  <rect x="180" y="308" width="40" height="18" rx="6" fill="#22c55e"/>
+  <text x="200" y="321" text-anchor="middle" font-family="Arial Black,sans-serif" font-size="8" font-weight="900" fill="#0f172a">ProGol CR</text>
+
+  <!-- Ear inner details -->
+  <path d="M132 192 Q135 215 143 235" stroke="#6A3A04" stroke-width="1.5" fill="none" opacity="0.5"/>
+  <path d="M268 192 Q265 215 257 235" stroke="#6A3A04" stroke-width="1.5" fill="none" opacity="0.5"/>
+
+</svg>

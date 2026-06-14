@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProGol CR — Guía de Marca 2026</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  :root {
+    --green:   #22c55e;
+    --green2:  #16a34a;
+    --dark:    #0f172a;
+    --card:    #1e293b;
+    --card2:   #263248;
+    --line:    #334155;
+    --fg:      #f1f5f9;
+    --muted:   #94a3b8;
+    --gold:    #f59e0b;
+    --blue:    #60a5fa;
+    --red:     #f43f5e;
+    --brown:   #92400e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--fg); line-height: 1.6; }
+
+  /* ── Layout ── */
+  .page { max-width: 1100px; margin: 0 auto; padding: 48px 24px; }
+  .section { margin-bottom: 72px; }
+  h1 { font-size: 48px; font-weight: 900; letter-spacing: -1px; }
+  h2 { font-size: 28px; font-weight: 800; margin-bottom: 24px; color: var(--fg); }
+  h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+  p  { color: var(--muted); line-height: 1.8; }
+  .label { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--green); margin-bottom: 8px; }
+  .divider { border: none; border-top: 1px solid var(--line); margin: 48px 0; }
+
+  /* ── Cover ── */
+  .cover { text-align: center; padding: 80px 0 60px; position: relative; overflow: hidden; }
+  .cover::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, #22c55e18 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .cover-logo { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 24px; }
+  .logo-icon {
+    width: 64px; height: 64px; background: var(--green); border-radius: 16px;
+    display: flex; align-items: center; justify-content: center; font-size: 32px;
+    box-shadow: 0 0 40px #22c55e55;
+  }
+  .logo-text { text-align: left; }
+  .logo-text .brand { font-size: 36px; font-weight: 900; letter-spacing: -1px; }
+  .logo-text .brand span { color: var(--green); }
+  .logo-text .sub { font-size: 12px; color: var(--muted); letter-spacing: 3px; text-transform: uppercase; }
+  .cover-tagline { font-size: 22px; font-weight: 300; color: var(--muted); margin-top: 16px; }
+  .cover-tagline strong { color: var(--fg); font-weight: 700; }
+  .cover-badge { display: inline-block; background: var(--green); color: #0f172a; font-weight: 800; font-size: 12px; padding: 4px 14px; border-radius: 999px; margin-top: 20px; letter-spacing: 1px; }
+
+  /* ── Mascot ── */
+  .mascot-section { display: flex; gap: 48px; align-items: center; flex-wrap: wrap; }
+  .mascot-svg-wrap { flex-shrink: 0; }
+  .mascot-info { flex: 1; min-width: 280px; }
+  .mascot-name { font-size: 42px; font-weight: 900; color: var(--green); }
+  .mascot-title { font-size: 16px; color: var(--muted); margin-bottom: 20px; }
+  .trait-list { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+  .trait { display: flex; gap: 12px; align-items: flex-start; }
+  .trait-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+  .trait-text strong { display: block; font-size: 14px; color: var(--fg); }
+  .trait-text span { font-size: 13px; color: var(--muted); }
+
+  /* ── Colors ── */
+  .color-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; }
+  .color-card { border-radius: 12px; overflow: hidden; border: 1px solid var(--line); }
+  .color-swatch { height: 80px; }
+  .color-info { background: var(--card); padding: 12px; }
+  .color-name { font-weight: 700; font-size: 13px; }
+  .color-hex { font-size: 12px; color: var(--muted); font-family: monospace; }
+  .color-use { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* ── Mission/Vision ── */
+  .mv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .mv-card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 28px; }
+  .mv-card.vision { border-color: var(--green); box-shadow: 0 0 30px #22c55e18; }
+  .mv-icon { font-size: 36px; margin-bottom: 12px; }
+  .mv-card p { font-size: 16px; color: var(--fg); line-height: 1.7; margin-top: 12px; }
+  .mv-card .label { margin-bottom: 6px; }
+
+  /* ── Values ── */
+  .values-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+  .value-card { background: var(--card); border-radius: 14px; padding: 24px; border: 1px solid var(--line); }
+  .value-card .v-icon { font-size: 32px; margin-bottom: 12px; }
+  .value-card h3 { color: var(--green); font-size: 15px; margin-bottom: 6px; }
+  .value-card p { font-size: 13px; }
+
+  /* ── Plans ── */
+  .plans-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px; }
+  .plan-card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 28px; position: relative; overflow: hidden; }
+  .plan-card.featured { border-color: var(--green); box-shadow: 0 0 40px #22c55e22; }
+  .plan-card.gold { border-color: var(--gold); box-shadow: 0 0 40px #f59e0b18; }
+  .plan-badge { position: absolute; top: 16px; right: 16px; font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 999px; letter-spacing: 1px; }
+  .plan-badge.popular { background: var(--green); color: #0f172a; }
+  .plan-badge.elite { background: var(--gold); color: #0f172a; }
+  .plan-name { font-size: 13px; font-weight: 800; letter-spacing: 2px; color: var(--muted); margin-bottom: 8px; }
+  .plan-price { font-size: 36px; font-weight: 900; color: var(--fg); }
+  .plan-price span { font-size: 14px; font-weight: 400; color: var(--muted); }
+  .plan-tagline { font-size: 13px; color: var(--muted); margin: 10px 0 18px; min-height: 40px; }
+  .plan-divider { border: none; border-top: 1px solid var(--line); margin: 16px 0; }
+  .feature-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .feature-list li { display: flex; gap: 8px; font-size: 13px; align-items: flex-start; }
+  .feature-list li.on { color: var(--fg); }
+  .feature-list li.on::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; }
+  .feature-list li.off { color: var(--line); }
+  .feature-list li.off::before { content: '—'; color: var(--line); flex-shrink: 0; }
+  .plan-hook { margin-top: 20px; padding: 12px; background: #0f172a; border-radius: 10px; font-size: 12px; color: var(--muted); font-style: italic; border-left: 3px solid var(--green); }
+  .plan-card.gold .plan-hook { border-left-color: var(--gold); }
+
+  /* ── Sales scripts ── */
+  .script-card { background: var(--card); border-radius: 14px; padding: 24px; border: 1px solid var(--line); margin-bottom: 20px; }
+  .script-card .channel { font-size: 11px; font-weight: 800; letter-spacing: 2px; color: var(--green); margin-bottom: 8px; }
+  .script-card .msg { background: #0f172a; border-radius: 10px; padding: 14px; font-size: 14px; color: var(--fg); line-height: 1.7; white-space: pre-wrap; font-family: inherit; border-left: 3px solid var(--green); }
+
+  /* ── Objections ── */
+  .obj-card { background: var(--card); border-radius: 14px; padding: 20px 24px; border: 1px solid var(--line); margin-bottom: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .obj-q { color: var(--red); font-size: 14px; font-weight: 600; }
+  .obj-a { color: var(--fg); font-size: 14px; }
+  .obj-a strong { color: var(--green); }
+
+  /* ── Channels ── */
+  .channel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+  .channel-card { background: var(--card); border-radius: 14px; padding: 20px; border: 1px solid var(--line); text-align: center; }
+  .channel-card .ch-icon { font-size: 36px; margin-bottom: 10px; }
+  .channel-card h3 { font-size: 14px; color: var(--fg); margin-bottom: 6px; }
+  .channel-card p { font-size: 12px; }
+
+  /* ── KPIs ── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; }
+  .kpi-card { background: var(--card); border-radius: 14px; padding: 20px; border: 1px solid var(--line); text-align: center; }
+  .kpi-card .kpi-num { font-size: 32px; font-weight: 900; color: var(--green); }
+  .kpi-card .kpi-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* ── Typography ── */
+  .type-sample { background: var(--card); border-radius: 14px; padding: 28px; border: 1px solid var(--line); }
+  .type-row { display: flex; align-items: baseline; gap: 20px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .type-row:last-child { border-bottom: none; }
+  .type-spec { font-size: 11px; color: var(--muted); min-width: 140px; font-family: monospace; }
+
+  /* ── Voice ── */
+  .voice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .voice-col h3 { margin-bottom: 16px; }
+  .voice-item { display: flex; gap: 8px; font-size: 13px; margin-bottom: 10px; }
+  .voice-item.yes::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; }
+  .voice-item.no::before  { content: '✗'; color: var(--red); font-weight: 700; flex-shrink: 0; }
+  .voice-item.yes { color: var(--fg); }
+  .voice-item.no  { color: var(--muted); }
+
+  /* ── Footer ── */
+  .footer { text-align: center; padding: 48px 0 24px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); }
+  .footer .f-logo { font-size: 20px; font-weight: 900; color: var(--fg); margin-bottom: 8px; }
+  .footer .f-logo span { color: var(--green); }
+
+  @media (max-width: 640px) {
+    h1 { font-size: 32px; }
+    .mv-grid, .voice-grid { grid-template-columns: 1fr; }
+    .obj-card { grid-template-columns: 1fr; }
+    .mascot-section { flex-direction: column; align-items: center; text-align: center; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- COVER -->
+  <div class="section cover">
+    <div class="cover-logo">
+      <div class="logo-icon">⚽</div>
+      <div class="logo-text">
+        <div class="brand">Pro<span>Gol</span> CR</div>
+        <div class="sub">Inteligencia Deportiva</div>
+      </div>
+    </div>
+    <h1>Guía de Marca</h1>
+    <div class="cover-tagline">La única plataforma en Centroamérica con<br><strong>matemática real detrás de cada pick.</strong></div>
+    <div class="cover-badge">CONFIDENCIAL · ESTEBAN VENEGAS · 2026</div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- MASCOTA -->
+  <div class="section">
+    <div class="label">Identidad Visual</div>
+    <h2>La Mascota — "Gol"</h2>
+    <div class="mascot-section">
+      <div class="mascot-svg-wrap">
+        <img src="/brand/mascota.jpg" alt="Gol — Mascota ProGol CR" style="width:260px;height:260px;border-radius:50%;object-fit:cover;box-shadow:0 8px 24px #00000044;border:4px solid #22c55e;"/>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 420" width="0" height="0" style="display:none">
+          <ellipse cx="200" cy="400" rx="80" ry="12" fill="#0f172a" opacity="0.3"/>
+          <ellipse cx="200" cy="290" rx="75" ry="80" fill="#92400e"/>
+          <ellipse cx="200" cy="310" rx="45" ry="52" fill="#d97706" opacity="0.6"/>
+          <rect x="135" y="340" width="30" height="50" rx="15" fill="#78350f"/>
+          <rect x="235" y="340" width="30" height="50" rx="15" fill="#78350f"/>
+          <ellipse cx="150" cy="390" rx="18" ry="10" fill="#92400e"/>
+          <ellipse cx="250" cy="390" rx="18" ry="10" fill="#92400e"/>
+          <path d="M275 270 Q310 230 330 210 Q345 195 335 185 Q320 175 305 195 Q285 220 270 260" fill="#78350f"/>
+          <ellipse cx="200" cy="210" rx="42" ry="35" fill="#92400e"/>
+          <circle cx="200" cy="165" r="68" fill="#92400e"/>
+          <ellipse cx="148" cy="140" rx="28" ry="40" fill="#78350f" transform="rotate(-20 148 140)"/>
+          <ellipse cx="252" cy="140" rx="28" ry="40" fill="#78350f" transform="rotate(20 252 140)"/>
+          <ellipse cx="200" cy="180" rx="40" ry="34" fill="#d97706" opacity="0.5"/>
+          <circle cx="178" cy="155" r="13" fill="#fff"/>
+          <circle cx="222" cy="155" r="13" fill="#fff"/>
+          <circle cx="181" cy="157" r="8" fill="#1c0a00"/>
+          <circle cx="225" cy="157" r="8" fill="#1c0a00"/>
+          <circle cx="184" cy="154" r="3" fill="#fff"/>
+          <circle cx="228" cy="154" r="3" fill="#fff"/>
+          <path d="M168 143 Q178 136 190 140" stroke="#5c2d0e" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path d="M210 140 Q222 136 232 143" stroke="#5c2d0e" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <ellipse cx="200" cy="178" rx="14" ry="10" fill="#1c0a00"/>
+          <ellipse cx="196" cy="175" rx="4" ry="3" fill="#3d1a00" opacity="0.5"/>
+          <path d="M186 191 Q200 203 214 191" stroke="#1c0a00" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <ellipse cx="200" cy="196" rx="10" ry="6" fill="#dc2626" opacity="0.7"/>
+          <rect x="163" y="144" width="30" height="20" rx="8" fill="none" stroke="#22c55e" stroke-width="2.5" opacity="0.9"/>
+          <rect x="207" y="144" width="30" height="20" rx="8" fill="none" stroke="#22c55e" stroke-width="2.5" opacity="0.9"/>
+          <line x1="193" y1="154" x2="207" y2="154" stroke="#22c55e" stroke-width="2" opacity="0.9"/>
+          <rect x="163" y="144" width="30" height="20" rx="8" fill="#22c55e" opacity="0.08"/>
+          <rect x="207" y="144" width="30" height="20" rx="8" fill="#22c55e" opacity="0.08"/>
+          <path d="M148 250 Q160 225 200 220 Q240 225 252 250 L252 320 L148 320 Z" fill="#0f172a"/>
+          <path d="M175 220 L165 320" stroke="#22c55e" stroke-width="3" opacity="0.7"/>
+          <path d="M200 220 L200 320" stroke="#22c55e" stroke-width="3" opacity="0.7"/>
+          <path d="M225 220 L235 320" stroke="#22c55e" stroke-width="3" opacity="0.7"/>
+          <text x="200" y="290" text-anchor="middle" font-family="Arial Black,sans-serif" font-size="28" font-weight="900" fill="#22c55e">10</text>
+          <ellipse cx="155" cy="320" rx="22" ry="14" fill="#92400e" transform="rotate(-20 155 320)"/>
+          <ellipse cx="245" cy="320" rx="22" ry="14" fill="#92400e" transform="rotate(20 245 320)"/>
+          <circle cx="200" cy="355" r="28" fill="#fff" stroke="#1e293b" stroke-width="1.5"/>
+          <polygon points="200,330 210,337 207,348 193,348 190,337" fill="#1e293b"/>
+          <polygon points="172,343 181,337 190,337 193,348 183,355" fill="#1e293b"/>
+          <polygon points="228,343 219,337 210,337 207,348 217,355" fill="#1e293b"/>
+          <circle cx="190" cy="338" r="6" fill="#fff" opacity="0.4"/>
+          <rect x="185" y="252" width="30" height="14" rx="4" fill="#22c55e"/>
+          <text x="200" y="262" text-anchor="middle" font-family="Arial,sans-serif" font-size="7" font-weight="bold" fill="#0f172a">ProGol CR</text>
+        </svg>
+      </div>
+      <div class="mascot-info">
+        <div class="mascot-name">Gol</div>
+        <div class="mascot-title">Perro analista · Jersey #10 · Lentes verdes</div>
+        <p>Gol es el analista jefe de ProGol CR. Un perro café, inteligente, con lentes de análisis verdes y camiseta negra del equipo. Representa la combinación perfecta de pasión futbolera y rigor matemático.</p>
+        <div class="trait-list">
+          <div class="trait">
+            <div class="trait-icon">🧠</div>
+            <div class="trait-text">
+              <strong>Inteligente pero accesible</strong>
+              <span>Habla de matemática sin hacerse el difícil</span>
+            </div>
+          </div>
+          <div class="trait">
+            <div class="trait-icon">⚽</div>
+            <div class="trait-text">
+              <strong>Fan de verdad</strong>
+              <span>Vive el fútbol, no solo lo analiza</span>
+            </div>
+          </div>
+          <div class="trait">
+            <div class="trait-icon">🇨🇷</div>
+            <div class="trait-text">
+              <strong>100% Tico</strong>
+              <span>Habla como CR, entiende la cultura local</span>
+            </div>
+          </div>
+          <div class="trait">
+            <div class="trait-icon">📊</div>
+            <div class="trait-text">
+              <strong>Transparente</strong>
+              <span>Muestra los números, no solo el resultado</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- COLORES -->
+  <div class="section">
+    <div class="label">Identidad Visual</div>
+    <h2>Paleta de Colores</h2>
+    <div class="color-grid">
+      <div class="color-card">
+        <div class="color-swatch" style="background:#22c55e;"></div>
+        <div class="color-info">
+          <div class="color-name">Verde ProGol</div>
+          <div class="color-hex">#22c55e</div>
+          <div class="color-use">Primario · CTAs · Logos · Acento</div>
+        </div>
+      </div>
+      <div class="color-card">
+        <div class="color-swatch" style="background:#0f172a;"></div>
+        <div class="color-info">
+          <div class="color-name">Azul Noche</div>
+          <div class="color-hex">#0f172a</div>
+          <div class="color-use">Fondo principal · Dark mode base</div>
+        </div>
+      </div>
+      <div class="color-card">
+        <div class="color-swatch" style="background:#1e293b;"></div>
+        <div class="color-info">
+          <div class="color-name">Pizarra</div>
+          <div class="color-hex">#1e293b</div>
+          <div class="color-use">Cards · Paneles · Superficies</div>
+        </div>
+      </div>
+      <div class="color-card">
+        <div class="color-swatch" style="background:#f1f5f9;"></div>
+        <div class="color-info">
+          <div class="color-name">Blanco Neblina</div>
+          <div class="color-hex">#f1f5f9</div>
+          <div class="color-use">Texto primario · Títulos</div>
+        </div>
+      </div>
+      <div class="color-card">
+        <div class="color-swatch" style="background:#f59e0b;"></div>
+        <div class="color-info">
+          <div class="color-name">Oro Gurú</div>
+          <div class="color-hex">#f59e0b</div>
+          <div class="color-use">Plan Élite · Alertas · Premium</div>
+        </div>
+      </div>
+      <div class="color-card">
+        <div class="color-swatch" style="background:#60a5fa;"></div>
+        <div class="color-info">
+          <div class="color-name">Azul Scout</div>
+          <div class="color-hex">#60a5fa</div>
+          <div class="color-use">Visitante · Links · Info secundaria</div>
+        </div>
+      </div>
+      <div class="color-card">
+        <div class="color-swatch" style="background:#f43f5e;"></div>
+        <div class="color-info">
+          <div class="color-name">Rojo Alerta</div>
+          <div class="color-hex">#f43f5e</div>
+          <div class="color-use">Errores · Advertencias · Urgencia</div>
+        </div>
+      </div>
+      <div class="color-card">
+        <div class="color-swatch" style="background:#94a3b8;"></div>
+        <div class="color-info">
+          <div class="color-name">Gris Datos</div>
+          <div class="color-hex">#94a3b8</div>
+          <div class="color-use">Texto secundario · Metadata</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- MISIÓN / VISIÓN -->
+  <div class="section">
+    <div class="label">Fundamentos</div>
+    <h2>Misión y Visión</h2>
+    <div class="mv-grid">
+      <div class="mv-card">
+        <div class="mv-icon">🎯</div>
+        <div class="label">Misión</div>
+        <p>Democratizar la inteligencia deportiva en Costa Rica y Centroamérica. Darle a cualquier aficionado acceso a las mismas herramientas matemáticas que usan los analistas profesionales — sin necesidad de un doctorado en estadística.</p>
+      </div>
+      <div class="mv-card vision">
+        <div class="mv-icon">🔭</div>
+        <div class="label">Visión</div>
+        <p>Ser la plataforma #1 de análisis predictivo de fútbol en Centroamérica. Que cuando alguien en Costa Rica quiera apostar con criterio, la primera herramienta que abra sea ProGol CR.</p>
+      </div>
+    </div>
+
+    <div style="margin-top:24px; background:var(--card); border-radius:14px; padding:24px; border:1px solid var(--green); box-shadow:0 0 30px #22c55e18;">
+      <div class="label">Posicionamiento</div>
+      <h3 style="color:var(--green); font-size:22px; margin:8px 0;">La única plataforma en CR con matemática real detrás de cada pick.</h3>
+      <p style="margin-top:8px;">No somos tipsters. No somos opinión. Somos un modelo Dixon-Coles + Poisson corriendo sobre datos reales — el mismo tipo de modelo que usan las casas de apuestas europeas. Esa es nuestra ventaja competitiva y nuestra promesa.</p>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- VALORES -->
+  <div class="section">
+    <div class="label">Cultura</div>
+    <h2>Valores de Marca</h2>
+    <div class="values-grid">
+      <div class="value-card">
+        <div class="v-icon">🔬</div>
+        <h3>Matemática primero</h3>
+        <p>Cada pick viene de un modelo, no de una corazonada. Los números mandan siempre.</p>
+      </div>
+      <div class="value-card">
+        <div class="v-icon">🪟</div>
+        <h3>Transparencia total</h3>
+        <p>Mostramos las probabilidades exactas, el modelo detrás, los errores y los aciertos.</p>
+      </div>
+      <div class="value-card">
+        <div class="v-icon">🇨🇷</div>
+        <h3>Primero lo local</h3>
+        <p>Precios en colones, SINPE Móvil, lenguaje tico, horarios CR. Somos de acá.</p>
+      </div>
+      <div class="value-card">
+        <div class="v-icon">⚖️</div>
+        <h3>Juego responsable</h3>
+        <p>Nunca apostamos ni movemos dinero. Somos análisis. La decisión final siempre es del usuario.</p>
+      </div>
+      <div class="value-card">
+        <div class="v-icon">🚀</div>
+        <h3>Mejora continua</h3>
+        <p>El modelo aprende de cada partido. Cada resultado actualiza los Elo. Siempre mejorando.</p>
+      </div>
+      <div class="value-card">
+        <div class="v-icon">🤝</div>
+        <h3>Comunidad</h3>
+        <p>WhatsApp, picks gratis, transparencia. Queremos que todos ganen, no solo los que pagan.</p>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- PLANES -->
+  <div class="section">
+    <div class="label">Monetización</div>
+    <h2>Los 4 Planes — Qué Vende Cada Uno</h2>
+    <div class="plans-grid">
+
+      <!-- FANÁTICO -->
+      <div class="plan-card">
+        <div class="plan-name">FANÁTICO</div>
+        <div class="plan-price">₡0 <span>/ mes</span></div>
+        <div class="plan-tagline">El gancho. Gratis para siempre. Sin tarjeta.</div>
+        <hr class="plan-divider">
+        <ul class="feature-list">
+          <li class="on">Pick del Día (1 pick diario fijo)</li>
+          <li class="on">Canal WhatsApp con picks</li>
+          <li class="on">Marcador en vivo</li>
+          <li class="on">Acceso básico a la app</li>
+          <li class="off">Partidos del Mundial completos</li>
+          <li class="off">Top 10 picks / día</li>
+          <li class="off">Gurú de bankroll</li>
+        </ul>
+        <div class="plan-hook">
+          💡 <strong>Por qué funciona:</strong> El pick gratis convierte. El usuario ve el valor, quiere más. El WhatsApp lo mantiene enganchado todos los días.
+        </div>
+      </div>
+
+      <!-- SCOUT -->
+      <div class="plan-card featured">
+        <div class="plan-badge popular">MÁS POPULAR</div>
+        <div class="plan-name">SCOUT</div>
+        <div class="plan-price">₡2,500 <span>/ mes</span></div>
+        <div class="plan-tagline">Para el que ya sabe apostar y quiere ventaja matemática real.</div>
+        <hr class="plan-divider">
+        <ul class="feature-list">
+          <li class="on">Top 10 picks del día (todos los partidos)</li>
+          <li class="on">Ligas internacionales completas</li>
+          <li class="on">Live stats — posesión, remates, ataques</li>
+          <li class="on">Email diario de picks</li>
+          <li class="on">Scout Report diario</li>
+          <li class="off">Partidos del Mundial completos</li>
+          <li class="off">Gurú de bankroll ilimitado</li>
+        </ul>
+        <div class="plan-hook">
+          💡 <strong>El argumento de venta:</strong> "₡2,500 es menos que una apuesta. Si el modelo te salva una mala apuesta al mes, ya pagó solo."
+        </div>
+      </div>
+
+      <!-- PRO -->
+      <div class="plan-card">
+        <div class="plan-name">PRO</div>
+        <div class="plan-price">₡6,000 <span>/ mes</span></div>
+        <div class="plan-tagline">Mundial completo + análisis profesional + Gurú.</div>
+        <hr class="plan-divider">
+        <ul class="feature-list">
+          <li class="on">Todo Scout +</li>
+          <li class="on">Todos los partidos del Mundial</li>
+          <li class="on">Gurú de bankroll ilimitado</li>
+          <li class="on">Quiniela con predicciones IA</li>
+          <li class="on">Análisis táctico por partido</li>
+          <li class="on">Historial de rendimiento del modelo</li>
+        </ul>
+        <div class="plan-hook">
+          💡 <strong>El argumento de venta:</strong> "El Gurú te dice exactamente cuánto apostar en cada partido según tu bankroll. Una sola apuesta bien calibrada cubre el mes."
+        </div>
+      </div>
+
+      <!-- ÉLITE -->
+      <div class="plan-card gold">
+        <div class="plan-badge elite">ÉLITE</div>
+        <div class="plan-name">ÉLITE</div>
+        <div class="plan-price">₡12,000 <span>/ mes</span></div>
+        <div class="plan-tagline">Live picks durante el partido + alertas en tiempo real.</div>
+        <hr class="plan-divider">
+        <ul class="feature-list">
+          <li class="on">Todo Pro +</li>
+          <li class="on">Live picks durante el partido</li>
+          <li class="on">Alertas de probabilidad (&gt;10% cambio)</li>
+          <li class="on">Soporte directo con el equipo</li>
+          <li class="on">Acceso anticipado a nuevas features</li>
+        </ul>
+        <div class="plan-hook" style="border-left-color:var(--gold);">
+          💡 <strong>El argumento de venta:</strong> "Las mejores cuotas en vivo aparecen en los primeros 20 minutos. Con las alertas automáticas, nunca las perdés."
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Upsell ladder -->
+    <div style="margin-top:32px; background:var(--card); border-radius:14px; padding:24px; border:1px solid var(--line);">
+      <div class="label">Estrategia de Conversión</div>
+      <h3 style="margin-bottom:16px;">La Escalera de Valor</h3>
+      <div style="display:flex; align-items:center; gap:0; flex-wrap:wrap;">
+        <div style="text-align:center; flex:1; padding:12px; min-width:120px;">
+          <div style="font-size:24px;">🆓</div>
+          <div style="font-size:13px; font-weight:700; margin:6px 0;">Fanático</div>
+          <div style="font-size:11px; color:var(--muted);">Enganchar</div>
+        </div>
+        <div style="color:var(--green); font-size:20px; padding:0 4px;">→</div>
+        <div style="text-align:center; flex:1; padding:12px; min-width:120px;">
+          <div style="font-size:24px;">🔬</div>
+          <div style="font-size:13px; font-weight:700; color:var(--green); margin:6px 0;">Scout</div>
+          <div style="font-size:11px; color:var(--muted);">Primer pago</div>
+        </div>
+        <div style="color:var(--green); font-size:20px; padding:0 4px;">→</div>
+        <div style="text-align:center; flex:1; padding:12px; min-width:120px;">
+          <div style="font-size:24px;">⚡</div>
+          <div style="font-size:13px; font-weight:700; margin:6px 0;">Pro</div>
+          <div style="font-size:11px; color:var(--muted);">Cliente comprometido</div>
+        </div>
+        <div style="color:var(--gold); font-size:20px; padding:0 4px;">→</div>
+        <div style="text-align:center; flex:1; padding:12px; min-width:120px;">
+          <div style="font-size:24px;">👑</div>
+          <div style="font-size:13px; font-weight:700; color:var(--gold); margin:6px 0;">Élite</div>
+          <div style="font-size:11px; color:var(--muted);">VIP recurrente</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- SCRIPTS DE VENTA -->
+  <div class="section">
+    <div class="label">Ventas</div>
+    <h2>Scripts de WhatsApp</h2>
+
+    <div class="script-card">
+      <div class="channel">PRIMER MENSAJE — Para alguien nuevo en el grupo</div>
+      <pre class="msg">🧿 ¡Bienvenido a ProGol CR!
+
+Somos la única plataforma en Costa Rica que usa matemática real (modelo Dixon-Coles + Poisson) para generar picks.
+
+📌 Lo que recibís GRATIS:
+✓ Pick del Día todos los días
+✓ Probabilidades exactas del modelo
+✓ Acceso a la app en tiempo real
+
+¿Querés más? El plan Scout (₡2,500/mes) te da los 10 mejores picks del día + live stats.
+
+Sin tarjeta. SINPE Móvil cuando estés listo. 🇨🇷</pre>
+    </div>
+
+    <div class="script-card">
+      <div class="channel">UPSELL — De Fanático a Scout</div>
+      <pre class="msg">Hola! Vi que seguís el pick del día 👀
+
+Una consulta — ¿sabías que el modelo genera 10 picks por día, no solo uno?
+
+El pick que mandamos al grupo es el más seguro. Pero hay 9 más con buenas probabilidades que solo ven los miembros Scout.
+
+₡2,500/mes. Menos que una apuesta. Si el modelo te salva una mala jugada al mes, ya pagó solo.
+
+¿Te cuento más?</pre>
+    </div>
+
+    <div class="script-card">
+      <div class="channel">UPSELL — De Scout a Pro (durante el Mundial)</div>
+      <pre class="msg">⚽ Con el Mundial en marcha...
+
+El plan Pro incluye análisis completo de TODOS los partidos del Mundial — probabilidades, marcador más probable, quién anota primero.
+
+Y el Gurú de bankroll ilimitado: le decís cuánto dinero tenés y él te arma el plan exacto de apuestas para el día.
+
+Pro = ₡6,000/mes. ¿Lo probamos?</pre>
+    </div>
+
+    <div class="script-card">
+      <div class="channel">UPSELL — De Pro a Élite</div>
+      <pre class="msg">🔴 Para los que apuestan en vivo:
+
+Con el plan Élite, el modelo te avisa automáticamente cuando las probabilidades de un partido cambian más del 10% durante el juego.
+
+Por ejemplo: si empieza 0-0 y a los 30 min ya hay dominio claro de uno, la cuota en vivo sube — vos ya lo sabés antes de que Doradobet lo ajuste del todo.
+
+Élite = ₡12,000/mes. ¿Te interesa?</pre>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- OBJECIONES -->
+  <div class="section">
+    <div class="label">Ventas</div>
+    <h2>Objeciones Comunes y Respuestas</h2>
+
+    <div class="obj-card">
+      <div class="obj-q">❓ "Esto es como cualquier tipster"</div>
+      <div class="obj-a"><strong>Los tipsters dan opinión. Nosotros damos matemática.</strong> El modelo Dixon-Coles calcula las probabilidades exactas desde datos reales de Elo, forma reciente y goles esperados. Podés ver los números, no solo el resultado final.</div>
+    </div>
+    <div class="obj-card">
+      <div class="obj-q">❓ "Y si el pick falla?"</div>
+      <div class="obj-a"><strong>El modelo no garantiza aciertos — la probabilidad sí.</strong> Un pick al 70% falla 3 de cada 10 veces. Lo que garantizamos es que a largo plazo, apostar con probabilidades a favor gana dinero.</div>
+    </div>
+    <div class="obj-card">
+      <div class="obj-q">❓ "₡2,500 está caro para una app"</div>
+      <div class="obj-a"><strong>¿Cuánto perdiste la última vez que apostaste por intuición?</strong> Si el modelo te evita una mala apuesta al mes, ya pagó solo. Y si te da una buena, ganaste de sobra.</div>
+    </div>
+    <div class="obj-card">
+      <div class="obj-q">❓ "No sé si es seguro pagar"</div>
+      <div class="obj-a"><strong>SINPE Móvil al 8561-0677 (Esteban V.).</strong> Sin contratos, sin tarjeta. Pagás un mes, si no te gusta no pagás el siguiente. Nada que perder.</div>
+    </div>
+    <div class="obj-card">
+      <div class="obj-q">❓ "Puedo encontrar picks gratis en internet"</div>
+      <div class="obj-a"><strong>Picks gratis hay miles. Matemática detrás, muy pocos.</strong> Los picks de internet son opinión de tipsters con incentivos para que aposten. El nuestro es un modelo que muestra su propio historial de aciertos.</div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- VOZ Y TONO -->
+  <div class="section">
+    <div class="label">Comunicación</div>
+    <h2>Voz y Tono de Marca</h2>
+    <div class="voice-grid">
+      <div class="voice-col">
+        <h3 style="color:var(--green);">✓ Sí decimos</h3>
+        <div class="voice-item yes">Confiado pero honesto sobre la incertidumbre</div>
+        <div class="voice-item yes">Lenguaje tico natural ("¿querés más?", "dale")</div>
+        <div class="voice-item yes">Datos primero, opinión después</div>
+        <div class="voice-item yes">Precios en colones siempre</div>
+        <div class="voice-item yes">Admitimos cuando el modelo falla</div>
+        <div class="voice-item yes">Humor leve, nunca arrogancia</div>
+        <div class="voice-item yes">Claridad: "probabilidad 68%" no "pick seguro"</div>
+      </div>
+      <div class="voice-col">
+        <h3 style="color:var(--red);">✗ No decimos</h3>
+        <div class="voice-item no">"Pick garantizado" o "100% seguro"</div>
+        <div class="voice-item no">"Hacete rico apostando"</div>
+        <div class="voice-item no">Anglicismos innecesarios</div>
+        <div class="voice-item no">Exageración o hype vacío</div>
+        <div class="voice-item no">"Confía en mí" sin datos</div>
+        <div class="voice-item no">Presión agresiva para comprar</div>
+        <div class="voice-item no">Ocultar los fallos del modelo</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- CANALES -->
+  <div class="section">
+    <div class="label">Distribución</div>
+    <h2>Canales de Venta y Distribución</h2>
+    <div class="channel-grid">
+      <div class="channel-card">
+        <div class="ch-icon">💬</div>
+        <h3>WhatsApp Grupo</h3>
+        <p>Canal principal. Pick del día gratis todos los días. Upsell natural con el tiempo.</p>
+      </div>
+      <div class="channel-card">
+        <div class="ch-icon">🌐</div>
+        <h3>App Web (127.0.0.1)</h3>
+        <p>Dashboard completo. Login por plan. Estadísticas, Gurú, Scout en tiempo real.</p>
+      </div>
+      <div class="channel-card">
+        <div class="ch-icon">📧</div>
+        <h3>Email Diario</h3>
+        <p>Resumen de picks del día para suscriptores Scout+. Recurrencia y retención.</p>
+      </div>
+      <div class="channel-card">
+        <div class="ch-icon">📱</div>
+        <h3>Instagram</h3>
+        <p>Infografías de picks, resultados del modelo. Funnel de entrada gratis.</p>
+      </div>
+      <div class="channel-card">
+        <div class="ch-icon">🤖</div>
+        <h3>Bot WhatsApp</h3>
+        <p>Envío automático de picks, imágenes de análisis y alertas al grupo.</p>
+      </div>
+      <div class="channel-card">
+        <div class="ch-icon">💰</div>
+        <h3>SINPE Móvil</h3>
+        <p>8561-0677 · Sin fricción · Sin tarjeta · Acceso en minutos tras el pago.</p>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- KPIs -->
+  <div class="section">
+    <div class="label">Métricas Clave</div>
+    <h2>KPIs que Importan</h2>
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-num">60%+</div>
+        <div class="kpi-label">Acertividad del modelo (meta)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-num">₡2,500</div>
+        <div class="kpi-label">Primer umbral de pago (Scout)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-num">10</div>
+        <div class="kpi-label">Suscriptores Pro = ₡60,000/mes</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-num">30%</div>
+        <div class="kpi-label">Meta de conversión Fanático→Scout</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-num">5</div>
+        <div class="kpi-label">Días para recuperar costo de Scout</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-num">NPS</div>
+        <div class="kpi-label">"¿Recomendarías ProGol CR?" — meta 8+/10</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- TIPOGRAFÍA -->
+  <div class="section">
+    <div class="label">Identidad Visual</div>
+    <h2>Tipografía</h2>
+    <div class="type-sample">
+      <div class="type-row">
+        <div class="type-spec">Inter Black 900 · 48px</div>
+        <div style="font-size:48px; font-weight:900; letter-spacing:-2px;">ProGol CR</div>
+      </div>
+      <div class="type-row">
+        <div class="type-spec">Inter Bold 700 · 28px</div>
+        <div style="font-size:28px; font-weight:700;">Análisis del Mundial</div>
+      </div>
+      <div class="type-row">
+        <div class="type-spec">Inter SemiBold 600 · 16px</div>
+        <div style="font-size:16px; font-weight:600;">Pick del Día — Germany gana o empata</div>
+      </div>
+      <div class="type-row">
+        <div class="type-spec">Inter Regular 400 · 14px</div>
+        <div style="font-size:14px; color:var(--muted);">Probabilidad modelo: 82.4% · Cuota justa: 1.21 · EV +3.2%</div>
+      </div>
+      <div class="type-row">
+        <div class="type-spec">Monospace · 13px · datos</div>
+        <div style="font-size:13px; font-family:monospace; color:var(--green);">λ=1.82/0.94 · ρ=-0.13 · Elo 1985 vs 1600</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="f-logo">Pro<span>Gol</span> CR</div>
+    <p>Propiedad de Esteban Venegas · Documento confidencial · 2026</p>
+    <p style="margin-top:6px;">SINPE Móvil: 8561-0677 · La decisión final siempre es tuya.</p>
+  </div>
+
+</div>
+</body>
+</html>

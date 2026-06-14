@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ProGol CR — Guía Completa de la App</title>
+<style>
+  :root {
+    --green: #22c55e;
+    --green-dark: #16a34a;
+    --green-dim: #166534;
+    --bg: #0f172a;
+    --bg2: #1e293b;
+    --bg3: #334155;
+    --text: #f8fafc;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --border: #334155;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --purple: #a855f7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 15px; line-height: 1.6; }
+
+  /* HEADER */
+  .header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 24px 32px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 3px solid var(--green); }
+  .header-text h1 { font-size: 22px; font-weight: 700; color: var(--green); }
+  .header-text p { color: var(--text2); font-size: 13px; }
+  .badge { background: var(--green-dim); color: var(--green); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--green-dark); display: inline-block; margin-top: 4px; }
+
+  /* LAYOUT */
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar {
+    width: 260px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    position: sticky;
+    top: 89px;
+    height: calc(100vh - 89px);
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  .sidebar-section { padding: 8px 20px 4px; font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-top: 12px; }
+  .sidebar a {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 20px; color: var(--text2); text-decoration: none;
+    font-size: 13px; border-left: 3px solid transparent;
+    transition: all 0.15s;
+  }
+  .sidebar a:hover, .sidebar a.active { color: var(--green); border-left-color: var(--green); background: #0f172a44; }
+  .sidebar a .icon { font-size: 16px; width: 20px; text-align: center; }
+
+  /* CONTENT */
+  .content { flex: 1; padding: 40px 48px; max-width: 860px; }
+
+  /* SECTIONS */
+  .section { margin-bottom: 64px; scroll-margin-top: 110px; }
+  .section-title {
+    font-size: 24px; font-weight: 700; color: var(--text);
+    border-bottom: 2px solid var(--green); padding-bottom: 12px; margin-bottom: 28px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .section-title .tab-icon { font-size: 22px; }
+  h3 { font-size: 16px; font-weight: 700; color: var(--green); margin: 28px 0 10px; }
+  h4 { font-size: 14px; font-weight: 700; color: var(--text); margin: 20px 0 8px; }
+  p { color: var(--text2); margin-bottom: 12px; }
+  strong { color: var(--text); }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  .card-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .card p { margin: 0; font-size: 13px; }
+
+  /* GRID */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+
+  /* STAT BOXES */
+  .stat-box {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px;
+    text-align: center;
+  }
+  .stat-box .num { font-size: 28px; font-weight: 800; color: var(--green); }
+  .stat-box .lbl { font-size: 11px; color: var(--text2); margin-top: 4px; }
+
+  /* HIGHLIGHTS */
+  .tip {
+    background: #0f2d1a; border: 1px solid var(--green-dim); border-radius: 10px;
+    padding: 14px 18px; margin: 16px 0; font-size: 13px; color: #86efac;
+    display: flex; gap: 10px;
+  }
+  .tip .tip-icon { font-size: 18px; flex-shrink: 0; }
+  .warn {
+    background: #292500; border: 1px solid #a16207; border-radius: 10px;
+    padding: 14px 18px; margin: 16px 0; font-size: 13px; color: #fde047;
+    display: flex; gap: 10px;
+  }
+  .warn .tip-icon { font-size: 18px; flex-shrink: 0; }
+
+  /* INTERFACE MOCKUP */
+  .ui-mock {
+    background: #0f172a; border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px; margin: 20px 0; font-family: monospace; font-size: 12px; overflow-x: auto;
+  }
+  .ui-mock .row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .ui-mock .label { color: var(--text3); min-width: 120px; }
+  .ui-mock .value { color: var(--green); }
+  .ui-mock .sep { height: 1px; background: var(--border); margin: 12px 0; }
+
+  /* TABS PREVIEW */
+  .tabs-bar {
+    display: flex; gap: 0; background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden; margin: 20px 0;
+  }
+  .tab-btn {
+    flex: 1; padding: 12px 8px; text-align: center; font-size: 11px; font-weight: 600;
+    color: var(--text3); border-right: 1px solid var(--border); cursor: default;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .tab-btn:last-child { border-right: none; }
+  .tab-btn.active { color: var(--green); background: #0f2d1a; }
+  .tab-btn .t-icon { font-size: 18px; }
+
+  /* STEPS */
+  .steps { list-style: none; counter-reset: step; }
+  .steps li { counter-increment: step; padding: 12px 16px 12px 48px; position: relative; border-left: 2px solid var(--border); margin-left: 16px; margin-bottom: 4px; color: var(--text2); font-size: 13px; }
+  .steps li:last-child { border-left-color: transparent; }
+  .steps li::before {
+    content: counter(step);
+    position: absolute; left: -16px; top: 10px;
+    width: 28px; height: 28px; background: var(--green-dim); border-radius: 50%;
+    color: var(--green); font-weight: 700; font-size: 12px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+  th { background: var(--bg3); color: var(--text); padding: 10px 14px; text-align: left; font-weight: 600; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text2); }
+  tr:hover td { background: #1e293b55; }
+
+  /* PILL */
+  .pill {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; margin: 2px;
+  }
+  .pill-green { background: #0f2d1a; color: var(--green); border: 1px solid var(--green-dark); }
+  .pill-yellow { background: #292500; color: var(--yellow); border: 1px solid #a16207; }
+  .pill-red { background: #2d0000; color: var(--red); border: 1px solid #7f1d1d; }
+  .pill-blue { background: #0c1a3d; color: var(--blue); border: 1px solid #1e40af; }
+  .pill-purple { background: #2d0d4a; color: var(--purple); border: 1px solid #7e22ce; }
+
+  /* DIVIDER */
+  hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .content { padding: 20px 16px; }
+    .grid2, .grid3 { grid-template-columns: 1fr; }
+    .tabs-bar { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <img src="/brand/mascota.jpg" alt="Gol"/>
+  <div class="header-text">
+    <h1>ProGol CR — Guía Completa</h1>
+    <p>Manual maestro de la plataforma · Todo lo que necesitás saber</p>
+    <span class="badge">🔒 Uso interno — Esteban Venegas</span>
+  </div>
+</div>
+
+<div class="layout">
+  <nav class="sidebar">
+    <div class="sidebar-section">Visión General</div>
+    <a href="#overview" class="active"><span class="icon">🏠</span> Qué es ProGol CR</a>
+    <a href="#modelo"><span class="icon">🧠</span> El Modelo IA</a>
+    <a href="#header-ui"><span class="icon">🎛️</span> Barra Superior</a>
+
+    <div class="sidebar-section">Las Pestañas</div>
+    <a href="#quiniela"><span class="icon">🏆</span> QUINIELA</a>
+    <a href="#picks"><span class="icon">🎯</span> PICKS</a>
+    <a href="#guru"><span class="icon">💬</span> GURÚ</a>
+    <a href="#scout"><span class="icon">🔍</span> SCOUT</a>
+    <a href="#notas"><span class="icon">📋</span> NOTAS</a>
+    <a href="#live"><span class="icon">🔴</span> LIVE</a>
+    <a href="#apoya"><span class="icon">❤️</span> APOYA</a>
+
+    <div class="sidebar-section">Funciones</div>
+    <a href="#match-card"><span class="icon">📊</span> Tarjeta de Partido</a>
+    <a href="#modal"><span class="icon">🔎</span> Modal de Análisis</a>
+    <a href="#live-widget"><span class="icon">📡</span> Widget En Vivo</a>
+    <a href="#elo"><span class="icon">⚡</span> Sistema Elo</a>
+
+    <div class="sidebar-section">Planes</div>
+    <a href="#planes"><span class="icon">💎</span> Diferencias de Planes</a>
+    <a href="#venta"><span class="icon">📱</span> Kit de Venta</a>
+
+    <div class="sidebar-section">Actualizaciones</div>
+    <a href="#changelog"><span class="icon">📝</span> Changelog v1.x</a>
+  </nav>
+
+  <main class="content">
+
+    <!-- OVERVIEW -->
+    <section class="section" id="overview">
+      <div class="section-title"><span class="tab-icon">🏠</span> ¿Qué es ProGol CR?</div>
+
+      <p>ProGol CR es una <strong>plataforma de inteligencia deportiva</strong> diseñada para el aficionado costarricense que apuesta en la casa de apuestas. No es un tipster, no es un grupo de WhatsApp con "seguro del día". Es un <strong>sistema analítico real</strong> con modelo matemático propio.</p>
+
+      <div class="grid3">
+        <div class="stat-box"><div class="num">Dixon-Coles</div><div class="lbl">Modelo estadístico base</div></div>
+        <div class="stat-box"><div class="num">Poisson</div><div class="lbl">Distribución de goles</div></div>
+        <div class="stat-box"><div class="num">Elo</div><div class="lbl">Rating de fuerza de equipos</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🎯 ¿Para qué sirve exactamente?</div>
+        <p>Te dice cuánto <strong>valen realmente</strong> las cuotas de la casa de apuestas comparado con lo que el modelo calcula. Si el modelo dice que Brasil gana con 65% de probabilidad y la casa de apuestas paga 2.10 (implica 47%), ahí hay <strong>valor real para apostar</strong>. Si la cuota solo paga 1.55 (implica 64%), no hay ventaja matemática — el modelo te lo muestra sin adornos.</p>
+      </div>
+
+      <div class="tip">
+        <span class="tip-icon">✅</span>
+        <span>ProGol CR es una herramienta de <strong>análisis e inteligencia</strong>. NUNCA realiza apuestas, nunca mueve dinero, nunca accede a tu cuenta de la casa de apuestas. Vos siempre decidís y ejecutás.</span>
+      </div>
+
+      <h3>La Pantalla Principal</h3>
+      <div class="tabs-bar">
+        <div class="tab-btn"><span class="t-icon">🏆</span>QUINIELA</div>
+        <div class="tab-btn active"><span class="t-icon">🎯</span>PICKS</div>
+        <div class="tab-btn"><span class="t-icon">💬</span>GURÚ</div>
+        <div class="tab-btn"><span class="t-icon">🔍</span>SCOUT</div>
+        <div class="tab-btn"><span class="t-icon">📋</span>NOTAS</div>
+        <div class="tab-btn"><span class="t-icon">🔴</span>LIVE</div>
+        <div class="tab-btn"><span class="t-icon">❤️</span>APOYA</div>
+      </div>
+      <p>Cada pestaña tiene un propósito específico. No son redundantes — cada una ataca un ángulo distinto del mismo objetivo: <strong>encontrar valor antes de apostar</strong>.</p>
+    </section>
+
+    <!-- MODELO -->
+    <section class="section" id="modelo">
+      <div class="section-title"><span class="tab-icon">🧠</span> El Modelo IA — Cómo Piensa</div>
+
+      <p>El cerebro de ProGol CR. Todo lo que ves en la app — probabilidades, picks, consejos del Gurú — sale de este modelo.</p>
+
+      <h3>Dixon-Coles + Poisson</h3>
+      <p>El modelo base es <strong>Dixon-Coles</strong>, una extensión del modelo de Poisson bivariado publicado en 1997. Predice goles de cada equipo de forma independiente pero corrigiendo la correlación en resultados muy bajos (0-0, 1-0, 0-1, 1-1).</p>
+
+      <div class="card">
+        <div class="card-title">📐 ¿Qué es el rating Elo?</div>
+        <p>Cada equipo tiene un número Elo (similar al ajedrez). Brasil ~1950, Costa Rica ~1580, un equipo promedio ~1700. La diferencia Elo entre equipos determina cuántos goles espera marcar cada uno. Un equipo con Elo 200 puntos superior marca ~0.4 goles más por partido en promedio.</p>
+      </div>
+
+      <h3>Parámetros Especiales — Mundial 2026</h3>
+      <table>
+        <tr><th>Parámetro</th><th>Valor</th><th>Por qué</th></tr>
+        <tr><td>Goles base esperados</td><td>2.30 por partido</td><td>Mundiales son más cautelosos que ligas locales (2.50 normal)</td></tr>
+        <tr><td>Ventaja local anfitrión</td><td>+15 Elo (USA/CAN/MEX)</td><td>Solo los países sede tienen ventaja real</td></tr>
+        <tr><td>Otros partidos WC</td><td>0 ventaja de local</td><td>Estadios neutros en USA/Canadá/México</td></tr>
+        <tr><td>Parámetro Dixon-Coles ρ</td><td>-0.13</td><td>Corrección resultados bajos calibrada en WC históricos</td></tr>
+      </table>
+
+      <h3>Lo que calcula por cada partido</h3>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">📊 Probabilidades de resultado</div>
+          <p>% de que gane local, empate o gane visitante. Comparado con las cuotas implícitas de la casa de apuestas para encontrar valor.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">⚽ Mercados de goles</div>
+          <p>+2.5, -2.5, +1.5, ambos marcan / no marcan. El modelo calcula probabilidades exactas para cada mercado.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">📋 Marcadores exactos</div>
+          <p>Top 5 marcadores más probables con su porcentaje. Útil para apuestas exactas o quinielas.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">🔢 Córneres esperados</div>
+          <p>Calculados dinámicamente: base 8.2 + ajuste según intensidad del partido proyectada.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- HEADER UI -->
+    <section class="section" id="header-ui">
+      <div class="section-title"><span class="tab-icon">🎛️</span> Barra Superior — Cada Elemento</div>
+
+      <table>
+        <tr><th>Elemento</th><th>Qué hace</th></tr>
+        <tr>
+          <td><strong>Logo ProGol CR</strong> (esquina izq.)</td>
+          <td>Identidad de la plataforma. Click vuelve a la vista principal.</td>
+        </tr>
+        <tr>
+          <td><strong>Botón DB</strong> 🟢</td>
+          <td><strong>Conectar con la casa de apuestas.</strong> Cuando está verde y dice "DB", la app está obteniendo cuotas en tiempo real desde la casa de apuestas. Si está gris/apagado, las cuotas no están disponibles y el modelo trabaja solo con probabilidades propias.</td>
+        </tr>
+        <tr>
+          <td><strong>ES / EN</strong></td>
+          <td>Cambio de idioma. Cambia toda la interfaz entre español e inglés. Los nombres de equipos también se normalizan (Alemania ↔ Germany, etc.).</td>
+        </tr>
+        <tr>
+          <td><strong>Icono Usuario</strong> 👤</td>
+          <td>Perfil, sesión, plan activo del usuario.</td>
+        </tr>
+        <tr>
+          <td><strong>Ícono Configuración</strong> ⚙️</td>
+          <td>Ajustes de la plataforma.</td>
+        </tr>
+      </table>
+
+      <h3>Barra de Filtros (debajo de las tabs)</h3>
+      <table>
+        <tr><th>Filtro</th><th>Función</th></tr>
+        <tr><td><strong>← → Fecha</strong></td><td>Navegar día a día. Ver partidos de ayer, hoy, mañana.</td></tr>
+        <tr><td><strong>📅 Ícono calendario</strong></td><td>Saltar a fecha específica.</td></tr>
+        <tr><td><strong>Hoy</strong></td><td>Regresar a la fecha actual con un click.</td></tr>
+        <tr><td><strong>Mundial</strong> (pill amarillo)</td><td>Filtrar solo partidos FIFA World Cup 2026.</td></tr>
+        <tr><td><strong>Internacional</strong></td><td>Partidos internacionales de selecciones (amistosos, CONCACAF, etc.).</td></tr>
+        <tr><td><strong>Ligas Top</strong></td><td>Las principales ligas de clubes europeas y americanas.</td></tr>
+        <tr><td><strong>Todos</strong></td><td>Todos los partidos disponibles sin filtro.</td></tr>
+        <tr><td><strong>Picks</strong> (derecha)</td><td>Mostrar/ocultar el banner de picks del día encima de la lista.</td></tr>
+        <tr><td><strong>Actualizar</strong></td><td>Refrescar datos manualmente.</td></tr>
+        <tr><td><strong>Auto</strong></td><td>Auto-refresh activado — la app se actualiza sola cada X minutos.</td></tr>
+      </table>
+    </section>
+
+    <hr/>
+
+    <!-- QUINIELA -->
+    <section class="section" id="quiniela">
+      <div class="section-title"><span class="tab-icon">🏆</span> Pestaña QUINIELA</div>
+
+      <p>La función más <strong>diferenciadora</strong> de ProGol CR. Permite armar quinielas de 9 partidos con análisis completo de cada partido.</p>
+
+      <h3>¿Qué es una quiniela en este contexto?</h3>
+      <p>Una selección de 9 partidos donde predecís el resultado (1 = local gana, X = empate, 2 = visitante gana). El modelo te ayuda a elegir las opciones con mayor valor esperado.</p>
+
+      <div class="card">
+        <div class="card-title">🔢 Cómo funciona paso a paso</div>
+        <ol class="steps" style="margin-top: 12px;">
+          <li>Seleccionás hasta 9 partidos del día de la lista principal</li>
+          <li>Para cada partido, el modelo muestra las probabilidades (ej: 58% / 22% / 20%)</li>
+          <li>Podés elegir 1, X o 2 para cada partido</li>
+          <li>El sistema calcula la probabilidad combinada de tu quiniela</li>
+          <li>Te muestra el valor esperado si la cuota de la casa de apuestas es favorable</li>
+        </ol>
+      </div>
+
+      <h3>Los indicadores de cada partido en la Quiniela</h3>
+      <table>
+        <tr><th>Indicador</th><th>Significado</th></tr>
+        <tr><td><span class="pill pill-green">1 — 58%</span></td><td>El modelo da 58% de probabilidad de que gane el local</td></tr>
+        <tr><td><span class="pill pill-yellow">X — 22%</span></td><td>22% de probabilidad de empate</td></tr>
+        <tr><td><span class="pill pill-red">2 — 20%</span></td><td>20% de probabilidad de que gane el visitante</td></tr>
+        <tr><td><span class="pill pill-blue">VALOR ✓</span></td><td>La cuota de la casa de apuestas paga más de lo que el modelo indica que debería</td></tr>
+      </table>
+
+      <div class="tip">
+        <span class="tip-icon">💡</span>
+        <span>En la Quiniela no apostás el dinero directamente — armás tu pronóstico y luego lo ejecutás vos mismo en la casa de apuestas. ProGol CR es la <strong>asesoría</strong>, vos sos el que decide.</span>
+      </div>
+    </section>
+
+    <!-- PICKS -->
+    <section class="section" id="picks">
+      <div class="section-title"><span class="tab-icon">🎯</span> Pestaña PICKS</div>
+
+      <p>El corazón diario de la plataforma. Los <strong>picks del día</strong> son las apuestas con mayor valor esperado según el modelo, considerando tanto la probabilidad calculada como las cuotas de la casa de apuestas.</p>
+
+      <h3>¿Qué es un Pick con Valor?</h3>
+      <div class="card">
+        <div class="card-title">📐 Fórmula de Valor Esperado</div>
+        <p><strong>Valor = (Probabilidad del modelo × Cuota la casa de apuestas) − 1</strong></p>
+        <p style="margin-top: 8px;">Ejemplo: modelo dice 60% de que Brasil gana → la casa de apuestas paga 2.00 (implica 50%)<br/>
+        Valor = (0.60 × 2.00) − 1 = <strong style="color: var(--green);">+0.20 (20% de ventaja)</strong> → PICK RECOMENDADO ✅</p>
+        <p style="margin-top: 8px;">Si la casa de apuestas paga 1.55 (implica 64%) → Valor = (0.60 × 1.55) − 1 = <strong style="color: var(--red);">−0.07 → NO TIENE VALOR ❌</strong></p>
+      </div>
+
+      <h3>Tipos de Picks que genera el sistema</h3>
+      <table>
+        <tr><th>Tipo</th><th>Qué es</th><th>Cuándo se da</th></tr>
+        <tr><td><span class="pill pill-green">1X2</span></td><td>Resultado final (gana local, empate, gana visitante)</td><td>Cuando la cuota paga más de lo que el modelo calcula</td></tr>
+        <tr><td><span class="pill pill-blue">+2.5</span></td><td>Más de 2.5 goles en el partido</td><td>Partidos de alto ritmo entre equipos ofensivos</td></tr>
+        <tr><td><span class="pill pill-blue">-2.5</span></td><td>Menos de 2.5 goles</td><td>Partidos defensivos o de baja calidad ofensiva</td></tr>
+        <tr><td><span class="pill pill-yellow">AMBOS MARCAN</span></td><td>Los dos equipos anotan al menos 1 gol</td><td>Cuando el modelo ve alta probabilidad en ambos ataques</td></tr>
+        <tr><td><span class="pill pill-purple">+1.5</span></td><td>Más de 1.5 goles (mínimo 2)</td><td>Apuesta más segura de goles</td></tr>
+      </table>
+
+      <h3>Cómo leer la tarjeta de un Pick</h3>
+      <div class="ui-mock">
+        <div class="row"><span class="label">Partido:</span><span class="value">Brazil vs Morocco</span></div>
+        <div class="row"><span class="label">Pick:</span><span class="value">Brazil gana (1)</span></div>
+        <div class="row"><span class="label">Prob. Modelo:</span><span class="value">67.4%</span></div>
+        <div class="row"><span class="label">Cuota la casa de apuestas:</span><span class="value">1.85</span></div>
+        <div class="row"><span class="label">Cuota Justa:</span><span class="value">1.48 (según modelo)</span></div>
+        <div class="row"><span class="label">Valor Esperado:</span><span class="value">+24.7% ✅</span></div>
+        <div class="row"><span class="label">Confianza:</span><span class="value">⭐⭐⭐⭐ ALTA</span></div>
+        <div class="sep"></div>
+        <div class="row"><span class="label">Nota:</span><span class="value">Ventaja Elo: +187 pts a favor de Brazil</span></div>
+      </div>
+
+      <div class="warn">
+        <span class="tip-icon">⚠️</span>
+        <span>Un pick con valor NO es una garantía de ganar. Es una <strong>ventaja matemática a largo plazo</strong>. En un partido individual cualquier cosa puede pasar. El valor se materializa a lo largo de decenas de apuestas.</span>
+      </div>
+
+      <h3>Pick del Día vs Top Picks</h3>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">⭐ Pick del Día</div>
+          <p>La apuesta con mayor valor esperado del día. El sistema selecciona automáticamente la que combina mayor probabilidad + mejor cuota relativa. Es el pick más recomendado.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">📋 Top Picks</div>
+          <p>Las 3-5 apuestas con más valor del día. No necesariamente todas del mismo partido. Ordenadas por valor esperado de mayor a menor.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- GURU -->
+    <section class="section" id="guru">
+      <div class="section-title"><span class="tab-icon">💬</span> Pestaña GURÚ</div>
+
+      <p>El asistente de IA conversacional de ProGol CR. Podés preguntarle en lenguaje natural y responde con análisis del modelo real, no opiniones genéricas.</p>
+
+      <h3>¿Cómo funciona el Gurú?</h3>
+      <p>El Gurú combina <strong>Claude (IA de Anthropic)</strong> + los datos del modelo ProGol CR. Cuando le preguntás algo, el sistema:</p>
+      <ol class="steps">
+        <li>Detecta si tu pregunta es sobre un partido específico (busca nombres de equipos en el mensaje)</li>
+        <li>Corre el modelo matemático en ese partido específico</li>
+        <li>Le pasa los resultados a Claude para que genere una respuesta en español, detallada y contextualizada</li>
+        <li>Incluye análisis Scout (contexto táctico, forma de los equipos) si hay datos disponibles</li>
+      </ol>
+
+      <h3>Qué podés preguntarle</h3>
+      <table>
+        <tr><th>Pregunta de ejemplo</th><th>Qué recibís</th></tr>
+        <tr><td>"tengo ₡7,000 para el partido de Haití"</td><td>Análisis completo solo del partido Haití vs X: probabilidades, pick recomendado, cuota objetivo, cómo distribuir el monto</td></tr>
+        <tr><td>"cuál es el mejor pick de hoy?"</td><td>Top picks del día con sus valores esperados, razonamiento del modelo</td></tr>
+        <tr><td>"Brazil vs Marruecos, quién gana?"</td><td>Análisis detallado de ese partido específico: Elo, goles esperados, marcadores más probables</td></tr>
+        <tr><td>"explícame por qué apostar +2.5 en ese partido"</td><td>Desglose matemático del mercado de goles, probabilidades, comparación con cuota</td></tr>
+        <tr><td>"dame picks para la quiniela de mañana"</td><td>Selección de 9 partidos con las mejores combinaciones</td></tr>
+      </table>
+
+      <div class="tip">
+        <span class="tip-icon">🎯</span>
+        <span>El Gurú detecta automáticamente el partido cuando mencionás el nombre de un equipo. No tenés que especificar "partido de..." — con decir "Haití", "Brazil", "Scotland" ya identifica de cuál partido hablás.</span>
+      </div>
+
+      <h3>Lo que incluye cada respuesta del Gurú</h3>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">📊 Análisis del Modelo</div>
+          <p>Probabilidades exactas 1X2, goles esperados, marcadores top, mercados específicos (2.5, BTTS, etc.)</p>
+        </div>
+        <div class="card">
+          <div class="card-title">🔬 Scout Táctico</div>
+          <p>Contexto de forma reciente, ventaja Elo, ajuste por sede/neutral, factores que podrían afectar el resultado</p>
+        </div>
+        <div class="card">
+          <div class="card-title">💰 Recomendación</div>
+          <p>Pick específico con valor, cuota objetivo en la casa de apuestas, nivel de confianza y distribución sugerida del monto</p>
+        </div>
+        <div class="card">
+          <div class="card-title">⚠️ Advertencias</div>
+          <p>Si no hay valor claro o el partido tiene mucha incertidumbre, el Gurú lo dice explícitamente en lugar de inventar un pick</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCOUT -->
+    <section class="section" id="scout">
+      <div class="section-title"><span class="tab-icon">🔍</span> Pestaña SCOUT</div>
+
+      <p>Análisis de scouting de un partido específico. Va más profundo que los picks — sirve para investigar un partido particular antes de apostar.</p>
+
+      <h3>Qué incluye el análisis Scout</h3>
+      <table>
+        <tr><th>Sección</th><th>Contenido</th></tr>
+        <tr><td>🏅 Ratings Elo</td><td>Elo actual de cada equipo, diferencia, lo que implica en términos de ventaja</td></tr>
+        <tr><td>⚽ Goles esperados (xG)</td><td>Cuántos goles espera marcar cada equipo según el modelo</td></tr>
+        <tr><td>📈 Forma reciente</td><td>Resultados de los últimos partidos (si están disponibles en los datos)</td></tr>
+        <tr><td>🗺️ Sede</td><td>Si es neutral, anfitrión, o con ventaja local real — y cómo afecta las probabilidades</td></tr>
+        <tr><td>🎲 Distribución de resultados</td><td>Tabla completa de probabilidades para cada marcador posible (0-0, 1-0, 1-1...)</td></tr>
+        <tr><td>💎 Picks con valor</td><td>Todos los mercados donde hay ventaja matemática contra las cuotas de la casa de apuestas</td></tr>
+      </table>
+
+      <h3>¿Cómo accedo al Scout?</h3>
+      <ol class="steps">
+        <li>Ir a la pestaña SCOUT en la barra superior</li>
+        <li>Escribir el nombre de los equipos (ej: "Brazil vs Morocco")</li>
+        <li>O hacer click en un partido de la lista y elegir "Scout" en el modal</li>
+        <li>El análisis se genera en segundos con todos los datos del modelo</li>
+      </ol>
+    </section>
+
+    <!-- NOTAS -->
+    <section class="section" id="notas">
+      <div class="section-title"><span class="tab-icon">📋</span> Pestaña NOTAS</div>
+
+      <p>Tu cuaderno personal de apuestas. Un espacio privado para registrar tus picks, llevar control de resultados, y anotar observaciones propias.</p>
+
+      <h3>Para qué usarlo</h3>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">📓 Registro de apuestas</div>
+          <p>Anotá cada apuesta que hacés: pick, monto, cuota, resultado. Con el tiempo podés analizar tu rendimiento real.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">🧠 Observaciones propias</div>
+          <p>Si sabés que un jugador clave está lesionado, o que un equipo acaba de cambiar técnico, anotalo acá para recordarlo al momento de decidir.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">📊 Seguimiento de ROI</div>
+          <p>Llevá el registro de cuánto invertiste vs cuánto ganaste para medir el impacto real de usar ProGol CR.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">📅 Agenda de partidos</div>
+          <p>Marcá partidos futuros que querés analizar o en los que ya tenés posición abierta.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- LIVE -->
+    <section class="section" id="live">
+      <div class="section-title"><span class="tab-icon">🔴</span> Pestaña LIVE</div>
+
+      <p>La función más avanzada de la plataforma. Permite actualizar el modelo matemático <strong>en tiempo real</strong> con datos del partido mientras se juega.</p>
+
+      <h3>¿Por qué importa el análisis en vivo?</h3>
+      <p>Las cuotas de la casa de apuestas cambian durante el partido, pero no siempre reflejan con precisión lo que está pasando en el campo. El modelo en vivo de ProGol CR toma los datos reales del partido y recalcula todo — a veces descubrís valor en el mercado "in-play" que no existía antes del partido.</p>
+
+      <h3>El Widget "Seguimiento EN VIVO" — Automático</h3>
+      <p>Dentro del modal de cualquier partido encontrás el panel <strong>"📡 Seguimiento EN VIVO"</strong>. <strong>No requiere entrada manual</strong> — la app obtiene el marcador directamente desde la API en tiempo real y recalcula el modelo automáticamente.</p>
+
+      <div class="tip">
+        <span class="tip-icon">🤖</span>
+        <span>El widget es <strong>100% automático</strong>. En cuanto abrís el modal de un partido que ya comenzó, el sistema detecta el marcador en vivo y recalcula las probabilidades sin que tengas que escribir nada. Se refresca solo cada 60 segundos.</span>
+      </div>
+
+      <h3>Qué muestra el widget cuando el partido está en curso</h3>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">📊 Nuevas probabilidades</div>
+          <p>Win% actualizado para cada equipo considerando el marcador, minuto y estadísticas actuales.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">⚽ Próximo gol</div>
+          <p>Probabilidad de que marque el local vs el visitante en los próximos minutos, basado en el ritmo de juego actual.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">📈 xG restante</div>
+          <p>Goles esperados que quedan por disputarse, ajustado al tiempo que falta.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">🎲 Top marcadores finales</div>
+          <p>Los 3 marcadores más probables para el resultado final del partido dado el estado actual.</p>
+        </div>
+      </div>
+
+      <div class="tip">
+        <span class="tip-icon">🔥</span>
+        <span>El análisis en vivo es especialmente útil cuando un equipo favorito va perdiendo pero domina el partido — el modelo puede identificar que el resultado actual no refleja la realidad del juego y que las cuotas de recuperación tienen valor.</span>
+      </div>
+    </section>
+
+    <!-- APOYA -->
+    <section class="section" id="apoya">
+      <div class="section-title"><span class="tab-icon">❤️</span> Pestaña APOYA</div>
+
+      <p>La sección de comunidad y soporte de ProGol CR. Permite a los usuarios contribuir al desarrollo de la plataforma y acceder a beneficios premium.</p>
+
+      <h3>Opciones disponibles</h3>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">☕ Apoyo puntual</div>
+          <p>Contribución única de cualquier monto. Para usuarios que quieren apoyar sin comprometerse con un plan mensual.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">💎 Upgrades de Plan</div>
+          <p>Acceso a funciones premium: más picks, análisis profundos, acceso anticipado a nuevas funciones.</p>
+        </div>
+      </div>
+    </section>
+
+    <hr/>
+
+    <!-- MATCH CARD -->
+    <section class="section" id="match-card">
+      <div class="section-title"><span class="tab-icon">📊</span> Tarjeta de Partido — Cada Elemento</div>
+
+      <p>Cada partido en la lista principal tiene una tarjeta con información densa. Acá desglosamos cada elemento:</p>
+
+      <div class="ui-mock">
+        <div style="color: var(--text3); font-size: 11px; margin-bottom: 8px;">EJEMPLO DE TARJETA</div>
+        <div class="row"><span class="label">Estado:</span><span class="value">PROGRAMADO / FINALIZADO / EN VIVO</span></div>
+        <div class="row"><span class="label">Liga:</span><span class="value">FIFA World Cup</span></div>
+        <div class="row"><span class="label">Equipos:</span><span class="value">🇧🇷 Brazil &nbsp;&nbsp;&nbsp; vs &nbsp;&nbsp;&nbsp; 🇲🇦 Morocco</span></div>
+        <div class="row"><span class="label">Hora/Marcador:</span><span class="value">04:00 p.m. / (cuando finaliza: 1 - 1)</span></div>
+        <div class="row"><span class="label">Estadio:</span><span class="value">📍 MetLife Stadium</span></div>
+        <div class="row"><span class="label">Botón:</span><span class="value">🟢 Apostar en la casa de apuestas ↗</span></div>
+      </div>
+
+      <table>
+        <tr><th>Elemento</th><th>Qué significa</th></tr>
+        <tr><td><span class="pill pill-blue">PROGRAMADO</span></td><td>Partido no iniciado. El modelo tiene predicciones pre-partido disponibles.</td></tr>
+        <tr><td><span class="pill pill-red">🔴 EN VIVO</span></td><td>Partido en curso. Usá el widget de Datos EN VIVO para análisis actualizado.</td></tr>
+        <tr><td><span class="pill pill-green">FINALIZADO</span></td><td>Partido terminado. El Elo se actualiza automáticamente en los siguientes 5 minutos.</td></tr>
+        <tr><td>Bandera + Nombre</td><td>País/equipo. Las banderas se muestran para selecciones nacionales automáticamente.</td></tr>
+        <tr><td>Botón la casa de apuestas</td><td>Enlace directo a ese partido en la casa de apuestas para apostar. No ejecuta la apuesta — te lleva al sitio.</td></tr>
+      </table>
+
+      <h3>Al hacer click en una tarjeta — El Modal</h3>
+      <p>Click en cualquier parte de la tarjeta (excepto el botón la casa de apuestas) abre el <strong>modal de análisis completo</strong>.</p>
+    </section>
+
+    <!-- MODAL -->
+    <section class="section" id="modal">
+      <div class="section-title"><span class="tab-icon">🔎</span> Modal de Análisis Completo</div>
+
+      <p>La ventana que aparece al hacer click en un partido. Contiene todo el análisis del modelo para ese partido específico.</p>
+
+      <h3>Secciones del Modal</h3>
+      <ol class="steps">
+        <li><strong>Encabezado</strong> — Nombre del partido, liga, hora, estado, estadio</li>
+        <li><strong>Probabilidades principales</strong> — Barras visuales de % para cada resultado (1/X/2)</li>
+        <li><strong>Goles esperados (xG)</strong> — xG local vs xG visitante</li>
+        <li><strong>Mercados de apuesta</strong> — +2.5, -2.5, BTTS, +1.5 con sus probabilidades</li>
+        <li><strong>Top marcadores</strong> — Los 5 resultados exactos más probables (ej: 1-0 → 18.3%, 1-1 → 14.2%)</li>
+        <li><strong>Córneres esperados</strong> — Total proyectado de córneres</li>
+        <li><strong>Combos recomendados</strong> — Apuesta segura y apuesta de riesgo construidas automáticamente con los mejores mercados</li>
+        <li><strong>Lectura rápida</strong> — 3-4 puntos de contexto clave del partido en texto simple</li>
+        <li><strong>Analista Probabilístico</strong> — Análisis completo generado por IA: táctico, picks, confianza general (se renderiza formateado)</li>
+        <li><strong>Seguimiento EN VIVO</strong> — Panel automático que detecta el marcador real y recalcula el modelo (ver sección LIVE)</li>
+        <li><strong>Nota del modelo</strong> — Contexto: si es neutral, ventaja de sede, ajuste WC, ratings Elo usados</li>
+      </ol>
+
+      <h3>Cómo leer las probabilidades</h3>
+      <div class="card">
+        <div class="card-title">Ejemplo: Brazil vs Morocco</div>
+        <div style="margin-top: 12px;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+            <span style="color: var(--text2); font-size: 12px; width: 80px;">Brazil gana</span>
+            <div style="flex:1; background: var(--bg3); border-radius: 4px; height: 8px;">
+              <div style="width: 67%; background: var(--green); border-radius: 4px; height: 8px;"></div>
+            </div>
+            <span style="color: var(--green); font-weight: 700; font-size: 13px; width: 40px;">67%</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+            <span style="color: var(--text2); font-size: 12px; width: 80px;">Empate</span>
+            <div style="flex:1; background: var(--bg3); border-radius: 4px; height: 8px;">
+              <div style="width: 19%; background: var(--yellow); border-radius: 4px; height: 8px;"></div>
+            </div>
+            <span style="color: var(--yellow); font-weight: 700; font-size: 13px; width: 40px;">19%</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="color: var(--text2); font-size: 12px; width: 80px;">Morocco gana</span>
+            <div style="flex:1; background: var(--bg3); border-radius: 4px; height: 8px;">
+              <div style="width: 14%; background: var(--red); border-radius: 4px; height: 8px;"></div>
+            </div>
+            <span style="color: var(--red); font-weight: 700; font-size: 13px; width: 40px;">14%</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ELO -->
+    <section class="section" id="elo">
+      <div class="section-title"><span class="tab-icon">⚡</span> Sistema Elo — Aprendizaje Automático</div>
+
+      <p>El sistema Elo de ProGol CR se <strong>actualiza automáticamente</strong> cada vez que termina un partido del Mundial.</p>
+
+      <h3>Cómo funciona la actualización</h3>
+      <ol class="steps">
+        <li>Un partido del Mundial finaliza (ej: Brazil 1 - Morocco 1)</li>
+        <li>El sistema detecta el resultado comparado con lo que esperaba el modelo</li>
+        <li>Si Brazil era favorito y empató, pierde algunos puntos Elo; Morocco gana puntos</li>
+        <li>Los nuevos ratings se guardan en <code style="background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px;">elo_overrides.json</code></li>
+        <li>El siguiente análisis de estos equipos ya usa los ratings actualizados</li>
+      </ol>
+
+      <div class="card">
+        <div class="card-title">⏱️ Frecuencia de actualización</div>
+        <p>El servidor verifica partidos finalizados cada <strong>5 minutos</strong>. Dentro de los 5-10 minutos de terminado un partido, el Elo ya está actualizado y todos los análisis siguientes reflejan los nuevos datos.</p>
+      </div>
+
+      <h3>¿Por qué importa?</h3>
+      <p>Un modelo estático con ratings fijos del año pasado sería impreciso durante el torneo. Con el auto-aprendizaje Elo, si un equipo "sorpresa" gana 3 partidos seguidos, su rating sube y el modelo empieza a valorarlo más en los siguientes análisis — tal como lo harías vos intuitivamente.</p>
+    </section>
+
+    <hr/>
+
+    <!-- PLANES -->
+    <section class="section" id="planes">
+      <div class="section-title"><span class="tab-icon">💎</span> Los 4 Planes — Diferencias Reales</div>
+
+      <table>
+        <tr>
+          <th>Función</th>
+          <th>🆓 Fanático<br/><small>₡0</small></th>
+          <th>🎯 Scout<br/><small>₡3,500</small></th>
+          <th>⚡ Pro<br/><small>₡6,000</small></th>
+          <th>👑 Élite<br/><small>₡12,000</small></th>
+        </tr>
+        <tr><td>Partidos del día</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        <tr><td>Picks básicos (top 1)</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        <tr><td>Top 5 Picks con valor</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        <tr><td>Modal análisis completo</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        <tr><td>Gurú IA (mensajes/día)</td><td>3</td><td>10</td><td>ilimitado</td><td>ilimitado</td></tr>
+        <tr><td>Scout análisis profundo</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        <tr><td>Widget EN VIVO</td><td>❌</td><td>❌</td><td>✅</td><td>✅</td></tr>
+        <tr><td>Quiniela con modelo</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        <tr><td>Alertas de valor en tiempo real</td><td>❌</td><td>❌</td><td>✅</td><td>✅</td></tr>
+        <tr><td>Notas personales</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        <tr><td>Asesoría personalizada 1:1</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td></tr>
+        <tr><td>Revisión de historial apostador</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td></tr>
+        <tr><td>Acceso anticipado funciones nuevas</td><td>❌</td><td>❌</td><td>✅</td><td>✅</td></tr>
+      </table>
+    </section>
+
+    <!-- VENTA -->
+    <section class="section" id="venta">
+      <div class="section-title"><span class="tab-icon">📱</span> Kit de Venta — Guía de Bienvenida</div>
+
+      <p>Esta sección es para preparar el material de onboarding que le vas a mandar a cada usuario nuevo que pague Scout (₡3,500).</p>
+
+      <h3>Mensaje de Bienvenida — WhatsApp</h3>
+      <div class="card">
+        <div class="card-title">📲 Copiar y pegar</div>
+        <p style="font-family: monospace; font-size: 12px; line-height: 1.8; color: var(--text);">
+          ¡Bienvenido a ProGol CR! 🐾⚽<br/><br/>
+          Ya tenés acceso a la plataforma. Aquí van los primeros pasos:<br/><br/>
+          1️⃣ Abrí la app en: [link]<br/>
+          2️⃣ Revisá la pestaña PICKS — ahí están los picks del día con su valor<br/>
+          3️⃣ Usá el GURÚ si querés analizar un partido específico<br/>
+          4️⃣ Antes de apostar, revisá el modal del partido (click en la tarjeta)<br/><br/>
+          Tu guía completa de cómo funciona todo: [link guia]<br/><br/>
+          Cualquier duda, escribime. 🟢
+        </p>
+      </div>
+
+      <h3>Los 3 puntos de venta principales</h3>
+      <div class="grid3">
+        <div class="card">
+          <div class="card-title">🔢 Matemática real</div>
+          <p>No es intuición ni "tips" de alguien. Es un modelo estadístico que calcula probabilidades exactas y las compara con las cuotas.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">💰 Valor esperado</div>
+          <p>Te dice CUÁNDO una cuota paga más de lo que debería. Eso es la ventaja matemática que buscás a largo plazo.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">🧠 IA especializada</div>
+          <p>El Gurú no es un chatbot genérico — está conectado al modelo real de ProGol CR y responde con datos, no con opiniones.</p>
+        </div>
+      </div>
+
+      <div class="tip">
+        <span class="tip-icon">🐾</span>
+        <span>Esta guía completa está disponible en <strong>/brand/guia-app.html</strong> desde el servidor. Podés compartir el link a cualquier usuario nuevo para que entienda todo antes de empezar.</span>
+      </div>
+    </section>
+
+    <!-- CHANGELOG -->
+    <section class="section" id="changelog">
+      <div class="section-title"><span class="tab-icon">📝</span> Changelog — Historial de Cambios</div>
+
+      <h3>v1.4 — Junio 2026 (actual)</h3>
+      <div class="card">
+        <div class="card-title">✅ Motor de Calibración Diaria ProGol™ (calibrator.py)</div>
+        <p>El servidor ahora auto-calibra los ratings Elo de cada equipo con los resultados reales del día (ESPN API). Después de cada partido terminado del Mundial, los ratings se actualizan con K=32 y el modelo recalcula inmediatamente para los siguientes partidos. Los datos de precisión (Brier Score) se guardan en <code>data/brier_scores.json</code>.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ Índice ProGol™ — métrica propietaria exclusiva</div>
+        <p>Se añadió el <strong>Índice ProGol™</strong> (escala 0–10) a cada predicción: combina probabilidad del favorito, entropía de Shannon, factor de forma y volumen de córneres. Es la única métrica de este tipo en el mercado centroamericano. Aparece en el panel de análisis y en el contexto del analista.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ Combinadas del Día (multi-partido)</div>
+        <p>El modal de PICKS ahora muestra automáticamente una <strong>Combinada Segura (3 patas)</strong> y una <strong>Combinada Arriesgada (5 patas)</strong> cruzando los mejores picks de todos los partidos del día. Solo usa mercados 100% combinables (nunca primer córner ni primer goleador).</p>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ Acceso desde celular — IP local visible</div>
+        <p>La pantalla de Configuración (⚙️) ahora muestra la URL local de red para acceder desde cualquier celular o tablet conectado a la misma WiFi. Incluye instrucción para abrir el puerto en el firewall de Windows (<code>abrir-puerto-celular.bat</code>).</p>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ Protocolo MAESTRO (clasificado)</div>
+        <p>El analista Scout tiene un modo ultra-profundo que se activa escribiendo <strong>MAESTRO</strong> en el chat. Muestra todos los parámetros internos del modelo, historial de calibración, Brier Score acumulado y genera 3 combinadas del día automáticamente. Solo Esteban Venegas conoce este protocolo.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ Combinadas por partido: 3 seguras + 5 arriesgadas</div>
+        <p>El sistema de combinadas del modal de partido ahora genera siempre <strong>3 patas seguras</strong> y <strong>5 patas arriesgadas</strong>, eliminando los mercados no combinables en casas de apuestas (primer córner, primer goleador, primera tarjeta).</p>
+      </div>
+
+      <h3>v1.3 — Junio 2026</h3>
+      <div class="card">
+        <div class="card-title">✅ Seguimiento EN VIVO ahora es automático</div>
+        <p>El widget de marcador en vivo ya no requiere entrada manual. La app consulta la API en tiempo real al abrir cualquier modal, detecta el marcador actual y recalcula el modelo automáticamente. Se refresca cada 60 segundos mientras el partido está en curso.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ Analista Probabilístico — formato correcto</div>
+        <p>El análisis generado por IA (sección "Analista Probabilístico" en el modal) ahora renderiza correctamente con títulos, negritas, listas y tablas. Antes mostraba texto crudo con ## y **.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ Panel CUOTAS DORADOBET eliminado</div>
+        <p>Se removió la sección de cuotas de la casa de apuestas del modal de análisis para simplificar la interfaz y mantener el foco en las probabilidades propias del modelo.</p>
+      </div>
+
+      <h3>v1.2 — Junio 2026</h3>
+      <div class="card">
+        <div class="card-title">✅ Mascota oficial: Gol</div>
+        <p>Se incorporó la foto real de la mascota de ProGol CR — el perro dorado de Esteban — reemplazando el SVG genérico. Aparece en el encabezado de la plataforma y en materiales de marca.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ Integración API de fútbol en vivo</div>
+        <p>Conexión con <code style="background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px">free-api-live-football-data.p.rapidapi.com</code> (FotMob data). Permite detectar partidos en curso, obtener marcadores y estados en tiempo real.</p>
+      </div>
+
+      <h3>v1.1 — Mayo–Junio 2026</h3>
+      <div class="card">
+        <div class="card-title">✅ Modelo Dixon-Coles calibrado para Mundial 2026</div>
+        <p>Parámetros ajustados para torneos neutrales: base de goles 2.30, ρ=-0.13, ventaja de sede solo para USA/CAN/MEX, actualización Elo automática post-partido cada 5 min.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ Gurú IA + Scout análisis profundo</div>
+        <p>Chat con Claude (Anthropic) conectado al modelo real. El Scout corre automáticamente al abrir cualquier modal de partido.</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  const links = document.querySelectorAll('.sidebar a');
+  const sections = document.querySelectorAll('.section');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`.sidebar a[href="#${e.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { threshold: 0.3 });
+  sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
