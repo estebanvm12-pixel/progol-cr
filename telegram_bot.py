@@ -366,6 +366,60 @@ def _get_informe():
         f"💚 ProGol CR · Queremos que todos ganen."
     )
 
+def _get_partidos_hoy():
+    """Lista los partidos de hoy con hora y predicción rápida."""
+    sys.path.insert(0, HERE)
+    import db, sqlite3
+    db.init_db()
+    today = datetime.date.today().isoformat()
+    conn = db.get_conn()
+    conn.row_factory = sqlite3.Row
+    cur = conn.execute(
+        "SELECT home, away, kickoff_utc, competition FROM matches "
+        "WHERE date=? AND home!='' AND away!='' "
+        "AND NOT EXISTS ("
+        "  SELECT 1 FROM matches m2 "
+        "  WHERE m2.home=matches.home AND m2.away=matches.away "
+        "  AND m2.status IN ('Finished','Live','FT','AET','PEN')"
+        ") GROUP BY home, away ORDER BY kickoff_utc",
+        (today,)
+    )
+    rows = cur.fetchall()
+    conn.close()
+    if not rows:
+        return f"📅 No hay partidos programados para hoy ({today})."
+    import model
+    lines = [f"📅 *PARTIDOS DE HOY*", f"*{today} · Copa del Mundo 2026*\n"]
+    for r in rows:
+        h, a = es(r["home"]), es(r["away"])
+        # Hora local CR (UTC-6)
+        hora = ""
+        if r["kickoff_utc"]:
+            try:
+                k = r["kickoff_utc"].replace("Z", "").replace("T", " ")[:16]
+                dt = datetime.datetime.strptime(k, "%Y-%m-%d %H:%M")
+                dt_cr = dt - datetime.timedelta(hours=6)
+                hora = f" · {dt_cr.strftime('%I:%M %p')} CR"
+            except Exception:
+                pass
+        try:
+            p = model.predict(r["home"], r["away"])
+            prob = p["prob"]
+            if prob["home"] > prob["away"] and prob["home"] > prob["draw"]:
+                fav, pct = h, prob["home"]
+            elif prob["draw"] >= prob["home"] and prob["draw"] >= prob["away"]:
+                fav, pct = "Empate", prob["draw"]
+            else:
+                fav, pct = a, prob["away"]
+            lines.append(f"⚽ *{h} vs {a}*{hora}")
+            lines.append(f"   Ryder: *{fav}* ({pct/100:.0%})\n")
+        except Exception:
+            lines.append(f"⚽ *{h} vs {a}*{hora}\n")
+    lines.append("━━━━━━━━━━━━━━━━━━━━━━━")
+    lines.append("Para picks detallados escribí /comprar 👇")
+    lines.append("_ProGol CR · No es consejo financiero_")
+    return "\n".join(lines)
+
 def _get_goleadores():
     rows, today = _today_matches(8)
     if not rows:
@@ -412,20 +466,21 @@ CONTENT_MAP = {
 # ── Teclados ───────────────────────────────────────────────────────────────────
 def _main_menu():
     return {"inline_keyboard": [
-        [{"text": "🆓 Pick Gratis del Día (₡0)", "callback_data": "buy:free"}],
-        [{"text": "⚡ Pro del Día — ₡500", "callback_data": "buy:pro"},
-         {"text": "👑 Premium — ₡1,000", "callback_data": "buy:premium"}],
-        [{"text": "📋 Quiniela — ₡300", "callback_data": "buy:quiniela"},
-         {"text": "⚽ Un Partido — ₡200", "callback_data": "buy:partido"}],
-        [{"text": "🎯 Parlay Armado — ₡250", "callback_data": "buy:parlay"},
-         {"text": "🥅 Goleadores — ₡300", "callback_data": "buy:goleadores"}],
-        [{"text": "🧠 Ryder Pro Deep-Dive — ₡350", "callback_data": "buy:deepdive"}],
-        [{"text": "📊 Informe Mundial — ₡400", "callback_data": "buy:informe"}],
-        [{"text": "── COMBOS ──", "callback_data": "noop"}],
-        [{"text": "🌍 Combo Mundial ₡800", "callback_data": "buy:combo_mundial"}],
-        [{"text": "💰 Combo Apostador ₡650", "callback_data": "buy:combo_apostador"}],
+        [{"text": "📅 Partidos de Hoy (Gratis)", "callback_data": "partidos"}],
+        [{"text": "🆓 Pick Gratis del Día",       "callback_data": "buy:free"}],
+        [{"text": "⚡ Pro del Día — ₡500",        "callback_data": "buy:pro"},
+         {"text": "👑 Premium — ₡1,000",          "callback_data": "buy:premium"}],
+        [{"text": "📋 Quiniela — ₡300",           "callback_data": "buy:quiniela"},
+         {"text": "⚽ Un Partido — ₡200",         "callback_data": "buy:partido"}],
+        [{"text": "🎯 Parlay — ₡250",             "callback_data": "buy:parlay"},
+         {"text": "🥅 Goleadores — ₡300",         "callback_data": "buy:goleadores"}],
+        [{"text": "🧠 Ryder Pro Deep-Dive — ₡350","callback_data": "buy:deepdive"}],
+        [{"text": "📊 Informe Mundial — ₡400",    "callback_data": "buy:informe"}],
+        [{"text": "── COMBOS ──",                  "callback_data": "noop"}],
+        [{"text": "🌍 Combo Mundial ₡800",         "callback_data": "buy:combo_mundial"}],
+        [{"text": "💰 Combo Apostador ₡650",       "callback_data": "buy:combo_apostador"}],
         [{"text": "🏆 Combo Total ProGol ₡1,200", "callback_data": "buy:combo_total"}],
-        [{"text": "💚 Apoyar a ProGol CR", "callback_data": "donate"}],
+        [{"text": "💚 Apoyar a ProGol CR",         "callback_data": "donate"}],
     ]}
 
 def _approval_kb(buyer_chat_id, product_key):
@@ -523,6 +578,12 @@ def _handle_callback(token, owner_chat_id, cb):
         _answer_callback(token, cb_id)
         return
 
+    # Partidos de hoy
+    if data == "partidos":
+        _answer_callback(token, cb_id, "Cargando partidos...")
+        _send(token, chat_id, _get_partidos_hoy())
+        return
+
     # Donación
     if data == "donate":
         _answer_callback(token, cb_id)
@@ -595,10 +656,95 @@ def _handle_callback(token, owner_chat_id, cb):
 
     _answer_callback(token, cb_id)
 
+# ── Pre-match promo scheduler ──────────────────────────────────────────────────
+_sent_promos = set()   # set de "home|away|date" ya enviados
+
+def _promo_loop(token, owner_chat_id, stop_event):
+    """Revisa cada 5 min si hay partidos mundialistas en la próxima hora y envía promo."""
+    while not (stop_event and stop_event.is_set()):
+        try:
+            sys.path.insert(0, HERE)
+            import db, sqlite3
+            db.init_db()
+            now_utc = datetime.datetime.utcnow()
+            today   = now_utc.date().isoformat()
+            conn    = db.get_conn()
+            conn.row_factory = sqlite3.Row
+            # Partidos mundialistas con kickoff en los próximos 30-75 min
+            cur = conn.execute(
+                "SELECT DISTINCT home, away, kickoff_utc, competition FROM matches "
+                "WHERE date=? AND home!='' AND away!='' "
+                "AND (competition LIKE '%World Cup%' OR competition LIKE '%FIFA%' OR is_wc=1) "
+                "AND status='Scheduled' "
+                "ORDER BY kickoff_utc",
+                (today,)
+            )
+            rows = cur.fetchall()
+            conn.close()
+            for r in rows:
+                key = f"{r['home']}|{r['away']}|{today}"
+                if key in _sent_promos:
+                    continue
+                if not r["kickoff_utc"]:
+                    continue
+                try:
+                    k = r["kickoff_utc"].replace("Z", "").replace("T", " ")[:16]
+                    kick = datetime.datetime.strptime(k, "%Y-%m-%d %H:%M")
+                    mins_to_kick = (kick - now_utc).total_seconds() / 60
+                    if 30 <= mins_to_kick <= 75:
+                        h, a = es(r["home"]), es(r["away"])
+                        # Hora CR (UTC-6)
+                        kick_cr = kick - datetime.timedelta(hours=6)
+                        hora_cr = kick_cr.strftime("%I:%M %p")
+                        # Predicción rápida
+                        pick_txt = ""
+                        try:
+                            import model
+                            p = model.predict(r["home"], r["away"])
+                            prob = p["prob"]
+                            if prob["home"] > prob["away"] and prob["home"] > prob["draw"]:
+                                pick_txt = f"\n🔮 Ryder ve a *{h}* como favorito ({prob['home']/100:.0%})"
+                            elif prob["draw"] >= prob["home"] and prob["draw"] >= prob["away"]:
+                                pick_txt = f"\n🔮 Ryder proyecta *empate* ({prob['draw']/100:.0%})"
+                            else:
+                                pick_txt = f"\n🔮 Ryder ve a *{a}* como favorito ({prob['away']/100:.0%})"
+                        except Exception:
+                            pass
+                        msg = (
+                            f"⚽🔔 *¡PARTIDO EN {int(mins_to_kick)} MINUTOS!*\n\n"
+                            f"🏆 *Copa del Mundo 2026*\n"
+                            f"*{h} vs {a}*\n"
+                            f"🕐 {hora_cr} (hora Costa Rica){pick_txt}\n\n"
+                            f"💡 ¿Querés los picks completos para este partido?\n"
+                            f"Escribí /comprar y Ryder te da todo antes del pitazo.\n\n"
+                            f"💚 *ProGol CR · Queremos que todos ganen* 🐕"
+                        )
+                        _api(token, "sendMessage", {
+                            "chat_id": owner_chat_id,
+                            "text": msg,
+                            "parse_mode": "Markdown",
+                        })
+                        _sent_promos.add(key)
+                        print(f"[bot] Promo enviada: {h} vs {a} en {int(mins_to_kick)} min")
+                except Exception as e:
+                    print(f"[bot] promo error {r['home']}: {e}")
+        except Exception as e:
+            print(f"[bot] promo loop error: {e}")
+        # Revisar cada 5 minutos
+        for _ in range(60):
+            if stop_event and stop_event.is_set():
+                return
+            time.sleep(5)
+
 # ── Loop de polling ────────────────────────────────────────────────────────────
 def run_bot(token, owner_chat_id, stop_event=None):
     offset = 0
     print(f"[bot] Polling activo (owner={owner_chat_id})")
+    # Limpiar updates acumulados para que botones viejos no fallen
+    res = _api(token, "getUpdates", {"offset": -1, "timeout": 1})
+    if res.get("result"):
+        offset = res["result"][-1]["update_id"] + 1
+        print(f"[bot] Saltando {len(res['result'])} updates acumulados, offset={offset}")
     while not (stop_event and stop_event.is_set()):
         try:
             res = _api(token, "getUpdates", {"offset": offset, "timeout": 25})
@@ -622,8 +768,10 @@ def start_bot_thread(cfg):
         print("[bot] Telegram no configurado — bot inactivo")
         return None
     stop = threading.Event()
-    threading.Thread(target=run_bot, args=(token, owner_id, stop), daemon=True).start()
+    threading.Thread(target=run_bot,      args=(token, owner_id, stop), daemon=True).start()
+    threading.Thread(target=_promo_loop,  args=(token, owner_id, stop), daemon=True).start()
     print("[bot] Bot de ventas activo — enviá /start al bot de Telegram")
+    print("[bot] Scheduler de promos activo (revisa cada 5 min)")
     return stop
 
 if __name__ == "__main__":
