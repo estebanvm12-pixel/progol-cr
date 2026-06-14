@@ -529,6 +529,45 @@ def send_winner_announcement(token, channel_or_chat, match, pick, result):
     else:
         _send_photo(token, channel_or_chat, caption)
 
+BIENVENIDA = """\
+🐕 *¡Bienvenido a ProGol CR, {first}!*
+
+Somos la comunidad costarricense de análisis deportivo para la Copa del Mundo 2026.
+Ryder, nuestro scout, analiza cada partido para que apostés con criterio.
+
+━━━━━━━━━━━━━━━━━━━━━━━
+📖 *¿Cómo usar el bot?*
+
+📅 *Partidos de Hoy* — Ve todos los partidos del día, hora CR y canal
+🆓 *Pick Gratis* — Recibí el mejor pick del día sin costo
+⚡ *Pro / 👑 Premium* — Picks completos con análisis de Ryder
+📋 *Quiniela* — Pronóstico de todos los partidos
+🧠 *Ryder Pro* — Análisis profundo de un partido
+📊 *Informe Mundial* — Panorama completo del torneo
+💰 *Combos* — Paquetes con descuento
+
+━━━━━━━━━━━━━━━━━━━━━━━
+⌨️ *Comandos rápidos:*
+
+/menu — Ver el menú de productos
+/partidos — Partidos de hoy con hora y canal
+/comprar — Lo mismo que el menú
+/donar — Apoyar a ProGol CR
+
+━━━━━━━━━━━━━━━━━━━━━━━
+💚 *Queremos que todos ganen.*
+_ProGol CR · No es consejo financiero_
+"""
+
+def _welcome(token, chat_id, first, is_new=False):
+    """Envía bienvenida completa (primera vez) o menú simple (regresa)."""
+    if is_new:
+        _send(token, chat_id, BIENVENIDA.format(first=first or "campeón"))
+        time.sleep(0.5)
+    _send(token, chat_id,
+          f"👇 *Elegí tu producto:*",
+          reply_markup=_main_menu())
+
 # ── Handlers ───────────────────────────────────────────────────────────────────
 def _handle_message(token, owner_chat_id, msg):
     chat_id   = str(msg["chat"]["id"])
@@ -537,20 +576,16 @@ def _handle_message(token, owner_chat_id, msg):
     username  = msg.get("from", {}).get("username", "")
 
     with _lock:
-        state = _state.get(chat_id, {"step": "idle"})
+        state    = _state.get(chat_id, {"step": "idle"})
+        is_new   = state.get("step") == "idle" and "welcomed" not in state
 
-    # Comandos principales
+    # Comandos de info
     if text in ("/partidos", "/hoy"):
         _send_partidos_img(token, chat_id)
         return
 
-    if text in ("/start", "/menu", "/comprar", "/picks"):
-        with _lock:
-            _state[chat_id] = {"step": "menu", "username": username or first}
-        _send(token, chat_id,
-              f"🐕 *¡Hola {first or 'campeón'}!* Bienvenido a *ProGol CR*\n\n"
-              f"Ryder analizó los partidos del día. Elegí tu producto 👇",
-              reply_markup=_main_menu())
+    if text == "/ayuda":
+        _send(token, chat_id, BIENVENIDA.format(first=first or "campeón"))
         return
 
     if text == "/donar":
@@ -563,7 +598,7 @@ def _handle_message(token, owner_chat_id, msg):
               f"💚 ProGol CR quiere que todos ganen.")
         return
 
-    # Esperando comprobante
+    # Esperando comprobante de pago
     if state.get("step") == "waiting_sinpe":
         product_key = state.get("product_key", "")
         all_prod    = {**PRODUCTS, **COMBOS}
@@ -582,13 +617,29 @@ def _handle_message(token, owner_chat_id, msg):
             _state[chat_id] = {"step": "pending_approval", "product_key": product_key}
         return
 
-    # Cualquier otro mensaje → mostrar menú
+    # /start → bienvenida completa primera vez
+    if text == "/start" or is_new:
+        with _lock:
+            _state[chat_id] = {"step": "menu", "welcomed": True, "username": username or first}
+        _welcome(token, chat_id, first, is_new=True)
+        return
+
+    # /menu, /comprar, /picks o cualquier otro mensaje → menú directo
     with _lock:
-        _state[chat_id] = {"step": "menu", "username": username or first}
-    _send(token, chat_id,
-          f"🐕 *¡Hola {first or 'campeón'}!* Bienvenido a *ProGol CR*\n\n"
-          f"Ryder analizó los partidos del día. Elegí tu producto 👇",
-          reply_markup=_main_menu())
+        _state[chat_id] = {"step": "menu", "welcomed": True, "username": username or first}
+    _welcome(token, chat_id, first, is_new=False)
+
+def _handle_callback(token, owner_chat_id, cb):
+    chat_id    = str(cb["message"]["chat"]["id"])
+    message_id = cb["message"]["message_id"]
+    data       = cb.get("data", "")
+    cb_id      = cb["id"]
+
+    # SIEMPRE responder al callback primero para quitar el spinner de Telegram
+    try:
+        _answer_callback(token, cb_id)
+    except Exception:
+        pass
 
 def _handle_callback(token, owner_chat_id, cb):
     chat_id    = str(cb["message"]["chat"]["id"])
@@ -597,18 +648,15 @@ def _handle_callback(token, owner_chat_id, cb):
     cb_id      = cb["id"]
 
     if data == "noop":
-        _answer_callback(token, cb_id)
         return
 
     # Partidos de hoy
     if data == "partidos":
-        _answer_callback(token, cb_id, "Cargando partidos...")
         _send_partidos_img(token, chat_id)
         return
 
     # Donación
     if data == "donate":
-        _answer_callback(token, cb_id)
         _send(token, chat_id,
               f"💚 *Gracias por apoyar ProGol CR*\n\n"
               f"*SINPE Móvil:* 8561-0677 (Esteban V.)\n"
@@ -621,9 +669,7 @@ def _handle_callback(token, owner_chat_id, cb):
         key  = data.split(":", 1)[1]
         prod = {**PRODUCTS, **COMBOS}.get(key)
         if not prod:
-            _answer_callback(token, cb_id, "Producto no encontrado")
             return
-        _answer_callback(token, cb_id)
         if prod["price"] == 0:
             content = CONTENT_MAP.get(key, lambda: "")()
             _send(token, chat_id, content)
@@ -646,7 +692,6 @@ def _handle_callback(token, owner_chat_id, cb):
     # Aprobar (solo el dueño)
     if data.startswith("approve:") and chat_id == str(owner_chat_id):
         _, buyer_id, key = data.split(":", 2)
-        _answer_callback(token, cb_id, "✅ Enviando...")
         prod = {**PRODUCTS, **COMBOS}.get(key, {})
         try:
             content = CONTENT_MAP.get(key, lambda: "Contenido no disponible.")()
@@ -667,7 +712,6 @@ def _handle_callback(token, owner_chat_id, cb):
     # Rechazar
     if data.startswith("reject:") and chat_id == str(owner_chat_id):
         _, buyer_id, _ = data.split(":", 2)
-        _answer_callback(token, cb_id, "❌ Rechazado")
         _send(token, buyer_id,
               f"❌ No pudimos verificar tu pago.\n"
               f"Escribinos directamente y lo resolvemos. 🐕")
@@ -675,8 +719,6 @@ def _handle_callback(token, owner_chat_id, cb):
         with _lock:
             _state[buyer_id] = {"step": "idle"}
         return
-
-    _answer_callback(token, cb_id)
 
 # ── Pre-match promo scheduler ──────────────────────────────────────────────────
 _sent_promos = set()   # set de "home|away|date" ya enviados
