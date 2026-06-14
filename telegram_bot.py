@@ -505,11 +505,13 @@ def _handle_message(token, owner_chat_id, msg):
             _state[chat_id] = {"step": "pending_approval", "product_key": product_key}
         return
 
-    # Idle
-    if state.get("step") == "idle":
-        _send(token, chat_id,
-              f"¡Hola! Usá /comprar para ver los picks de hoy 🐕⚽\n"
-              f"O /donar si querés apoyar el proyecto.")
+    # Cualquier otro mensaje → mostrar menú
+    with _lock:
+        _state[chat_id] = {"step": "menu", "username": username or first}
+    _send(token, chat_id,
+          f"🐕 *¡Hola {first or 'campeón'}!* Bienvenido a *ProGol CR*\n\n"
+          f"Ryder analizó los partidos del día. Elegí tu producto 👇",
+          reply_markup=_main_menu())
 
 def _handle_callback(token, owner_chat_id, cb):
     chat_id    = str(cb["message"]["chat"]["id"])
