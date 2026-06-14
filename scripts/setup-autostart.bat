@@ -9,9 +9,9 @@ echo   ProGol CR — Configurando inicio automatico con Windows
 echo ============================================================
 echo.
 
-:: Get the directory where this script lives
-set "APP_DIR=%~dp0"
-set "APP_DIR=%APP_DIR:~0,-1%"
+:: Get the project root (one level above scripts/)
+set "APP_DIR=%~dp0.."
+for %%I in ("%APP_DIR%") do set "APP_DIR=%%~fI"
 set "PYTHON_EXE="
 
 :: Find Python

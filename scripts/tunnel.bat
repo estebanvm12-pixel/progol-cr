@@ -12,7 +12,7 @@ echo IMPORTANTE: Deja esta ventana abierta mientras clients usan la app.
 echo Para cerrar: presiona Ctrl+C
 echo.
 
-cd /d "%~dp0"
+cd /d "%~dp0\.."
 python server.py --tunnel
 
 pause

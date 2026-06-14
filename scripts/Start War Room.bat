@@ -1,9 +1,9 @@
 @echo off
-title World Cup 2026 - War Room
-cd /d "%~dp0"
-echo Starting the World Cup 2026 War Room...
-echo A browser window will open at http://127.0.0.1:8765
-echo Close this window (or press Ctrl+C) to stop the app.
+title ProGol CR
+cd /d "%~dp0\.."
+echo Iniciando ProGol CR...
+echo Abre http://127.0.0.1:8765 en tu navegador
+echo Presiona Ctrl+C para detener.
 echo.
 python server.py
 pause
