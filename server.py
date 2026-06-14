@@ -2957,29 +2957,37 @@ def _require_auth(data):
 
 
 STATIC_FILES = {
-    "/": ("index.html", "text/html; charset=utf-8"),
-    "/index.html": ("index.html", "text/html; charset=utf-8"),
-    "/landing.html": ("landing.html", "text/html; charset=utf-8"),
-    "/landing": ("landing.html", "text/html; charset=utf-8"),
-    "/pitch.html": ("pitch.html", "text/html; charset=utf-8"),
-    "/pitch": ("pitch.html", "text/html; charset=utf-8"),
-    "/report.html": ("report.html", "text/html; charset=utf-8"),
-    "/report": ("report.html", "text/html; charset=utf-8"),
-    "/apoyo.html": ("apoyo.html", "text/html; charset=utf-8"),
-    "/apoyo": ("apoyo.html", "text/html; charset=utf-8"),
-    "/picks.html": ("picks.html", "text/html; charset=utf-8"),
-    "/picks/hoy": ("picks.html", "text/html; charset=utf-8"),
-    "/picks": ("picks.html", "text/html; charset=utf-8"),
-    "/styles.css": ("styles.css", "text/css; charset=utf-8"),
-    "/app.js": ("app.js", "application/javascript; charset=utf-8"),
-    "/brand/progol-cr-brand.html": ("brand/progol-cr-brand.html", "text/html; charset=utf-8"),
+    # App principal
+    "/": ("frontend/index.html", "text/html; charset=utf-8"),
+    "/index.html": ("frontend/index.html", "text/html; charset=utf-8"),
+    "/styles.css": ("frontend/styles.css", "text/css; charset=utf-8"),
+    "/app.js": ("frontend/app.js", "application/javascript; charset=utf-8"),
+    # Marketing
+    "/landing.html": ("marketing/landing.html", "text/html; charset=utf-8"),
+    "/landing": ("marketing/landing.html", "text/html; charset=utf-8"),
+    "/pitch.html": ("marketing/pitch.html", "text/html; charset=utf-8"),
+    "/pitch": ("marketing/pitch.html", "text/html; charset=utf-8"),
+    "/report.html": ("marketing/report.html", "text/html; charset=utf-8"),
+    "/report": ("marketing/report.html", "text/html; charset=utf-8"),
+    "/apoyo.html": ("marketing/apoyo.html", "text/html; charset=utf-8"),
+    "/apoyo": ("marketing/apoyo.html", "text/html; charset=utf-8"),
+    "/picks.html": ("marketing/picks.html", "text/html; charset=utf-8"),
+    "/picks/hoy": ("marketing/picks.html", "text/html; charset=utf-8"),
+    "/picks": ("marketing/picks.html", "text/html; charset=utf-8"),
+    # Brand assets
     "/brand/mascota.svg": ("brand/mascota.svg", "image/svg+xml"),
     "/brand/mascota.jpg": ("brand/mascota.jpg", "image/jpeg"),
-    "/brand/guia-app.html": ("brand/guia-app.html", "text/html; charset=utf-8"),
-    "/brand/estrategia.html": ("brand/estrategia.html", "text/html; charset=utf-8"),
+    # Docs
+    "/docs/guia-app.html": ("docs/guia-app.html", "text/html; charset=utf-8"),
+    "/docs/estrategia.html": ("docs/estrategia.html", "text/html; charset=utf-8"),
+    "/docs/brand.html": ("docs/progol-cr-brand.html", "text/html; charset=utf-8"),
+    # Backward-compat aliases for old brand/ URLs
+    "/brand/guia-app.html": ("docs/guia-app.html", "text/html; charset=utf-8"),
+    "/brand/estrategia.html": ("docs/estrategia.html", "text/html; charset=utf-8"),
+    "/brand/progol-cr-brand.html": ("docs/progol-cr-brand.html", "text/html; charset=utf-8"),
 }
 
-SUPPORTERS_PATH = os.path.join(HERE, "supporters.json")
+SUPPORTERS_PATH = os.path.join(HERE, "data", "supporters.json")
 
 # ── Live match data (api-football.com) ────────────────────────────────────────
 FOOTBALL_API_KEY = os.environ.get("FOOTBALL_API_KEY", "47481c1f2ccd38d4875fc76cbc6f6989")

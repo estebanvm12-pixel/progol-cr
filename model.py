@@ -27,7 +27,7 @@ import os
 
 # File where post-match Elo updates are persisted across restarts
 _HERE = os.path.dirname(os.path.abspath(__file__))
-_ELO_OVERRIDES_PATH = os.path.join(_HERE, "elo_overrides.json")
+_ELO_OVERRIDES_PATH = os.path.join(_HERE, "data", "elo_overrides.json")
 
 def _load_elo_overrides():
     try:

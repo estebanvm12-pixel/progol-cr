@@ -11,6 +11,14 @@ warroom.db-shm
 data/brier_scores.json
 data/calibration_log.json
 data/processed_matches.json
+data/doradobet_session.json
+
+# Logs
+server_err.log
+server_out.log
+
+# Binaries
+scripts/ngrok.exe
 
 # Python
 __pycache__/
@@ -18,11 +26,8 @@ __pycache__/
 *.pyo
 .env
 
-# wa-bot dependencies & sessions
-wa-bot/node_modules/
-wa-bot/.wwebjs_auth/
-wa-bot/.wwebjs_cache/
-wa-bot/session2/
+# wa-bot — todo el directorio (deprecated)
+wa-bot/
 
 # OS
 .DS_Store

@@ -13,7 +13,7 @@ import urllib.error
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ENV_PATH = os.path.join(HERE, ".env.txt")
-SESSION_PATH = os.path.join(HERE, "doradobet_session.json")
+SESSION_PATH = os.path.join(HERE, "data", "doradobet_session.json")
 
 VS_LOBBY = "https://partnerapi.virtualsoft.tech/Lobby/Api"
 INTEGRATION = "doradobetcr"
