@@ -78,6 +78,22 @@ COMBOS = {
 
 _state = {}
 _lock  = threading.Lock()
+_group_chat_id = None   # se llena desde config o cuando el bot entra al grupo
+
+def _save_group_chat_id(chat_id):
+    """Guarda el group_chat_id en config.json si no estaba."""
+    global _group_chat_id
+    _group_chat_id = chat_id
+    try:
+        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+            cfg = json.load(f)
+        if not cfg.get("group_chat_id"):
+            cfg["group_chat_id"] = chat_id
+            with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+                json.dump(cfg, f, indent=2, ensure_ascii=False)
+            print(f"[bot] group_chat_id guardado: {chat_id}")
+    except Exception as e:
+        print(f"[bot] no se pudo guardar group_chat_id: {e}")
 
 # ── API helpers ────────────────────────────────────────────────────────────────
 def _cfg():
@@ -559,6 +575,16 @@ Ryder, nuestro scout, analiza cada partido para que apostés con criterio.
 _ProGol CR · No es consejo financiero_
 """
 
+def _is_group(msg):
+    return msg.get("chat", {}).get("type") in ("group", "supergroup", "channel")
+
+def _bot_username(token):
+    try:
+        r = _api(token, "getMe", {})
+        return r.get("result", {}).get("username", "")
+    except Exception:
+        return ""
+
 def _welcome(token, chat_id, first, is_new=False):
     """Envía bienvenida completa (primera vez) o menú simple (regresa)."""
     if is_new:
@@ -568,36 +594,95 @@ def _welcome(token, chat_id, first, is_new=False):
           f"👇 *Elegí tu producto:*",
           reply_markup=_main_menu())
 
+def _group_welcome(token, chat_id, title):
+    """Mensaje de bienvenida cuando el bot entra a un grupo."""
+    _send(token, chat_id,
+          f"🐕 *¡Hola a todos en {title}!*\n\n"
+          f"Soy el bot de *ProGol CR*, tu comunidad de análisis para la Copa del Mundo 2026.\n\n"
+          f"*¿Qué puedo hacer acá?*\n"
+          f"📅 /partidos — Partidos de hoy con hora CR y canal\n"
+          f"🆓 /pick — Pick gratis del día\n"
+          f"📋 /quiniela — Quiniela del día\n"
+          f"🛒 /comprar — Ver todos los productos con precios\n"
+          f"❓ /ayuda — Cómo funciona ProGol CR\n\n"
+          f"💚 *Queremos que todos ganen.*\n"
+          f"_ProGol CR · No es consejo financiero_")
+
 # ── Handlers ───────────────────────────────────────────────────────────────────
 def _handle_message(token, owner_chat_id, msg):
     chat_id   = str(msg["chat"]["id"])
     text      = msg.get("text", "").strip()
     first     = msg.get("from", {}).get("first_name", "")
     username  = msg.get("from", {}).get("username", "")
+    is_group  = _is_group(msg)
+
+    # Bot agregado a un grupo nuevo
+    new_members = msg.get("new_chat_members", [])
+    if new_members:
+        bot_info = _api(token, "getMe", {})
+        bot_id   = bot_info.get("result", {}).get("id")
+        if any(m.get("id") == bot_id for m in new_members):
+            group_title = msg["chat"].get("title", "el grupo")
+            _group_welcome(token, chat_id, group_title)
+            # Guardar group_chat_id en config si no está
+            _save_group_chat_id(chat_id)
+        return
+
+    # En grupos: solo responder a comandos explícitos (no a cualquier mensaje)
+    if is_group and not text.startswith("/"):
+        return
+
+    # Normalizar comando (remover @botname si viene en grupo)
+    cmd = text.split("@")[0].lower() if text.startswith("/") else text.lower()
 
     with _lock:
-        state    = _state.get(chat_id, {"step": "idle"})
-        is_new   = state.get("step") == "idle" and "welcomed" not in state
+        state  = _state.get(chat_id, {"step": "idle"})
+        is_new = not is_group and state.get("step") == "idle" and "welcomed" not in state
+
+    # /id — responde el chat_id (útil para configurar el grupo)
+    if cmd == "/id":
+        _send(token, chat_id, f"🆔 Chat ID: `{chat_id}`\n_Copiá este número y pegalo en config.json como group\\_chat\\_id_")
+        return
 
     # Comandos de info
-    if text in ("/partidos", "/hoy"):
+    if cmd in ("/partidos", "/hoy"):
         _send_partidos_img(token, chat_id)
         return
 
-    if text == "/ayuda":
+    if cmd in ("/pick", "/free"):
+        content = _get_free_pick()
+        _send(token, chat_id, content)
+        if not is_group:
+            _send(token, chat_id, "Querés más picks? Escribí /comprar 👇", reply_markup=_main_menu())
+        return
+
+    if cmd == "/quiniela":
+        _send(token, chat_id, _get_quiniela())
+        return
+
+    if cmd == "/ayuda":
         _send(token, chat_id, BIENVENIDA.format(first=first or "campeón"))
         return
 
-    if text == "/donar":
+    if cmd == "/donar":
         _send(token, chat_id,
               f"💚 *Gracias por apoyar a ProGol CR*\n\n"
-              f"Tu donación ayuda a mantener a Ryder analizando cada partido.\n\n"
               f"*SINPE Móvil:* 8561-0677 (Esteban V.)\n"
-              f"Cualquier monto es bienvenido — el proyecto es de la comunidad.\n\n"
-              f"Si querés que sigamos creciendo, compartí el canal con alguien.\n"
+              f"Cualquier monto es bienvenido.\n\n"
               f"💚 ProGol CR quiere que todos ganen.")
         return
 
+    # En grupos: /comprar manda al DM privado con el bot
+    if is_group and cmd in ("/comprar", "/menu", "/picks"):
+        bot_un = _bot_username(token)
+        link   = f"https://t.me/{bot_un}" if bot_un else "el bot"
+        _send(token, chat_id,
+              f"🛒 Para comprar picks escribile directo al bot en privado:\n"
+              f"👉 {link}\n\n"
+              f"_Ahí podés ver todos los productos y pagar de forma segura._")
+        return
+
+    # Chat privado: flujo normal
     # Esperando comprobante de pago
     if state.get("step") == "waiting_sinpe":
         product_key = state.get("product_key", "")
@@ -783,11 +868,15 @@ def _promo_loop(token, owner_chat_id, stop_event):
                             f"Escribí /comprar y Ryder te da todo antes del pitazo.\n\n"
                             f"💚 *ProGol CR · Queremos que todos ganen* 🐕"
                         )
-                        _api(token, "sendMessage", {
-                            "chat_id": owner_chat_id,
-                            "text": msg,
-                            "parse_mode": "Markdown",
-                        })
+                        targets = [owner_chat_id]
+                        if _group_chat_id and _group_chat_id != owner_chat_id:
+                            targets.append(_group_chat_id)
+                        for target in targets:
+                            _api(token, "sendMessage", {
+                                "chat_id": target,
+                                "text": msg,
+                                "parse_mode": "Markdown",
+                            })
                         _sent_promos.add(key)
                         print(f"[bot] Promo enviada: {h} vs {a} en {int(mins_to_kick)} min")
                 except Exception as e:
@@ -826,14 +915,19 @@ def run_bot(token, owner_chat_id, stop_event=None):
             time.sleep(5)
 
 def start_bot_thread(cfg):
+    global _group_chat_id
     token    = (cfg.get("telegram_bot_token") or "").strip()
     owner_id = (cfg.get("telegram_chat_id") or "").strip()
     if not token or not owner_id:
         print("[bot] Telegram no configurado — bot inactivo")
         return None
+    # Cargar group_chat_id si ya estaba guardado
+    _group_chat_id = (cfg.get("group_chat_id") or "").strip() or None
+    if _group_chat_id:
+        print(f"[bot] Grupo configurado: {_group_chat_id}")
     stop = threading.Event()
-    threading.Thread(target=run_bot,      args=(token, owner_id, stop), daemon=True).start()
-    threading.Thread(target=_promo_loop,  args=(token, owner_id, stop), daemon=True).start()
+    threading.Thread(target=run_bot,     args=(token, owner_id, stop), daemon=True).start()
+    threading.Thread(target=_promo_loop, args=(token, owner_id, stop), daemon=True).start()
     print("[bot] Bot de ventas activo — enviá /start al bot de Telegram")
     print("[bot] Scheduler de promos activo (revisa cada 5 min)")
     return stop
