@@ -203,45 +203,113 @@ def _today_matches(limit=8):
     conn.close()
     return rows, today
 
-def _get_free_pick():
-    rows, today = _today_matches(6)
-    if not rows:
-        return "No hay partidos programados para hoy."
-    import model
+def _best_pick_data():
+    """Devuelve dict con todos los datos del mejor pick del día, o None."""
+    import db, sqlite3, model
+    db.init_db()
+    today = datetime.date.today().isoformat()
+    conn  = db.get_conn()
+    conn.row_factory = sqlite3.Row
+    cur = conn.execute(
+        "SELECT home, away, kickoff_utc, competition, home_badge, away_badge "
+        "FROM matches WHERE date=? AND home!='' AND away!='' "
+        "AND NOT EXISTS (SELECT 1 FROM matches m2 WHERE m2.home=matches.home "
+        "AND m2.away=matches.away AND m2.status IN ('Finished','Live','FT','AET','PEN')) "
+        "GROUP BY home, away ORDER BY kickoff_utc LIMIT 8",
+        (today,)
+    )
+    rows = cur.fetchall()
+    conn.close()
     best, best_conf = None, 0
     for r in rows:
         try:
             pred = model.predict(r["home"], r["away"])
             if pred.get("conf", 0) > best_conf:
                 best_conf = pred["conf"]
-                best = (r["home"], r["away"], pred)
+                best = (dict(r), pred)
         except Exception:
             continue
     if not best:
-        return "No se pudo generar el pick de hoy."
-    home, away, p = best
-    prob = p["prob"]
-    h_es, a_es = es(home), es(away)
+        return None
+    row, p = best
+    prob   = p["prob"]
+    h_es   = es(row["home"])
+    a_es   = es(row["away"])
     if prob["home"] >= prob["away"] and prob["home"] >= prob["draw"]:
-        pick_text, pick_prob = f"{h_es} gana", prob["home"] / 100
+        pick_text, pick_prob = f"Gana {h_es}", prob["home"]
     elif prob["draw"] >= prob["home"] and prob["draw"] >= prob["away"]:
-        pick_text, pick_prob = "Empate", prob["draw"] / 100
+        pick_text, pick_prob = "Empate", prob["draw"]
     else:
-        pick_text, pick_prob = f"{a_es} gana", prob["away"] / 100
+        pick_text, pick_prob = f"Gana {a_es}", prob["away"]
     conf = int(round(p.get("conf", 0)))
-    fair = round(1 / pick_prob, 2) if pick_prob > 0 else 0
-    stars = "⭐" * min(conf, 10)
+    fair = round(100 / pick_prob, 2) if pick_prob > 0 else 0
+    # Hora CR
+    hora_cr, canal = "", "ESPN / Teletica"
+    if row.get("kickoff_utc"):
+        try:
+            k  = row["kickoff_utc"].replace("Z","").replace("T"," ")[:16]
+            dt = datetime.datetime.strptime(k, "%Y-%m-%d %H:%M")
+            dt_cr = dt - datetime.timedelta(hours=6)
+            hora_cr = dt_cr.strftime("%I:%M %p")
+        except Exception:
+            pass
+    return {
+        "home": row["home"], "away": row["away"],
+        "home_es": h_es, "away_es": a_es,
+        "pick_text": pick_text, "prob_pct": int(pick_prob),
+        "conf": conf, "fair": fair,
+        "hora_cr": hora_cr, "canal": canal, "today": today,
+        "home_badge": row.get("home_badge",""),
+        "away_badge": row.get("away_badge",""),
+    }
+
+def _get_free_pick():
+    """Texto plano del pick gratis (fallback)."""
+    d = _best_pick_data()
+    if not d:
+        return "No hay partidos programados para hoy."
+    stars = "⭐" * min(d["conf"], 10)
+    hora  = f"\n🕐 {d['hora_cr']} CR · 📺 {d['canal']}" if d["hora_cr"] else ""
     return (
         f"🐕 *PICK GRATIS DEL DÍA*\n"
-        f"📅 {today} · Copa del Mundo 2026\n\n"
-        f"⚽ *{h_es} vs {a_es}*\n\n"
-        f"🎯 Pick: *{pick_text}*\n"
-        f"📊 Probabilidad: *{pick_prob:.0%}*\n"
-        f"💰 Cuota justa: *{fair}*\n"
-        f"🔥 Confianza Ryder: *{conf}/10* {stars}\n\n"
+        f"📅 {d['today']} · Copa del Mundo 2026\n\n"
+        f"⚽ *{d['home_es']} vs {d['away_es']}*{hora}\n\n"
+        f"🎯 Pick: *{d['pick_text']}*\n"
+        f"📊 Probabilidad: *{d['prob_pct']}%*\n"
+        f"💰 Cuota justa: *{d['fair']}*\n"
+        f"🔥 Confianza Ryder: *{d['conf']}/10* {stars}\n\n"
         f"_Analizado por Ryder, el scout de ProGol CR 🐕_\n\n"
         f"¿Querés todos los picks del día? Escribí /comprar"
     )
+
+def _send_free_pick_img(token, chat_id):
+    """Genera imagen del pick gratis y la envía. Fallback a texto."""
+    d = _best_pick_data()
+    if not d:
+        _send(token, chat_id, "No hay partidos programados para hoy.")
+        return
+    img_path = None
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "gen_pick_img", os.path.join(HERE, "scripts", "gen_pick_img.py"))
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        img_path = mod.generar(
+            home_es=d["home_es"], away_es=d["away_es"],
+            pick_text=d["pick_text"], prob_pct=d["prob_pct"],
+            conf=d["conf"], fair=d["fair"],
+            hora_cr=d["hora_cr"], canal=d["canal"],
+            home_badge_url=d["home_badge"], away_badge_url=d["away_badge"],
+            today=d["today"]
+        )
+    except Exception as e:
+        print(f"[bot] gen_pick_img error: {e}")
+    if img_path and os.path.exists(img_path):
+        caption = f"🐕 *Pick Gratis* · {d['pick_text']} · {d['prob_pct']}% confianza\n_ProGol CR · /comprar para más picks_"
+        if _send_photo(token, chat_id, caption, file_path=img_path):
+            return
+    _send(token, chat_id, _get_free_pick())
 
 def _get_pro_picks():
     rows, today = _today_matches(8)
@@ -650,10 +718,10 @@ def _handle_message(token, owner_chat_id, msg):
         return
 
     if cmd in ("/pick", "/free"):
-        content = _get_free_pick()
-        _send(token, chat_id, content)
+        _send_free_pick_img(token, chat_id)
         if not is_group:
-            _send(token, chat_id, "Querés más picks? Escribí /comprar 👇", reply_markup=_main_menu())
+            time.sleep(0.5)
+            _send(token, chat_id, "¿Querés más picks? 👇", reply_markup=_main_menu())
         return
 
     if cmd == "/quiniela":
@@ -756,8 +824,11 @@ def _handle_callback(token, owner_chat_id, cb):
         if not prod:
             return
         if prod["price"] == 0:
-            content = CONTENT_MAP.get(key, lambda: "")()
-            _send(token, chat_id, content)
+            if key == "free":
+                _send_free_pick_img(token, chat_id)
+            else:
+                content = CONTENT_MAP.get(key, lambda: "")()
+                _send(token, chat_id, content)
             with _lock:
                 _state[chat_id] = {"step": "idle"}
             return
