@@ -1,139 +1,137 @@
-# ⚽ World Cup 2026 — War Room
+# 🐕 ProGol CR — Inteligencia Deportiva
 
-A small **local** web app that shows every World Cup 2026 match for any day
-(live scores + status), with an **"Ask the Analyst"** chat panel powered by Claude.
+Plataforma local de análisis cuantitativo para fútbol, con picks del Mundial 2026 impulsados por modelos Poisson/Elo/Dixon-Coles y Claude AI (Ryder).
 
-- **Live data:** TheSportsDB (free public key built in — no signup needed).
-- **Chat:** Anthropic API (Claude). You paste your own key once; it's stored
-  locally in `config.json` and never leaves your machine except to call Anthropic.
-- **Zero dependencies:** runs on the Python standard library only.
+- **Datos en vivo:** TheSportsDB + API-Football
+- **IA:** Anthropic Claude (Ryder) — clave propia, nunca sale de tu PC
+- **Sin dependencias pip** — corre solo con la librería estándar de Python
+- **Acceso remoto:** túnel automático vía localtunnel, link enviado por Telegram al arrancar
 
 ---
 
-## How to run
+## Cómo arrancar
 
-**Easiest:** double-click **`Start War Room.bat`**.
+**Opción 1 — automático al encender el PC:**
+Ya configurado con el VBS en Startup. Arranca servidor + túnel y envía el link a Telegram.
 
-**Or from a terminal:**
+**Opción 2 — con túnel (acceso desde celular):**
 ```powershell
 cd C:\Users\esteb\worldcup-warroom
+python server.py --tunnel
+```
+
+**Opción 3 — solo local:**
+```powershell
 python server.py
 ```
 
-Your browser opens automatically at <http://127.0.0.1:8765>.
-Close the terminal window (or press `Ctrl+C`) to stop it.
+Abre automáticamente `http://127.0.0.1:8765`
 
 ---
 
-## First-time setup (to enable chat)
+## Usuarios del sistema
 
-1. Click the **⚙ (Settings)** button, top-right.
-2. Paste your **Anthropic API key** (get one at
-   <https://console.anthropic.com> → *API Keys*).
-3. Pick a model (Sonnet is the recommended balance of smart + cheap).
-4. **Save.** The chat panel now says "Claude connected."
+| Usuario | Contraseña | Rol | Permisos |
+|---|---|---|---|
+| DeadRyder | *(ver backup OneDrive)* | maestro | Todo, incluyendo ⚙️ Configuración |
+| ProGolMega | *(ver backup OneDrive)* | mega_premium | Picks + parlays, sin configuración |
+| ProGolPremium | *(ver backup OneDrive)* | premium | Picks básicos, sin configuración |
 
-> The fixtures dashboard works **without** any key. The key is only needed for
-> the chat / analysis panel. Each question costs a few cents on your Anthropic
-> account.
+> Solo DeadRyder puede acceder a ⚙️ Configuración.
 
 ---
 
-## What it does
+## Funcionalidades
 
-| Feature | Notes |
+| Feature | Notas |
 |---|---|
-| Day-by-day fixtures | Use ◀ ▶ or the date picker to browse any day |
-| **Competition filter** | 🏆 **World Cup** or 🌍 **All International** (friendlies, qualifiers, Nations League, Gold Cup, etc. — any country-vs-country game) |
-| Live scores & status | Auto-refreshes every 45s (toggle "Auto" off to pause) |
-| Venues & kickoff times | Kickoff shown in **your** local timezone |
-| **🔮 Match Insights** | **Click any match** for a full predictive breakdown (see below) |
-| Ask the Analyst | Claude sees the fixtures on screen and answers tactics, previews, corners, predictions |
-| **📝 Analyst notes** | Saved in the local database, tied to each date — your running scouting log |
-| **Offline cache** | Every fetched match is stored in SQLite; if the feed is down you still see the last-known fixtures (shown with an "offline · cached" badge) |
+| Fixtures día por día | ◀ ▶ o selector de fecha |
+| Scores en vivo | Auto-refresh cada 45s |
+| 🔮 Match Insights | Predicción completa por partido (1X2, goles, BTTS, corners, tarjetas) |
+| 🧠 Ryder (chat AI) | Análisis táctico contextual con Claude |
+| 📝 Notas del analista | Guardadas en SQLite por fecha |
+| DoradoBet | Combinador inteligente con advertencia de picks del mismo partido |
+| Acceso remoto | Túnel público automático al arrancar con `--tunnel` |
 
 ---
 
-## 🔮 Match Insights (the prediction model)
+## Modelo de predicción
 
-Click any match card to open a predictive dashboard powered by `model.py` — a
-transparent **Poisson scoring model** (the standard approach in football
-analytics) built on team strength ratings. From one model you get:
+`model.py` — motor Poisson + corrección Dixon-Coles + ratings Elo:
 
-- **Predicted scoreline** + the most-likely scorelines with probabilities
-- **Win / Draw / Win** probability bar (1X2)
-- **Who scores first** (home / away / no goal)
-- **First corner** + expected corners per team
-- **Expected goals (xG)** per side
-- **Both teams to score**, **Over/Under 2.5**, **expected cards**
-- A **1–10 confidence** read
-
-Then hit **🧠 AI deep-dive** to have Claude layer tactical reasoning, players to
-watch, and injury/lineup risks on top of the model numbers (needs your API key).
-
-> These are **model estimates, not guarantees** — the panel says so. The model
-> does not yet include lineups, injuries, referee or weather; the AI deep-dive
-> and the analyst chat are there to add that human/contextual layer.
-> Ratings live in `model.py` (`RATINGS`) and are easy to tweak.
-
-### Good things to ask the analyst
-- "Preview today's biggest game and the key tactical battle."
-- "Corner and card outlook for [team] vs [team]."
-- "Give me a prediction with confidence 1–10 and the main risks."
-- "Which players should I watch today and why?"
-
-> **Note:** the in-app analyst does **not** browse the internet. It reasons over
-> the live fixtures the app feeds it plus its football knowledge, and it flags
-> when something (late injuries, confirmed lineups) needs fresh verification.
-> For live web research, ask me (Claude Code) directly.
+- Scoreline más probable + tabla de probabilidades
+- **1X2**, Doble Oportunidad, BTTS, Over/Under 1.5/2.5/3.5
+- Expected Goals (xG), corners esperados, tarjetas esperadas
+- **ProGol Index™** 1–10 de confianza
+- **Ryder AI deep-dive** — capa táctica encima del modelo matemático
 
 ---
 
-## Local database (SQLite — no install needed)
+## Archivos clave
 
-The app uses **SQLite**, which is built into Python — there is **no separate
-SQL server to install**. The entire database is a single file, `warroom.db`,
-created automatically on first run. It's still real SQL, so you can open it with
-any SQLite tool (DB Browser for SQLite, the `sqlite3` CLI, a VS Code extension)
-and run queries.
-
-**Tables**
-
-| Table | What's in it |
+| Archivo | Propósito |
 |---|---|
-| `matches` | Every fixture/result the app has fetched (offline cache + history) |
-| `notes` | Your analyst notes, tied to a date |
-| `competitions` | Catalog of international competitions tracked |
+| `server.py` | Servidor principal: auth, API, proxy Claude, tunnel |
+| `db.py` | Capa SQLite: fixtures, notas, calibración |
+| `model.py` | Motor Poisson + Elo + Dixon-Coles |
+| `index.html` / `styles.css` / `app.js` | Frontend del dashboard |
+| `warroom.db` | Base de datos local (git-ignorado) |
+| `config.json` | API keys y configuración (git-ignorado) |
+| `data/users.json` | Usuarios y contraseñas hasheadas (git-ignorado) |
+| `tunnel.bat` | Arrancar túnel manualmente |
+| `setup-autostart.bat` | Configurar arranque automático |
 
-Example query (any SQLite client):
-```sql
-SELECT date, home, away, home_score, away_score, status
-FROM matches WHERE is_intl = 1 ORDER BY date DESC;
+---
+
+## Backup automático (Disaster Recovery)
+
+**Cada vez que arranca el servidor**, hace backup automático de los 3 archivos críticos en:
+```
+C:\Users\esteb\OneDrive\ProGolCR_Backup\progolcr_secrets_YYYYMMDD_HHMMSS.zip
 ```
 
-> If you ever outgrow SQLite, the schema in `db.py` ports cleanly to PostgreSQL.
+Incluye: `config.json` (API keys), `users.json` (contraseñas), `warroom.db` (base de datos).
+Conserva los últimos 5 backups y elimina los anteriores.
+
+### Restaurar en PC nueva
+
+```bash
+# 1. Instalar requisitos
+winget install Python.Python.3
+winget install OpenJS.NodeJS
+
+# 2. Clonar el código
+git clone https://github.com/DeadRyder/progol-cr.git
+cd progol-cr
+
+# 3. Restaurar archivos secretos
+# → Descargar el ZIP más reciente de OneDrive/ProGolCR_Backup/
+# → Extraer config.json a la raíz del proyecto
+# → Extraer users.json a la carpeta data/
+# → Extraer warroom.db a la raíz del proyecto
+
+# 4. Arrancar
+python server.py --tunnel
+```
+
+**Tiempo estimado de recuperación: menos de 10 minutos.**
 
 ---
 
-## Files
+## Seguridad
 
-| File | Purpose |
-|---|---|
-| `server.py` | Local server: serves the UI, proxies sports data + Claude, exposes notes + predict API |
-| `db.py` | SQLite layer: schema, match cache, notes, competitions |
-| `model.py` | Prediction engine: Poisson scoring model + team ratings |
-| `index.html` / `styles.css` / `app.js` | The dashboard front-end |
-| `warroom.db` | Your local database (git-ignored, created on first run) |
-| `config.json` | Your saved settings & API key (git-ignored, created on first run) |
-| `Start War Room.bat` | One-click launcher |
+- Contraseñas hasheadas con `pbkdf2_hmac` SHA-256, 100.000 iteraciones + salt único
+- Cookies `HttpOnly; SameSite=Lax` con TTL de 7 días
+- `config.json` y `data/users.json` git-ignorados — **nunca van al repositorio**
+- La app **nunca ejecuta apuestas** — es solo análisis y recomendación
+- Acceso remoto protegido por login obligatorio (no hay token público)
 
 ---
 
 ## Troubleshooting
 
-- **"No Anthropic API key set"** → open ⚙ Settings and paste your key.
-- **Fixtures won't load** → check your internet; click **⟳ Refresh**. The free
-  sports key is rate-limited, so very rapid refreshing can briefly throttle.
-- **Port already in use** → edit `PORT = 8765` near the top of `server.py`.
-- **Want faster/cheaper chat** → switch the model in Settings
-  (Haiku = fastest/cheapest, Opus = smartest).
+- **"No Anthropic API key"** → DeadRyder → ⚙️ → pegar clave
+- **Fixtures no cargan** → revisar internet, click ⟳ Refresh
+- **Puerto en uso** → cambiar `PORT = 8765` en `server.py`
+- **Túnel da 503** → volver a correr `python server.py --tunnel`
+- **No llega mensaje Telegram** → verificar token y chat_id en ⚙️ Configuración

@@ -220,6 +220,8 @@
     <a href="#planes"><span class="icon">💎</span> Diferencias de Planes</a>
     <a href="#venta"><span class="icon">📱</span> Kit de Venta</a>
 
+    <div class="sidebar-section">Sistema</div>
+    <a href="#recovery"><span class="icon">🛡️</span> Disaster Recovery</a>
     <div class="sidebar-section">Actualizaciones</div>
     <a href="#changelog"><span class="icon">📝</span> Changelog v1.x</a>
   </nav>
@@ -787,10 +789,113 @@
     </section>
 
     <!-- CHANGELOG -->
+    <section class="section" id="recovery">
+      <div class="section-title"><span class="tab-icon">🛡️</span> Disaster Recovery — Restaurar en PC Nueva</div>
+
+      <p>Si el PC se daña, se roba, o necesitás migrar, podés restaurar ProGol CR completo en menos de 10 minutos.</p>
+
+      <h3 style="margin:20px 0 12px;color:var(--green)">📦 Qué está respaldado y dónde</h3>
+      <div class="card">
+        <div class="card-title">🟢 GitHub — Código fuente (automático)</div>
+        <p><code>github.com/DeadRyder/progol-cr</code> (privado) — se actualiza con cada cambio. Contiene todo el código: <code>server.py</code>, <code>app.js</code>, <code>index.html</code>, <code>model.py</code>, etc.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">🟢 OneDrive — Archivos secretos (automático al arrancar)</div>
+        <p>Cada vez que inicia el servidor, crea un ZIP con timestamp en <code>OneDrive/ProGolCR_Backup/</code>. Incluye los 3 archivos que <strong>no van a GitHub</strong>:</p>
+        <ul style="margin:10px 0 0 20px;line-height:2">
+          <li><code>config.json</code> — API keys (Anthropic, Telegram, API-Football)</li>
+          <li><code>data/users.json</code> — Usuarios y contraseñas hasheadas</li>
+          <li><code>warroom.db</code> — Base de datos (historial de partidos, notas, calibración Elo)</li>
+        </ul>
+        <p style="margin-top:10px;color:var(--yellow)">⚠️ Conserva los últimos 5 backups. Backups más antiguos se eliminan automáticamente.</p>
+      </div>
+
+      <h3 style="margin:20px 0 12px;color:var(--green)">🔧 Pasos para restaurar</h3>
+      <div class="card">
+        <div class="card-title">Paso 1 — Instalar requisitos en el PC nuevo</div>
+        <pre style="background:var(--bg3);padding:12px;border-radius:8px;font-size:13px;overflow-x:auto">winget install Python.Python.3
+winget install OpenJS.NodeJS</pre>
+      </div>
+      <div class="card">
+        <div class="card-title">Paso 2 — Clonar el código</div>
+        <pre style="background:var(--bg3);padding:12px;border-radius:8px;font-size:13px;overflow-x:auto">git clone https://github.com/DeadRyder/progol-cr.git
+cd progol-cr</pre>
+      </div>
+      <div class="card">
+        <div class="card-title">Paso 3 — Restaurar archivos secretos</div>
+        <p>Ir a <strong>OneDrive → ProGolCR_Backup</strong> → descargar el ZIP más reciente → extraer:</p>
+        <ul style="margin:10px 0 0 20px;line-height:2">
+          <li><code>config.json</code> → raíz del proyecto (<code>worldcup-warroom/</code>)</li>
+          <li><code>users.json</code> → carpeta <code>data/</code></li>
+          <li><code>warroom.db</code> → raíz del proyecto</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">Paso 4 — Arrancar</div>
+        <pre style="background:var(--bg3);padding:12px;border-radius:8px;font-size:13px;overflow-x:auto">python server.py --tunnel</pre>
+        <p style="margin-top:8px">El servidor arranca, hace backup en OneDrive, levanta el túnel y te envía el link por Telegram. ✅</p>
+      </div>
+
+      <h3 style="margin:20px 0 12px;color:var(--green)">🔐 Usuarios del sistema</h3>
+      <div class="card">
+        <table style="width:100%;border-collapse:collapse;font-size:14px">
+          <thead><tr style="color:var(--text2);border-bottom:1px solid var(--border)">
+            <th style="padding:8px;text-align:left">Usuario</th>
+            <th style="padding:8px;text-align:left">Rol</th>
+            <th style="padding:8px;text-align:left">Permisos</th>
+          </tr></thead>
+          <tbody>
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:8px"><strong>DeadRyder</strong></td>
+              <td style="padding:8px"><span style="background:#78350f;color:#fbbf24;padding:2px 8px;border-radius:12px;font-size:12px">MAESTRO</span></td>
+              <td style="padding:8px">Todo — incluyendo ⚙️ Configuración</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:8px">ProGolMega</td>
+              <td style="padding:8px"><span style="background:#312e81;color:#a5b4fc;padding:2px 8px;border-radius:12px;font-size:12px">MEGA PREMIUM</span></td>
+              <td style="padding:8px">Picks + parlays + análisis completo</td>
+            </tr>
+            <tr>
+              <td style="padding:8px">ProGolPremium</td>
+              <td style="padding:8px"><span style="background:#14532d;color:#86efac;padding:2px 8px;border-radius:12px;font-size:12px">PREMIUM</span></td>
+              <td style="padding:8px">Picks básicos</td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="margin-top:10px;color:var(--text2);font-size:13px">Las contraseñas están en el backup de OneDrive (<code>users.json</code>). Si se perdieron, DeadRyder puede regenerarlas desde ⚙️ Configuración.</p>
+      </div>
+    </section>
+
     <section class="section" id="changelog">
       <div class="section-title"><span class="tab-icon">📝</span> Changelog — Historial de Cambios</div>
 
-      <h3>v1.4 — Junio 2026 (actual)</h3>
+      <h3>v1.5 — Junio 2026 (actual)</h3>
+      <div class="card">
+        <div class="card-title">✅ Sistema de Login por Roles</div>
+        <p>Autenticación completa con <strong>pbkdf2_hmac SHA-256</strong> (100.000 iteraciones + salt único). Tres roles: <strong>maestro</strong> (acceso total), <strong>mega_premium</strong> y <strong>premium</strong>. Solo DeadRyder puede acceder a ⚙️ Configuración. Cookies HttpOnly con TTL 7 días.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ Ryder — nueva identidad del analista</div>
+        <p>El analista de la app se llama <strong>Ryder</strong> (antes "Scout"). La mascota oficial (mascota.jpg) aparece en el chat bubble y en el encabezado del panel de chat.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ Acceso remoto automático con Telegram</div>
+        <p>Al arrancar con <code>--tunnel</code>, la app levanta un túnel público (localtunnel via npx) y envía el link automáticamente al Telegram de Esteban. Configurado para arrancar al encender la PC sin necesidad de ninguna acción manual.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ Backup automático en OneDrive</div>
+        <p>Al arrancar, el servidor copia automáticamente <code>config.json</code>, <code>data/users.json</code> y <code>warroom.db</code> a <code>OneDrive/ProGolCR_Backup/</code> como ZIP con timestamp. Conserva los últimos 5 backups. Permite recuperación completa en menos de 10 minutos en cualquier PC.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ GitHub — Respaldo del código en la nube</div>
+        <p>Todo el código fuente está en <code>github.com/DeadRyder/progol-cr</code> (privado). Los archivos secretos (<code>config.json</code>, <code>users.json</code>, <code>warroom.db</code>) están git-ignorados y nunca se suben al repositorio.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ Advertencia DoradoBet — picks del mismo partido</div>
+        <p>El combinador ahora muestra un aviso en ámbar cuando se intenta combinar múltiples picks del mismo partido (restricción de DoradoBet). Evita que el usuario arme una combinada inválida sin darse cuenta.</p>
+      </div>
+
+      <h3>v1.4 — Junio 2026</h3>
       <div class="card">
         <div class="card-title">✅ Motor de Calibración Diaria ProGol™ (calibrator.py)</div>
         <p>El servidor ahora auto-calibra los ratings Elo de cada equipo con los resultados reales del día (ESPN API). Después de cada partido terminado del Mundial, los ratings se actualizan con K=32 y el modelo recalcula inmediatamente para los siguientes partidos. Los datos de precisión (Brier Score) se guardan en <code>data/brier_scores.json</code>.</p>
