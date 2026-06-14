@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ProGol CR — Análisis de Mercado 2026</title>
+<style>
+  :root {
+    --bg: #0f172a; --bg2: #1e293b; --bg3: #334155;
+    --green: #22c55e; --green-dark: #16a34a; --green-dim: #166534;
+    --gold: #f59e0b; --red: #ef4444; --blue: #3b82f6; --purple: #a855f7;
+    --text: #f8fafc; --text2: #94a3b8; --text3: #64748b;
+    --border: #334155;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 15px; line-height: 1.6; }
+  .header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 28px 40px; display: flex; align-items: center; gap: 20px; }
+  .header img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 3px solid var(--green); }
+  .header h1 { font-size: 22px; font-weight: 800; color: var(--green); }
+  .header p { color: var(--text2); font-size: 13px; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+  .section { margin-bottom: 52px; }
+  .label { font-size: 10px; font-weight: 800; letter-spacing: 2px; color: var(--green); text-transform: uppercase; margin-bottom: 8px; }
+  h2 { font-size: 26px; font-weight: 800; margin-bottom: 6px; }
+  h3 { font-size: 17px; font-weight: 700; margin-bottom: 14px; color: var(--text2); }
+  p { color: var(--text2); margin-bottom: 12px; line-height: 1.7; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 48px 0; }
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 16px; }
+  .card-title { font-weight: 700; font-size: 15px; margin-bottom: 8px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  @media (max-width: 700px) { .grid2,.grid3,.grid4 { grid-template-columns: 1fr; } }
+
+  /* Stats */
+  .stat { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; }
+  .stat-num { font-size: 32px; font-weight: 900; color: var(--green); }
+  .stat-lbl { font-size: 12px; color: var(--text3); margin-top: 4px; }
+
+  /* Producto cards */
+  .prod-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+  .prod-card.highlight { border-color: var(--green); box-shadow: 0 0 24px #22c55e18; }
+  .prod-card.gold { border-color: var(--gold); }
+  .prod-emoji { font-size: 28px; margin-bottom: 10px; }
+  .prod-name { font-weight: 800; font-size: 15px; margin-bottom: 4px; }
+  .prod-price { font-size: 26px; font-weight: 900; color: var(--green); margin: 8px 0; }
+  .prod-price.gold { color: var(--gold); }
+  .prod-desc { font-size: 13px; color: var(--text2); }
+  .prod-margin { font-size: 11px; color: var(--text3); margin-top: 8px; padding: 6px 10px; background: var(--bg3); border-radius: 6px; }
+
+  /* Combos */
+  .combo-card { background: linear-gradient(135deg, var(--bg2), var(--bg3)); border: 1px solid var(--green); border-radius: 16px; padding: 24px; }
+  .combo-card.gold { border-color: var(--gold); background: linear-gradient(135deg, #1c1500, #2d1f00); }
+  .combo-tag { display: inline-block; background: var(--green-dim); color: var(--green); font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 999px; letter-spacing: 1px; margin-bottom: 10px; }
+  .combo-tag.gold { background: #451a03; color: var(--gold); }
+  .combo-savings { color: var(--red); font-size: 12px; text-decoration: line-through; }
+  .combo-badge { background: var(--green); color: #0f172a; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 999px; display: inline-block; margin-left: 8px; }
+
+  /* Tabla competencia */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; padding: 10px 14px; color: var(--text3); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border); }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--border); color: var(--text2); }
+  tr:last-child td { border: none; }
+  .check { color: var(--green); font-weight: 700; }
+  .cross { color: var(--text3); }
+  .us { color: var(--green); font-weight: 800; }
+
+  /* Proyección */
+  .proj-bar-wrap { margin: 8px 0; }
+  .proj-bar-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+  .proj-bar { height: 28px; border-radius: 6px; background: var(--bg3); overflow: hidden; }
+  .proj-bar-fill { height: 100%; border-radius: 6px; display: flex; align-items: center; padding: 0 10px; font-size: 12px; font-weight: 700; color: #0f172a; transition: width 1s; }
+
+  /* Funnel */
+  .funnel { display: flex; flex-direction: column; gap: 6px; }
+  .funnel-step { border-radius: 10px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
+  .funnel-name { font-weight: 700; font-size: 14px; }
+  .funnel-detail { font-size: 12px; color: var(--text3); }
+  .funnel-n { font-size: 22px; font-weight: 900; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <img src="/brand/mascota.jpg" alt="Ryder"/>
+  <div>
+    <h1>Análisis de Mercado — ProGol CR</h1>
+    <p>Copa del Mundo 2026 · Estrategia de monetización · Junio 2026</p>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- CONTEXTO -->
+  <div class="section">
+    <div class="label">El Contexto</div>
+    <h2>¿Dónde estamos parados?</h2>
+    <p>El Mundial 2026 es la mayor oportunidad de monetización de apuestas deportivas en la historia de Costa Rica — 48 equipos, 104 partidos, 6 semanas. El mercado de apuestas CR creció un 40% en 2022 (Qatar) y se proyecta que 2026 lo duplique por la cercanía geográfica y el horario.</p>
+
+    <div class="grid4" style="margin-top:24px;">
+      <div class="stat"><div class="stat-num">104</div><div class="stat-lbl">partidos del Mundial 2026</div></div>
+      <div class="stat"><div class="stat-num">~47</div><div class="stat-lbl">días de duración del torneo</div></div>
+      <div class="stat"><div class="stat-num">₡0</div><div class="stat-lbl">costo variable por cliente</div></div>
+      <div class="stat"><div class="stat-num">100%</div><div class="stat-lbl">margen en productos digitales</div></div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- COMPETENCIA -->
+  <div class="section">
+    <div class="label">Análisis Competitivo</div>
+    <h2>¿Quién más hay en CR?</h2>
+    <p>El mercado costarricense de tips/picks está dominado por grupos de WhatsApp informales sin modelo matemático. La competencia real es casi inexistente.</p>
+    <div class="card" style="padding:0;overflow:hidden;margin-top:20px;">
+      <table>
+        <thead>
+          <tr>
+            <th>Competidor</th>
+            <th>Modelo matemático</th>
+            <th>Precio transparente</th>
+            <th>App propia</th>
+            <th>Picks en tiempo real</th>
+            <th>Automatizado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="us">🐕 ProGol CR</td>
+            <td class="check">✅ Dixon-Coles + Elo</td>
+            <td class="check">✅ Diario</td>
+            <td class="check">✅ Propia</td>
+            <td class="check">✅ Sí</td>
+            <td class="check">✅ Bot Telegram</td>
+          </tr>
+          <tr>
+            <td>Grupos WhatsApp CR</td>
+            <td class="cross">❌ Opinión</td>
+            <td class="cross">❌ Variable</td>
+            <td class="cross">❌ No</td>
+            <td class="cross">❌ Manual</td>
+            <td class="cross">❌ No</td>
+          </tr>
+          <tr>
+            <td>Tipsters Instagram</td>
+            <td class="cross">❌ Gut feeling</td>
+            <td class="cross">⚠️ Mensual oculto</td>
+            <td class="cross">❌ No</td>
+            <td class="cross">❌ Stories</td>
+            <td class="cross">❌ No</td>
+          </tr>
+          <tr>
+            <td>Apps internacionales</td>
+            <td class="check">✅ Sí</td>
+            <td class="cross">⚠️ USD caro</td>
+            <td class="check">✅ Sí</td>
+            <td class="check">✅ Sí</td>
+            <td class="check">✅ Sí</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card" style="margin-top:16px; border-color: var(--green);">
+      <div class="card-title">💡 La ventaja competitiva real</div>
+      <p style="margin:0;">ProGol CR es la <strong>única plataforma en Centroamérica</strong> con modelo matemático propio + precios en colones + pagos por SINPE + bot automatizado. El cliente paga en su moneda, en su app de mensajería, sin tarjeta de crédito.</p>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- PRODUCTOS -->
+  <div class="section">
+    <div class="label">Catálogo de Productos</div>
+    <h2>Qué vendemos y a qué precio</h2>
+    <p>Precio diario — el cliente paga solo los días que apuesta. Sin suscripción, sin compromiso. Entrega automática por Telegram bot.</p>
+
+    <h3 style="margin-top:28px;">Niveles de acceso</h3>
+    <div class="grid3">
+      <div class="prod-card">
+        <div class="prod-emoji">🆓</div>
+        <div class="prod-name">FREE</div>
+        <div class="prod-price">₡0</div>
+        <div class="prod-desc">1 pick del día (el más seguro del modelo). Gratis siempre. El gancho.</div>
+        <div class="prod-margin">Costo: ₡0 · Margen: 100% · Función: conversión</div>
+      </div>
+      <div class="prod-card highlight">
+        <div class="prod-emoji">⚡</div>
+        <div class="prod-name">PRO del día</div>
+        <div class="prod-price">₡500</div>
+        <div class="prod-desc">Todos los picks del día (3 por partido) + Parlay Seguro + Parlay Valor.</div>
+        <div class="prod-margin">Costo: ₡0 · Margen: 100% · Volumen esperado: alto</div>
+      </div>
+      <div class="prod-card gold">
+        <div class="prod-emoji">👑</div>
+        <div class="prod-name">PREMIUM del día</div>
+        <div class="prod-price gold">₡1,000</div>
+        <div class="prod-desc">Todo Pro + Quiniela + Goleadores esperados + Ryder Deep-Dive táctico.</div>
+        <div class="prod-margin">Costo: ₡0 · Margen: 100% · Ticket más alto</div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:32px;">Productos sueltos (a la carta)</h3>
+    <div class="grid4">
+      <div class="prod-card">
+        <div class="prod-emoji">📋</div>
+        <div class="prod-name">Quiniela del Día</div>
+        <div class="prod-price" style="font-size:20px;">₡300</div>
+        <div class="prod-desc">Predicción 1X2 todos los partidos del día con probabilidades.</div>
+      </div>
+      <div class="prod-card">
+        <div class="prod-emoji">⚽</div>
+        <div class="prod-name">Picks de un Partido</div>
+        <div class="prod-price" style="font-size:20px;">₡200</div>
+        <div class="prod-desc">Los 3 picks del modelo + cuotas justas para un partido específico.</div>
+      </div>
+      <div class="prod-card">
+        <div class="prod-emoji">🎯</div>
+        <div class="prod-name">Parlay Armado</div>
+        <div class="prod-price" style="font-size:20px;">₡250</div>
+        <div class="prod-desc">Combinada lista (3–5 patas) con cuota y probabilidad total.</div>
+      </div>
+      <div class="prod-card">
+        <div class="prod-emoji">🥅</div>
+        <div class="prod-name">Datos Goleadores</div>
+        <div class="prod-price" style="font-size:20px;">₡300</div>
+        <div class="prod-desc">xG por jugador + probabilidad de anotar. Todos los partidos del día.</div>
+      </div>
+      <div class="prod-card">
+        <div class="prod-emoji">📊</div>
+        <div class="prod-name">Informe Mundial</div>
+        <div class="prod-price" style="font-size:20px;">₡400</div>
+        <div class="prod-desc">Tabla grupos + Elo actualizado + proyección de avance a octavos.</div>
+      </div>
+      <div class="prod-card">
+        <div class="prod-emoji">🧠</div>
+        <div class="prod-name">Ryder Deep-Dive</div>
+        <div class="prod-price" style="font-size:20px;">₡350</div>
+        <div class="prod-desc">Análisis táctico profundo de un partido. Alineaciones, jugadores clave, riesgos.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- COMBOS -->
+  <div class="section">
+    <div class="label">Estrategia de Empaquetado</div>
+    <h2>Combos — Más valor, ticket más alto</h2>
+    <p>Los combos aumentan el ticket promedio entre un 30–60% vs compra individual. El cliente percibe ahorro, vos aumentás ingreso por transacción.</p>
+    <div class="grid3" style="margin-top:24px;">
+
+      <div class="combo-card">
+        <div class="combo-tag">ENTRADA</div>
+        <div class="prod-name" style="font-size:17px;margin:8px 0;">🌍 Combo Mundial Completo</div>
+        <div style="font-size:28px;font-weight:900;color:var(--green);margin:10px 0;">₡800</div>
+        <div class="combo-savings">Valor suelto: ₡700</div>
+        <span class="combo-badge">Ahorrás ₡0 — comprás contexto</span>
+        <p style="margin-top:14px;font-size:13px;">Quiniela del día + Informe Mundial completo. Para el que quiere entender el torneo antes de apostar.</p>
+        <div style="margin-top:12px;font-size:12px;color:var(--text3);">
+          ✅ Quiniela 1X2 del día<br>
+          ✅ Tabla grupos actualizada<br>
+          ✅ Proyección de clasificados<br>
+          ✅ Elo de los 48 equipos
+        </div>
+      </div>
+
+      <div class="combo-card">
+        <div class="combo-tag">MÁS POPULAR</div>
+        <div class="prod-name" style="font-size:17px;margin:8px 0;">💰 Combo Apostador</div>
+        <div style="font-size:28px;font-weight:900;color:var(--green);margin:10px 0;">₡650</div>
+        <div class="combo-savings">Valor suelto: ₡750</div>
+        <span class="combo-badge">Ahorrás ₡100</span>
+        <p style="margin-top:14px;font-size:13px;">Todos los picks del día + Parlay armado listo para poner. El combo perfecto para días de jornada.</p>
+        <div style="margin-top:12px;font-size:12px;color:var(--text3);">
+          ✅ Todos los picks del día<br>
+          ✅ Parlay Seguro (2–3 patas)<br>
+          ✅ Parlay Valor (3–4 patas)<br>
+          ✅ Cuotas justas vs DoradoBet
+        </div>
+      </div>
+
+      <div class="combo-card gold">
+        <div class="combo-tag gold">TODO INCLUIDO</div>
+        <div class="prod-name" style="font-size:17px;margin:8px 0;">🏆 Combo Total ProGol</div>
+        <div style="font-size:28px;font-weight:900;color:var(--gold);margin:10px 0;">₡1,200</div>
+        <div class="combo-savings">Valor suelto: ₡1,600+</div>
+        <span class="combo-badge" style="background:var(--gold);">Ahorrás ₡400+</span>
+        <p style="margin-top:14px;font-size:13px;">El paquete completo. Picks + quiniela + goleadores + parlays + informe + Ryder deep-dive.</p>
+        <div style="margin-top:12px;font-size:12px;color:var(--text3);">
+          ✅ Todo Premium del día<br>
+          ✅ Quiniela + Informe Mundial<br>
+          ✅ Goleadores esperados<br>
+          ✅ Parlay Bomba especulativo<br>
+          ✅ Ryder Deep-Dive (1 partido)
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Combos especiales por evento -->
+    <div class="card" style="margin-top:24px; border-color: var(--purple);">
+      <div class="card-title">🎪 Combos de Evento Especial (precio premium)</div>
+      <p>Para octavos de final, cuartos, semis y la gran final — momentos de máximo interés donde el cliente está más dispuesto a pagar.</p>
+      <div class="grid3" style="margin-top:16px;">
+        <div style="background:var(--bg3);border-radius:10px;padding:16px;">
+          <div style="font-size:13px;font-weight:700;margin-bottom:6px;">🥈 Paquete Octavos</div>
+          <div style="font-size:22px;font-weight:900;color:var(--purple);">₡1,500</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:6px;">Los 8 partidos de octavos, análisis de cada uno, picks, quiniela de fase eliminatoria completa.</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:10px;padding:16px;">
+          <div style="font-size:13px;font-weight:700;margin-bottom:6px;">🥇 Paquete Semis + Final</div>
+          <div style="font-size:22px;font-weight:900;color:var(--gold);">₡2,000</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:6px;">Los 3 partidos más importantes del torneo. Análisis táctico completo + picks + probabilidades de campeón.</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:10px;padding:16px;">
+          <div style="font-size:13px;font-weight:700;margin-bottom:6px;">⚽ Paquete Fase de Grupos CR</div>
+          <div style="font-size:22px;font-weight:900;color:var(--green);">₡1,000</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:6px;">Los 3 partidos de la fase de grupos de La Sele. Análisis especial + picks + quiniela del grupo.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- EMBUDO DE CONVERSIÓN -->
+  <div class="section">
+    <div class="label">Embudo de Ventas</div>
+    <h2>El camino del cliente</h2>
+    <div class="funnel" style="margin-top:24px;">
+      <div class="funnel-step" style="background:#1e293b;border:1px solid var(--border);max-width:100%;">
+        <div><div class="funnel-name">👁️ Ve el pick gratis en Telegram</div><div class="funnel-detail">Canal público / grupo / reenvío de amigo</div></div>
+        <div class="funnel-n" style="color:var(--text3);">100</div>
+      </div>
+      <div style="text-align:center;color:var(--text3);font-size:12px;padding:2px 0;">↓ 40% hace click en /comprar</div>
+      <div class="funnel-step" style="background:#1e293b;border:1px solid var(--border);max-width:90%;margin:0 auto;">
+        <div><div class="funnel-name">💬 Escribe al bot</div><div class="funnel-detail">Ve el menú de productos, pregunta precios</div></div>
+        <div class="funnel-n" style="color:var(--blue);">40</div>
+      </div>
+      <div style="text-align:center;color:var(--text3);font-size:12px;padding:2px 0;">↓ 40% compra algo</div>
+      <div class="funnel-step" style="background:#1e293b;border:1px solid var(--green);max-width:75%;margin:0 auto;">
+        <div><div class="funnel-name">💰 Hace SINPE y compra</div><div class="funnel-detail">Producto suelto o Pro del día</div></div>
+        <div class="funnel-n" style="color:var(--green);">16</div>
+      </div>
+      <div style="text-align:center;color:var(--text3);font-size:12px;padding:2px 0;">↓ 30% upgrade en jornadas importantes</div>
+      <div class="funnel-step" style="background:#1c1500;border:1px solid var(--gold);max-width:55%;margin:0 auto;">
+        <div><div class="funnel-name">👑 Compra Combo Total o Premium</div><div class="funnel-detail">Octavos, semis, final — partidos grandes</div></div>
+        <div class="funnel-n" style="color:var(--gold);">5</div>
+      </div>
+    </div>
+    <p style="margin-top:16px;font-size:13px;color:var(--text3);">Con 100 seguidores del canal Telegram: ~16 ventas por jornada, ~5 en producto premium. Con 500 seguidores: ~80 ventas / jornada.</p>
+  </div>
+
+  <hr class="divider">
+
+  <!-- PROYECCIÓN DE INGRESOS -->
+  <div class="section">
+    <div class="label">Proyección Financiera</div>
+    <h2>¿Cuánto puede generar el Mundial?</h2>
+    <p>El Mundial tiene ~47 días de competencia con partidos. No todos los días hay jornada — en promedio 2–3 días de partidos por semana en grupos, luego diario en fases finales.</p>
+
+    <div class="grid3" style="margin-top:24px;gap:20px;">
+      <!-- Conservador -->
+      <div class="card">
+        <div class="card-title">📉 Conservador</div>
+        <p style="font-size:13px;">10 clientes activos · 50% compran Pro · 20 días de jornada</p>
+        <div style="margin:16px 0;">
+          <div class="proj-bar-wrap">
+            <div class="proj-bar-label"><span>Pro (5 × ₡500 × 20 días)</span><span style="color:var(--green);">₡50,000</span></div>
+            <div class="proj-bar"><div class="proj-bar-fill" style="width:20%;background:var(--green);">₡50k</div></div>
+          </div>
+          <div class="proj-bar-wrap">
+            <div class="proj-bar-label"><span>Combos / sueltos</span><span style="color:var(--green);">₡15,000</span></div>
+            <div class="proj-bar"><div class="proj-bar-fill" style="width:6%;background:var(--green);">₡15k</div></div>
+          </div>
+        </div>
+        <div style="font-size:28px;font-weight:900;color:var(--green);border-top:1px solid var(--border);padding-top:14px;margin-top:4px;">₡65,000</div>
+        <div style="font-size:12px;color:var(--text3);">= ~$120 USD durante el Mundial</div>
+      </div>
+
+      <!-- Realista -->
+      <div class="card" style="border-color:var(--green);">
+        <div class="card-title">📊 Realista <span style="color:var(--green);font-size:11px;">— META</span></div>
+        <p style="font-size:13px;">35 clientes · mix Pro + Premium + Combos · 30 días</p>
+        <div style="margin:16px 0;">
+          <div class="proj-bar-wrap">
+            <div class="proj-bar-label"><span>Pro (20 × ₡500 × 30)</span><span style="color:var(--green);">₡300,000</span></div>
+            <div class="proj-bar"><div class="proj-bar-fill" style="width:60%;background:var(--green);">₡300k</div></div>
+          </div>
+          <div class="proj-bar-wrap">
+            <div class="proj-bar-label"><span>Premium (8 × ₡1,000 × 20)</span><span style="color:var(--green);">₡160,000</span></div>
+            <div class="proj-bar"><div class="proj-bar-fill" style="width:32%;background:#16a34a;">₡160k</div></div>
+          </div>
+          <div class="proj-bar-wrap">
+            <div class="proj-bar-label"><span>Combos + sueltos</span><span style="color:var(--green);">₡80,000</span></div>
+            <div class="proj-bar"><div class="proj-bar-fill" style="width:16%;background:#166534;">₡80k</div></div>
+          </div>
+        </div>
+        <div style="font-size:28px;font-weight:900;color:var(--green);border-top:1px solid var(--border);padding-top:14px;margin-top:4px;">₡540,000</div>
+        <div style="font-size:12px;color:var(--text3);">= ~$1,000 USD durante el Mundial</div>
+      </div>
+
+      <!-- Optimista -->
+      <div class="card" style="border-color:var(--gold);">
+        <div class="card-title">🚀 Optimista</div>
+        <p style="font-size:13px;">100 clientes · canal viral · paquetes de fases finales</p>
+        <div style="margin:16px 0;">
+          <div class="proj-bar-wrap">
+            <div class="proj-bar-label"><span>Pro (50 × ₡500 × 40)</span><span style="color:var(--gold);">₡1,000,000</span></div>
+            <div class="proj-bar"><div class="proj-bar-fill" style="width:80%;background:var(--gold);">₡1M</div></div>
+          </div>
+          <div class="proj-bar-wrap">
+            <div class="proj-bar-label"><span>Premium + Combos totales</span><span style="color:var(--gold);">₡600,000</span></div>
+            <div class="proj-bar"><div class="proj-bar-fill" style="width:48%;background:#b45309;">₡600k</div></div>
+          </div>
+          <div class="proj-bar-wrap">
+            <div class="proj-bar-label"><span>Paquetes fases finales</span><span style="color:var(--gold);">₡200,000</span></div>
+            <div class="proj-bar"><div class="proj-bar-fill" style="width:16%;background:#78350f;">₡200k</div></div>
+          </div>
+        </div>
+        <div style="font-size:28px;font-weight:900;color:var(--gold);border-top:1px solid var(--border);padding-top:14px;margin-top:4px;">₡1,800,000</div>
+        <div style="font-size:12px;color:var(--text3);">= ~$3,300 USD durante el Mundial</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- CANALES DE ADQUISICIÓN -->
+  <div class="section">
+    <div class="label">Adquisición de Clientes</div>
+    <h2>Cómo conseguir los primeros 50 clientes</h2>
+    <div class="grid2" style="margin-top:20px;">
+      <div class="card" style="border-color:var(--blue);">
+        <div class="card-title">📱 Canal Telegram público (PRIORIDAD #1)</div>
+        <p style="font-size:13px;">Creás un canal donde mandás el pick gratis todos los días. Cada post termina con "¿Querés los picks completos? /comprar". La gente lo reenvía y el canal crece orgánicamente durante el Mundial.</p>
+        <div style="background:var(--bg3);border-radius:8px;padding:10px;font-size:12px;margin-top:10px;color:var(--text3);">Costo: ₡0 · Tiempo: 5 min/día · Alcance: viral si los picks aciertan</div>
+      </div>
+      <div class="card" style="border-color:var(--purple);">
+        <div class="card-title">💬 WhatsApp personal (PRIORIDAD #2)</div>
+        <p style="font-size:13px;">Tu red de contactos. Un status diario con el pick gratis + "SINPE para los picks completos". Amigos y familiares son los primeros compradores — no les vendés análisis, les das valor primero.</p>
+        <div style="background:var(--bg3);border-radius:8px;padding:10px;font-size:12px;margin-top:10px;color:var(--text3);">Costo: ₡0 · Tiempo: 2 min/día · Conversión: alta (confianza personal)</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Instagram / TikTok (CRECIMIENTO)</div>
+        <p style="font-size:13px;">Una cuenta dedicada a ProGol CR. Videos cortos de 30 segundos mostrando cómo funciona el modelo, celebrando picks acertados, mostrando las probabilidades en pantalla. El Mundial genera contenido solo.</p>
+        <div style="background:var(--bg3);border-radius:8px;padding:10px;font-size:12px;margin-top:10px;color:var(--text3);">Costo: ₡0 · Tiempo: 15 min/día · Alcance: potencialmente masivo</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🤝 Grupos de apuestas CR (INFILTRACIÓN)</div>
+        <p style="font-size:13px;">Hay decenas de grupos de WhatsApp y Telegram de apuestas en CR. Entrás, das picks gratis durante una semana, construís credibilidad, luego ofrecés el producto. Un grupo de 200 personas puede dar 20 clientes.</p>
+        <div style="background:var(--bg3);border-radius:8px;padding:10px;font-size:12px;margin-top:10px;color:var(--text3);">Costo: ₡0 · Tiempo: 30 min/semana · Riesgo: ser expulsado si es muy agresivo</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- PLAN DE ACCIÓN -->
+  <div class="section">
+    <div class="label">Plan de Acción</div>
+    <h2>Los próximos 7 días</h2>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:20px;">
+      <div class="card" style="display:flex;gap:16px;align-items:flex-start;">
+        <div style="background:var(--green);color:#0f172a;font-weight:900;font-size:13px;padding:6px 12px;border-radius:8px;flex-shrink:0;">DÍA 1</div>
+        <div><div style="font-weight:700;margin-bottom:4px;">Crear canal público de Telegram</div><div style="font-size:13px;color:var(--text2);">Nombre sugerido: "ProGol CR ⚽" · Enviar primer pick gratis · Compartir el link en tus contactos de WhatsApp.</div></div>
+      </div>
+      <div class="card" style="display:flex;gap:16px;align-items:flex-start;">
+        <div style="background:var(--blue);color:#fff;font-weight:900;font-size:13px;padding:6px 12px;border-radius:8px;flex-shrink:0;">DÍA 2</div>
+        <div><div style="font-weight:700;margin-bottom:4px;">Activar el bot de ventas</div><div style="font-size:13px;color:var(--text2);">El bot de Telegram ya está construido. Arrancar el servidor con --tunnel y probarlo con vos mismo primero.</div></div>
+      </div>
+      <div class="card" style="display:flex;gap:16px;align-items:flex-start;">
+        <div style="background:var(--purple);color:#fff;font-weight:900;font-size:13px;padding:6px 12px;border-radius:8px;flex-shrink:0;">DÍA 3–5</div>
+        <div><div style="font-weight:700;margin-bottom:4px;">Conseguir los primeros 3 clientes de pago</div><div style="font-size:13px;color:var(--text2);">Con amigos o contactos de confianza. Les regalás el primer día (₡0), al segundo día ya les ofrecés Pro a ₡500. El objetivo no es dinero aún — es probar el flujo completo.</div></div>
+      </div>
+      <div class="card" style="display:flex;gap:16px;align-items:flex-start;">
+        <div style="background:var(--gold);color:#0f172a;font-weight:900;font-size:13px;padding:6px 12px;border-radius:8px;flex-shrink:0;">DÍA 6–7</div>
+        <div><div style="font-weight:700;margin-bottom:4px;">Primer ingreso real + ajustar precios si hace falta</div><div style="font-size:13px;color:var(--text2);">Si los primeros 3 clientes pagan sin cuestionar, el precio está bien. Si piden rebaja, el producto necesita más percepción de valor (más detalle, más análisis). Iterás en una semana.</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

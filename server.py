@@ -2981,6 +2981,8 @@ STATIC_FILES = {
     "/docs/guia-app.html": ("docs/guia-app.html", "text/html; charset=utf-8"),
     "/docs/estrategia.html": ("docs/estrategia.html", "text/html; charset=utf-8"),
     "/docs/brand.html": ("docs/progol-cr-brand.html", "text/html; charset=utf-8"),
+    "/docs/mercado.html": ("docs/mercado.html", "text/html; charset=utf-8"),
+    "/docs/mercado": ("docs/mercado.html", "text/html; charset=utf-8"),
     # Backward-compat aliases for old brand/ URLs
     "/brand/guia-app.html": ("docs/guia-app.html", "text/html; charset=utf-8"),
     "/brand/estrategia.html": ("docs/estrategia.html", "text/html; charset=utf-8"),
@@ -4731,6 +4733,12 @@ def main():
         print(f"[db] init failed: {e}")
     _init_users()  # create default users if not exist
     threading.Thread(target=_backup_secrets, daemon=True).start()
+    # Start Telegram sales bot
+    try:
+        import telegram_bot as _tbot
+        _tbot.start_bot_thread(cfg)
+    except Exception as _e:
+        print(f"[bot] could not start Telegram bot: {_e}")
 
     use_tunnel = "--tunnel" in sys.argv
     local_url = f"http://127.0.0.1:{PORT}"
