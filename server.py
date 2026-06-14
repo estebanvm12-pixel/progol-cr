@@ -17,7 +17,9 @@ import json
 import os
 import re
 import secrets
+import shutil
 import socket
+import zipfile
 import subprocess
 import sys
 import time
@@ -4678,6 +4680,39 @@ def get_analyst_context_snapshot():
     return ""
 
 
+def _backup_secrets():
+    """Copy config.json, data/users.json, warroom.db into OneDrive as a ZIP."""
+    try:
+        onedrive = os.path.join(os.path.expanduser("~"), "OneDrive")
+        if not os.path.isdir(onedrive):
+            print("[backup] OneDrive folder not found — skipping backup")
+            return
+        backup_dir = os.path.join(onedrive, "ProGolCR_Backup")
+        os.makedirs(backup_dir, exist_ok=True)
+        stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        zip_path = os.path.join(backup_dir, f"progolcr_secrets_{stamp}.zip")
+        files_to_backup = [
+            os.path.join(HERE, "config.json"),
+            os.path.join(HERE, "data", "users.json"),
+            os.path.join(HERE, "warroom.db"),
+        ]
+        backed_up = []
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+            for fpath in files_to_backup:
+                if os.path.exists(fpath):
+                    zf.write(fpath, os.path.basename(fpath))
+                    backed_up.append(os.path.basename(fpath))
+        # Keep only the 5 most recent backups to avoid filling OneDrive
+        all_zips = sorted([
+            f for f in os.listdir(backup_dir) if f.startswith("progolcr_secrets_")
+        ])
+        for old in all_zips[:-5]:
+            os.remove(os.path.join(backup_dir, old))
+        print(f"[backup] OneDrive backup OK — {backed_up} → {zip_path}")
+    except Exception as e:
+        print(f"[backup] backup failed (non-fatal): {e}")
+
+
 def main():
     cfg = load_config()
     if not os.path.exists(CONFIG_PATH):
@@ -4687,6 +4722,7 @@ def main():
     except Exception as e:
         print(f"[db] init failed: {e}")
     _init_users()  # create default users if not exist
+    threading.Thread(target=_backup_secrets, daemon=True).start()
 
     use_tunnel = "--tunnel" in sys.argv
     local_url = f"http://127.0.0.1:{PORT}"
