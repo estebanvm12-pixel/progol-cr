@@ -2831,6 +2831,7 @@ function renderPickCard(p, idx) {
         <div class="pick-conf-bar"><div class="pick-conf-fill" style="width:${confPct}%"></div></div>
         <span class="pick-conf-val">${conf}</span>
       </div>
+      ${p.lucas ? `<div class="pick-lucas-badge">🎲 L: ${p.lucas.ph}/${p.lucas.pd}/${p.lucas.pa}%</div>` : ""}
     </div>
   </div>`;
 }

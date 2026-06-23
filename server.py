@@ -3554,6 +3554,10 @@ STATIC_FILES = {
     "/brand/guia-app.html": ("docs/guia-app.html", "text/html; charset=utf-8"),
     "/brand/estrategia.html": ("docs/estrategia.html", "text/html; charset=utf-8"),
     "/brand/progol-cr-brand.html": ("docs/progol-cr-brand.html", "text/html; charset=utf-8"),
+    "/tos": ("frontend/tos.html", "text/html; charset=utf-8"),
+    "/tos.html": ("frontend/tos.html", "text/html; charset=utf-8"),
+    "/privacy": ("frontend/privacy.html", "text/html; charset=utf-8"),
+    "/privacy.html": ("frontend/privacy.html", "text/html; charset=utf-8"),
 }
 
 SUPPORTERS_PATH = os.path.join(HERE, "data", "supporters.json")
@@ -4207,7 +4211,7 @@ class Handler(BaseHTTPRequestHandler):
         qs = urllib.parse.parse_qs(parsed.query)
 
         # Public assets needed by login page — no auth required
-        PUBLIC_ROUTES = {"/login", "/landing", "/landing.html", "/brand/mascota.jpg", "/brand/mascota.svg",
+        PUBLIC_ROUTES = {"/login", "/landing", "/landing.html", "/brand/mascota.jpg", "/brand/mascota.svg", "/tos", "/tos.html", "/privacy", "/privacy.html",
                           "/manifest.json", "/sw.js"}
         # PWA icons — public
         if route.startswith("/icons/"):
@@ -4599,7 +4603,29 @@ class Handler(BaseHTTPRequestHandler):
                 except Exception as e:
                     print(f"[top-picks] predict failed for "
                           f"{m.get('home')} vs {m.get('away')}: {e}")
+            # Enriquecer picks top-5 con datos de Lucas (Monte Carlo)
             picks.sort(key=lambda x: x["conf"], reverse=True)
+            try:
+                import council as _cp_cmod
+                import concurrent.futures as _cp_cf
+                def _enrich(pk):
+                    try:
+                        r = _cp_cmod.deliberate(pk["home"], pk["away"], n_simulations=500)
+                        lp = r.get("lucas", {})
+                        pk["lucas"] = {
+                            "ph": round(lp.get("p_home", 0)*100, 1),
+                            "pd": round(lp.get("p_draw", 0)*100, 1),
+                            "pa": round(lp.get("p_away", 0)*100, 1),
+                            "top": lp.get("top_scorelines", [])[:1],
+                        }
+                    except Exception:
+                        pass
+                    return pk
+                with _cp_cf.ThreadPoolExecutor(max_workers=3) as _pool:
+                    top5 = list(_pool.map(_enrich, picks[:5]))
+                picks[:5] = top5
+            except Exception as _enrich_err:
+                print(f"[top-picks] lucas enrich error: {_enrich_err}")
             return self._send_json({
                 "picks": picks[:10],
                 "total": len(picks),

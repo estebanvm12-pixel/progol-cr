@@ -2343,3 +2343,5 @@ code { font-family: "Cascadia Code", Consolas, monospace; }
 .council-op-tag { font-size: 11px; background: rgba(245,158,11,.15); color: #f59e0b; border-radius: 6px; padding: 2px 8px; }
 .council-loading { display: flex; align-items: center; gap: 8px; padding: 10px 4px; }
 .council-spinner { font-size: 18px; animation: spin 1.2s linear infinite; }
+
+.pick-lucas-badge{font-size:9px;color:var(--muted);padding:1px 0;letter-spacing:.2px}
