@@ -669,6 +669,216 @@ def _parse_doradobet_html(html: str, home: str, away: str) -> tuple:
 
 # ── Stubs para v2 ──────────────────────────────────────────────────────────────
 
+
+# ── The Odds API — todos los mercados de fútbol ───────────────────────────────
+def fetch_odds_api(home: str, away: str, sport: str = "soccer") -> dict:
+    """
+    The Odds API — cubre 50+ ligas de fútbol con odds reales de bookmakers.
+    API key en config.json como 'odds_api_key'.
+    Docs: https://the-odds-api.com/
+    """
+    cache_key = f"oddsapi_{home}_{away}"
+    cached = _cache_get(cache_key)
+    if cached:
+        return cached
+
+    cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+    try:
+        with open(cfg_path) as f:
+            api_key = json.load(f).get("odds_api_key", "").strip()
+    except Exception:
+        api_key = ""
+
+    if not api_key:
+        logger.warning("[cleo] odds_api_key no configurada")
+        return {"available": False, "error": "no_key"}
+
+    import urllib.parse as _up
+
+    def _name_match(team_name: str, candidate: str) -> bool:
+        """Fuzzy match — normaliza y compara."""
+        def _norm(s):
+            return s.lower().replace("-"," ").replace("."," ").replace("_"," ").strip()
+        t = _norm(team_name)
+        c = _norm(candidate)
+        # Exact
+        if t == c:
+            return True
+        # Substring both ways
+        if t in c or c in t:
+            return True
+        # First word match (e.g. "Portugal" in "Portugal U23")
+        tw = t.split()[0] if t.split() else t
+        cw = c.split()[0] if c.split() else c
+        if len(tw) > 4 and (tw in c or cw in t):
+            return True
+        return False
+
+    # Obtener todos los sports de soccer disponibles
+    sports_url = f"https://api.the-odds-api.com/v4/sports/?apiKey={api_key}"
+    sports_data = _fetch_json(sports_url)
+    soccer_sports = [
+        s["key"] for s in (sports_data if isinstance(sports_data, list) else [])
+        if s.get("group", "").lower() == "soccer" and s.get("active", False)
+    ] or ["soccer_fifa_world_cup", "soccer_uefa_champs_league", "soccer_epl"]
+
+    best_match = None
+    best_score = 0
+
+    for sport_key in soccer_sports[:15]:  # max 15 sports para conservar quota
+        url = (
+            f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds/?"
+            + _up.urlencode({
+                "apiKey":  api_key,
+                "regions": "us,eu",
+                "markets": "h2h",
+                "oddsFormat": "decimal",
+            })
+        )
+        events = _fetch_json(url)
+        if not isinstance(events, list):
+            continue
+
+        for ev in events:
+            h = ev.get("home_team", "")
+            a = ev.get("away_team", "")
+            if _name_match(home, h) and _name_match(away, a):
+                # Encontrado — extraer odds promedio de los bookmakers
+                home_odds, draw_odds, away_odds, bk_count = [], [], [], 0
+                for bk in ev.get("bookmakers", []):
+                    for mkt in bk.get("markets", []):
+                        if mkt.get("key") != "h2h":
+                            continue
+                        outs = {o["name"]: o["price"] for o in mkt.get("outcomes", [])}
+                        if h in outs:
+                            home_odds.append(outs[h])
+                            bk_count += 1
+                        if a in outs:
+                            away_odds.append(outs[a])
+                        # Draw
+                        draw_candidates = [v for k,v in outs.items() if k not in (h, a)]
+                        if draw_candidates:
+                            draw_odds.append(draw_candidates[0])
+
+                if not home_odds:
+                    continue
+
+                avg_h = round(sum(home_odds)/len(home_odds), 3)
+                avg_a = round(sum(away_odds)/len(away_odds), 3) if away_odds else None
+                avg_d = round(sum(draw_odds)/len(draw_odds), 3) if draw_odds else None
+
+                # Implied probabilities
+                imp_h = round(1/avg_h, 4) if avg_h else None
+                imp_a = round(1/avg_a, 4) if avg_a else None
+                imp_d = round(1/avg_d, 4) if avg_d else None
+
+                result = {
+                    "available":     True,
+                    "source":        "the_odds_api",
+                    "sport":         sport_key,
+                    "event_id":      ev.get("id"),
+                    "home_team":     h,
+                    "away_team":     a,
+                    "commence_time": ev.get("commence_time"),
+                    "home_odd":      avg_h,
+                    "draw_odd":      avg_d,
+                    "away_odd":      avg_a,
+                    "home_implied":  imp_h,
+                    "draw_implied":  imp_d,
+                    "away_implied":  imp_a,
+                    "bookmaker_count": bk_count,
+                    "bookmakers":    [bk["title"] for bk in ev.get("bookmakers", [])[:5]],
+                }
+                _cache_set(cache_key, result, ttl=300)
+                logger.info(f"[cleo] OddsAPI: {h} vs {a} — H={avg_h} D={avg_d} A={avg_a} ({bk_count} bookmakers)")
+                return result
+
+    logger.warning(f"[cleo] OddsAPI: no encontrado {home} vs {away}")
+    return {"available": False, "error": "not_found"}
+
+
+def fetch_all_football_matches(max_sports: int = 20) -> list:
+    """
+    Retorna TODOS los partidos de fútbol disponibles en The Odds API hoy.
+    Usado para generar pronósticos de todos los mercados disponibles en Doradobet.
+    """
+    cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+    try:
+        with open(cfg_path) as f:
+            api_key = json.load(f).get("odds_api_key", "").strip()
+    except Exception:
+        api_key = ""
+
+    if not api_key:
+        return []
+
+    import urllib.parse as _up
+    import datetime as _dt
+
+    # Obtener sports activos de soccer
+    sports_data = _fetch_json(f"https://api.the-odds-api.com/v4/sports/?apiKey={api_key}")
+    soccer_sports = [
+        s["key"] for s in (sports_data if isinstance(sports_data, list) else [])
+        if s.get("group","").lower() == "soccer" and s.get("active", False)
+    ][:max_sports]
+
+    all_matches = []
+    today = _dt.datetime.utcnow().date().isoformat()
+
+    for sport_key in soccer_sports:
+        url = (
+            f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds/?"
+            + _up.urlencode({
+                "apiKey":    api_key,
+                "regions":   "us,eu",
+                "markets":   "h2h",
+                "oddsFormat": "decimal",
+                "dateFormat": "iso",
+            })
+        )
+        events = _fetch_json(url)
+        if not isinstance(events, list):
+            continue
+
+        for ev in events:
+            ct = ev.get("commence_time","")
+            if today not in ct[:10]:
+                continue
+            bookmakers = ev.get("bookmakers", [])
+            odds_h, odds_a, odds_d = [], [], []
+            h = ev.get("home_team","")
+            a = ev.get("away_team","")
+            for bk in bookmakers:
+                for mkt in bk.get("markets",[]):
+                    if mkt.get("key") != "h2h":
+                        continue
+                    outs = {o["name"]: o["price"] for o in mkt.get("outcomes",[])}
+                    if h in outs: odds_h.append(outs[h])
+                    if a in outs: odds_a.append(outs[a])
+                    draw = [v for k,v in outs.items() if k not in (h,a)]
+                    if draw: odds_d.append(draw[0])
+
+            if not odds_h:
+                continue
+
+            all_matches.append({
+                "home":        h,
+                "away":        a,
+                "league":      sport_key.replace("soccer_","").replace("_"," ").title(),
+                "sport_key":   sport_key,
+                "time_utc":    ct,
+                "home_odd":    round(sum(odds_h)/len(odds_h), 3),
+                "away_odd":    round(sum(odds_a)/len(odds_a), 3) if odds_a else None,
+                "draw_odd":    round(sum(odds_d)/len(odds_d), 3) if odds_d else None,
+                "bookmakers":  len(bookmakers),
+            })
+
+    all_matches.sort(key=lambda x: x["time_utc"])
+    logger.info(f"[cleo] fetch_all_football_matches: {len(all_matches)} partidos hoy")
+    return all_matches
+
+
+
 def fetch_betcris(home: str, away: str) -> dict:
     """Stub — implementar en v2 con scraping HTML público de betcris.com"""
     logger.info(f"[cleo] Betcris: stub (v2)")
@@ -911,11 +1121,12 @@ class CleoAgent:
         polymarket = fetch_polymarket(home, away)
         kalshi     = fetch_kalshi(home, away)
         doradobet  = fetch_doradobet(home, away)
+        odds_api   = fetch_odds_api(home, away)  # The Odds API — todos los mercados
         betcris    = fetch_betcris(home, away)
         codere     = fetch_codere(home, away)
         bodog      = fetch_bodog(home, away)
 
-        all_markets_raw = [polymarket, kalshi, doradobet, betcris, codere, bodog]
+        all_markets_raw = [polymarket, kalshi, doradobet, odds_api, betcris, codere, bodog]
         active_markets = {
             m["platform"]: m for m in all_markets_raw
             if m and m.get("available", False)

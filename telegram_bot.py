@@ -9,6 +9,7 @@ import json, os, sys, time, threading, urllib.request, urllib.parse, urllib.erro
 import datetime, io
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+LANDING_URL = "https://estebanvm12-pixel.github.io/progol-cr/"
 CONFIG_PATH   = os.path.join(HERE, "config.json")
 MASCOTA_PATH  = os.path.join(HERE, "brand", "mascota.jpg")
 WINNER_GIF    = os.path.join(HERE, "brand", "winner_announce.gif")
@@ -1473,6 +1474,152 @@ def run_bot(token, owner_chat_id, stop_event=None):
                 print(f"[bot] polling error: {e}")
                 time.sleep(5)
 
+
+
+# ── Pick diario automático ─────────────────────────────────────────────────────
+_daily_pick_sent_date = None
+
+def _send_daily_pick(token, owner_chat_id):
+    """Genera y envía el pick del día a las 8am CR (14:00 UTC)."""
+    global _daily_pick_sent_date
+    import datetime as _dt
+    today = _dt.datetime.utcnow().date().isoformat()
+    if _daily_pick_sent_date == today:
+        return  # ya enviado hoy
+
+    try:
+        sys.path.insert(0, HERE)
+
+        # Intentar con council (Ryder + Cleo + Lucas)
+        pick_msg = None
+        try:
+            import council
+            # Buscar el partido con mayor confianza del día
+            import db, sqlite3
+            db.init_db()
+            conn = db.get_conn()
+            conn.row_factory = sqlite3.Row
+            cur = conn.execute(
+                "SELECT DISTINCT home, away FROM matches WHERE date=? AND home!='' AND away!='' AND status='Scheduled' ORDER BY kickoff_utc LIMIT 5",
+                (today,)
+            )
+            matches = cur.fetchall()
+            conn.close()
+
+            best = None
+            best_conf = 0
+            for m in matches:
+                try:
+                    r = council.deliberate(m["home"], m["away"], n_simulations=500)
+                    lucas = r.get("lucas", {})
+                    ph = lucas.get("p_home", 0)
+                    pd = lucas.get("p_draw", 0)
+                    pa = lucas.get("p_away", 0)
+                    conf = max(ph, pd, pa)
+                    if conf > best_conf:
+                        best_conf = conf
+                        best = (m["home"], m["away"], r, conf)
+                except Exception:
+                    continue
+
+            if best:
+                home, away, r, conf = best
+                ryder = r["ryder"]["probs"]
+                lucas = r.get("lucas", {})
+                cleo  = r.get("cleo", {})
+                ph_l = lucas.get("p_home", 0)
+                pd_l = lucas.get("p_draw", 0)
+                pa_l = lucas.get("p_away", 0)
+                ph_r = ryder["home"]
+                pd_r = ryder["draw"]
+                pa_r = ryder["away"]
+                # Consenso Ryder(40%) + Lucas(60%)
+                ph_f = 0.4*ph_r + 0.6*ph_l
+                pd_f = 0.4*pd_r + 0.6*pd_l
+                pa_f = 0.4*pa_r + 0.6*pa_l
+                best_p = max(ph_f, pd_f, pa_f)
+                pick  = "1" if best_p == ph_f else "X" if best_p == pd_f else "2"
+                pick_team = home if pick=="1" else "Empate" if pick=="X" else away
+                top_score = lucas.get("top_scorelines",[("?",0)])[0][0] if lucas else "?"
+                opps = cleo.get("opportunities", []) if cleo else []
+                ev_str = ""
+                if opps:
+                    b = opps[0]
+                    ev_str = f"\n📊 *Cleo detectó EV {b.get('ev_pct',0):+.1f}%* en {b.get('platform','?')}"
+
+                pick_msg = (
+                    f"☀️ *PICK DEL DÍA — ProGol CR*\n"
+                    f"━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                    f"⚽ *{es(home)} vs {es(away)}*\n\n"
+                    f"📐 *RYDER:* {es(home)} {ph_r*100:.0f}% | X {pd_r*100:.0f}% | {es(away)} {pa_r*100:.0f}%\n"
+                    f"🎲 *LUCAS* (500 sims): {es(home)} {ph_l*100:.0f}% | X {pd_l*100:.0f}% | {es(away)} {pa_l*100:.0f}%\n"
+                    f"🏆 *Marcador más probable:* {top_score}{ev_str}\n\n"
+                    f"✅ *Pick del Consejo: [{pick}] {es(pick_team)}* ({best_p*100:.0f}% consenso)\n\n"
+                    f"🔗 Análisis completo: {LANDING_URL}\n"
+                    f"💚 *ProGol CR · La IA al servicio del apostador tico*"
+                )
+        except Exception as e:
+            print(f"[bot] daily council error: {e}")
+
+        # Fallback: pick simple con model.predict
+        if not pick_msg:
+            try:
+                import model
+                # Partido genérico del día
+                pick_msg = (
+                    f"☀️ *Pick del día — ProGol CR*\n\n"
+                    f"Hoy Ryder + Cleo + Lucas analizan los partidos disponibles.\n"
+                    f"Escribí /picks para ver el análisis completo.\n\n"
+                    f"🔗 {LANDING_URL}\n"
+                    f"💚 *ProGol CR*"
+                )
+            except Exception:
+                pick_msg = (
+                    f"☀️ *Buenos días desde ProGol CR* 🇨🇷\n\n"
+                    f"Ryder, Cleo y Lucas están analizando los partidos de hoy.\n"
+                    f"Escribí /picks para ver los pronósticos.\n\n"
+                    f"🔗 {LANDING_URL}"
+                )
+
+        if pick_msg:
+            targets = [owner_chat_id]
+            if _group_chat_id and _group_chat_id != owner_chat_id:
+                targets.append(_group_chat_id)
+            for target in targets:
+                _api(token, "sendMessage", {
+                    "chat_id":    target,
+                    "text":       pick_msg,
+                    "parse_mode": "Markdown",
+                    "reply_markup": {"inline_keyboard": [[
+                        {"text": "📊 Ver análisis completo", "url": LANDING_URL},
+                        {"text": "💬 Contacto", "url": "https://wa.me/50685610677"},
+                    ]]},
+                })
+            _daily_pick_sent_date = today
+            print(f"[bot] Pick diario enviado: {today}")
+
+    except Exception as e:
+        print(f"[bot] _send_daily_pick error: {e}")
+
+
+def _daily_pick_loop(token, owner_chat_id, stop_event):
+    """Envía pick del día todos los días a las 8am CR (14:00 UTC)."""
+    import datetime as _dt
+    print("[bot] Daily pick loop activo (8am CR = 14:00 UTC)")
+    while not (stop_event and stop_event.is_set()):
+        try:
+            now_utc = _dt.datetime.utcnow()
+            # Ventana: 14:00 - 14:05 UTC (8:00-8:05 am CR)
+            if now_utc.hour == 14 and now_utc.minute < 5:
+                _send_daily_pick(token, owner_chat_id)
+        except Exception as e:
+            print(f"[bot] daily_pick_loop error: {e}")
+        for _ in range(60):  # check every minute
+            if stop_event and stop_event.is_set():
+                return
+            time.sleep(1)
+
+
 def start_bot_thread(cfg):
     global _group_chat_id
     token    = (cfg.get("telegram_bot_token") or "").strip()
@@ -1487,6 +1634,7 @@ def start_bot_thread(cfg):
     stop = threading.Event()
     threading.Thread(target=run_bot,     args=(token, owner_id, stop), daemon=True).start()
     threading.Thread(target=_promo_loop, args=(token, owner_id, stop), daemon=True).start()
+    threading.Thread(target=_daily_pick_loop, args=(token, owner_id, stop), daemon=True).start()
     print("[bot] Bot de ventas activo — enviá /start al bot de Telegram")
     print("[bot] Scheduler de promos activo (revisa cada 5 min)")
     return stop
