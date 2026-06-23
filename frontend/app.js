@@ -115,7 +115,7 @@ en: {
   favored: (t) => `${t} favored`, confidence: (c) => `Confidence ${c}/10`,
   resultProb: "Match result probability", draw: "Draw",
   keyMarkets: "Key markets", whoFirst: "⚽ Who scores first", firstCorner: "🚩 First corner",
-  xg: "Expected goals (xG)", xCorners: "Expected corners", btts: "Both teams score",
+  xg: "Expected goals (xG)", xCorners: "Expected corners (est.)", btts: "Both teams score",
   ou25: "Over / Under 2.5", modelGoals: "model goals per side",
   leanYes: "leaning yes", leanNo: "leaning no", underX: (x) => `under ${x}`,
   advMarkets: "Advanced markets",
@@ -167,7 +167,7 @@ en: {
   copyPrompt: "Copy prompt", copied: "✓ Copied!", openClaude: "Open Claude.ai →",
   modelNote1: "Model estimate — not a guarantee.",
   modelNote2: "It does not yet factor lineups, injuries, referee or weather — use the AI deep-dive to layer those in.",
-  modelNoteCards: (t, h, hc, a, ac) => `Expected cards: ${t} total (${h} ${hc} · ${a} ${ac}).`,
+  modelNoteCards: (t, h, hc, a, ac) => `Expected cards (model estimate): ${t} total (${h} ${hc} · ${a} ${ac}).`,
   inclHomeEdge: ", incl. home edge", strength: "strength",
   lowDataWarn: "<strong>⚠ Limited data:</strong> one or both teams aren't in the ratings table, so this is a rough baseline — lean on the AI deep-dive here.",
   liveTitle: "🔴 LIVE in-play read", liveUpdating: "updating live",
@@ -240,7 +240,7 @@ es: {
   favored: (t) => `Favorito: ${t}`, confidence: (c) => `Confianza ${c}/10`,
   resultProb: "Probabilidad del resultado", draw: "Empate",
   keyMarkets: "Mercados clave", whoFirst: "⚽ Quién anota primero", firstCorner: "🚩 Primer córner",
-  xg: "Goles esperados (xG)", xCorners: "Córners esperados", btts: "Ambos equipos anotan",
+  xg: "Goles esperados (xG)", xCorners: "Córners esperados (est.)", btts: "Ambos equipos anotan",
   ou25: "Más / Menos 2.5", modelGoals: "goles del modelo por equipo",
   leanYes: "se inclina al sí", leanNo: "se inclina al no", underX: (x) => `menos ${x}`,
   advMarkets: "Mercados avanzados",
@@ -292,7 +292,7 @@ es: {
   copyPrompt: "Copiar prompt", copied: "✓ ¡Copiado!", openClaude: "Abrir Claude.ai →",
   modelNote1: "Estimación del modelo — no es garantía.",
   modelNote2: "Aún no considera alineaciones, lesiones, árbitro ni clima — usa el análisis IA para sumar eso.",
-  modelNoteCards: (t, h, hc, a, ac) => `Tarjetas esperadas: ${t} en total (${h} ${hc} · ${a} ${ac}).`,
+  modelNoteCards: (t, h, hc, a, ac) => `Tarjetas esperadas (estimación del modelo): ${t} en total (${h} ${hc} · ${a} ${ac}).`,
   inclHomeEdge: ", incl. ventaja de local", strength: "fuerza",
   lowDataWarn: "<strong>⚠ Datos limitados:</strong> uno o ambos equipos no están en la tabla de ratings, así que esto es una base aproximada — apóyate en el análisis IA aquí.",
   liveTitle: "🔴 Lectura EN VIVO", liveUpdating: "actualizando en vivo",
@@ -464,7 +464,8 @@ function matchCard(m, i) {
     </div>
     <div class="mc-bottom">
       ${ko ? `<span class="ko">🕒 ${escapeHtml(ko)}</span>` : ""}
-      ${m.venue ? `<span>📍 ${escapeHtml(m.venue)}</span>` : ""}
+      ${m.canal ? `<span class="mc-canal">📺 ${escapeHtml(m.canal)}</span>` : ""}
+      ${m.venue ? `<span class="mc-venue">📍 ${escapeHtml(m.venue)}</span>` : ""}
     </div>
   </div>`;
 }
@@ -562,30 +563,84 @@ async function activateMaestro() {
   await sendChat("MAESTRO");
 }
 
+// ── Image attachment state ──────────────────────────────────────────────
+let _pendingImageB64 = null;
+
+function clearChatImage() {
+  _pendingImageB64 = null;
+  $("chatImageInput").value = "";
+  $("imgPreviewBar").style.display = "none";
+}
+
+function initImageUpload() {
+  const input = $("chatImageInput");
+  if (!input) return;
+  input.addEventListener("change", () => {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target.result;
+      // Strip "data:image/...;base64," prefix
+      _pendingImageB64 = dataUrl.split(",")[1];
+      $("imgPreviewThumb").src = dataUrl;
+      $("imgPreviewBar").style.display = "flex";
+    };
+    reader.readAsDataURL(file);
+  });
+  // Paste from clipboard (Ctrl+V in chat textarea)
+  $("chatInput").addEventListener("paste", (ev) => {
+    const items = ev.clipboardData && ev.clipboardData.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        ev.preventDefault();
+        const file = item.getAsFile();
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          _pendingImageB64 = e.target.result.split(",")[1];
+          $("imgPreviewThumb").src = e.target.result;
+          $("imgPreviewBar").style.display = "flex";
+        };
+        reader.readAsDataURL(file);
+        break;
+      }
+    }
+  });
+}
+
 async function sendChat(text) {
-  text = text.trim();
-  if (!text) return;
+  text = (text || "").trim();
+  const hasImage = !!_pendingImageB64;
+  if (!text && !hasImage) return;
   const isMaestro = text === "MAESTRO";
   if (!isMaestro) {
-    addMsg("user", `<p>${escapeHtml(text).replace(/\n/g, "<br>")}</p>`);
+    let userHtml = text ? `<p>${escapeHtml(text).replace(/\n/g, "<br>")}</p>` : "";
+    if (hasImage) userHtml += `<img src="${$("imgPreviewThumb").src}" style="max-width:180px;border-radius:8px;margin-top:6px;display:block;">`;
+    addMsg("user", userHtml);
   }
-  state.history.push({ role: "user", content: text });
+  state.history.push({ role: "user", content: text || "[imagen adjunta]" });
   $("chatInput").value = "";
   autoGrow($("chatInput"));
   $("sendBtn").disabled = true;
   const thinking = addMsg("assistant", `${t("analyzing")}<span class='dot-flash'></span>`, "thinking");
 
+  const imageToSend = _pendingImageB64;
+  clearChatImage();
+
   try {
+    const body = {
+      message: text,
+      history: state.history.slice(0, -1),
+      matches: state.matches,
+      date: state.date,
+      lang: state.lang,
+    };
+    if (imageToSend) body.image = imageToSend;
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: text,
-        history: state.history.slice(0, -1),
-        matches: state.matches,
-        date: state.date,
-        lang: state.lang,
-      }),
+      body: JSON.stringify(body),
     });
     const data = await res.json();
     thinking.remove();
@@ -1225,11 +1280,144 @@ async function refreshLivePanel(m) {
               + `&minute=${encodeURIComponent(minute)}&hs=${hs}&as=${as}`;
     const live = await fetch(url).then(r => r.json());
     const mount2 = $("livePanelMount");
-    if (mount2 && !live.error) mount2.innerHTML = renderLivePanel(live, m);
+    if (mount2 && !live.error) {
+      mount2.innerHTML = renderLivePanel(live, m);
+      // Update main probability bar with live recalculation
+      const lp = live.prob;
+      if (lp) {
+        const lph = lp.home, lpd = lp.draw, lpa = lp.away;
+        const segH = document.getElementById('mainProbSegH');
+        const segD = document.getElementById('mainProbSegD');
+        const segA = document.getElementById('mainProbSegA');
+        const leg  = document.getElementById('mainProbLegend');
+        const lbl  = document.getElementById('mainProbLabel');
+        if (segH) { segH.style.width = lph + '%'; segH.textContent = lph >= 12 ? Math.round(lph) + '%' : ''; }
+        if (segD) { segD.style.width = lpd + '%'; segD.textContent = lpd >= 12 ? Math.round(lpd) + '%' : ''; }
+        if (segA) { segA.style.width = lpa + '%'; segA.textContent = lpa >= 12 ? Math.round(lpa) + '%' : ''; }
+        if (leg)  leg.innerHTML = `<span>🟢 ${escapeHtml(m.home)} ${pct(lph)}</span><span>${t('draw')} ${pct(lpd)}</span><span>${escapeHtml(m.away)} ${pct(lpa)} 🔵</span>`;
+        if (lbl)  lbl.innerHTML = t('resultProb') + ' <span style="color:#ef4444;font-size:10px;font-weight:700;letter-spacing:.5px">● LIVE</span>';
+      }
+    }
   } catch (e) { /* keep last render on transient errors */ }
 }
 
 function closeInsights() { stopLivePolling(); $("insightsModal").classList.add("hidden"); }
+
+// ── Model Health Dashboard (owner only) ──────────────────────────────────────
+function closeModelHealth() {
+  const m = $("modelHealthModal");
+  if (m) m.classList.add("hidden");
+}
+
+async function openModelHealth() {
+  const modal = $("modelHealthModal");
+  const body  = $("modelHealthBody");
+  if (!modal || !body) return;
+  modal.classList.remove("hidden");
+  body.innerHTML = '<p class="muted small">Cargando datos del modelo…</p>';
+
+  try {
+    const [health, cal, bias, sources] = await Promise.all([
+      fetch("/api/ryder/model-health").then(r => r.json()),
+      fetch("/api/ryder/calibration?n=100").then(r => r.json()),
+      fetch("/api/ryder/bias?n=200").then(r => r.json()),
+      fetch("/api/ryder/source-health").then(r => r.json()),
+    ]);
+    body.innerHTML = renderModelHealth(health, cal, bias, sources);
+  } catch (e) {
+    body.innerHTML = `<p class="error">Error: ${e.message}</p>`;
+  }
+}
+
+function renderModelHealth(health, cal, bias, sources) {
+  const statusColor = {
+    excelente: "#22c55e", bueno: "#84cc16", aceptable: "#f59e0b",
+    necesita_revision: "#ef4444", sin_datos: "#94a3b8",
+  };
+  const sc = statusColor[health.status] || "#94a3b8";
+
+  // Header stats
+  let html = `<div class="sr-summary">
+    <div class="sr-stat"><span class="sr-big" style="color:${sc}">${health.accuracy_pct ?? "—"}</span><span class="sr-label">Accuracy</span></div>
+    <div class="sr-stat"><span class="sr-big">${health.brier_score ?? "—"}</span><span class="sr-label">Brier Score</span></div>
+    <div class="sr-stat"><span class="sr-big">${health.total_predictions ?? 0}</span><span class="sr-label">Predicciones</span></div>
+    <div class="sr-stat"><span class="sr-big">${health.sample_size ?? 0}</span><span class="sr-label">Reviews</span></div>
+  </div>
+  <p class="muted small" style="margin:6px 0 16px">
+    Estado: <strong style="color:${sc}">${health.status ?? "—"}</strong> ·
+    vs random: <strong>${health.vs_random ?? "—"}</strong> ·
+    Sin revisar: <strong>${health.unreviewed_count ?? 0}</strong>
+  </p>`;
+
+  // Calibration
+  if (cal.status === "ok") {
+    const calColor = { excelente: "#22c55e", buena: "#84cc16", aceptable: "#f59e0b", necesita_ajuste: "#ef4444" }[cal.calibration] || "#94a3b8";
+    html += `<h3 class="sr-section">📐 Calibración (ECE: <span style="color:${calColor}">${cal.ece}</span> — ${cal.calibration})</h3>
+    <p class="muted small">${cal.narrative}</p>`;
+
+    if (cal.curve && cal.curve.length) {
+      html += `<div class="mh-curve-wrap">`;
+      for (const b of cal.curve) {
+        const gap = b.gap;
+        const barColor = Math.abs(gap) < 0.05 ? "#22c55e" : Math.abs(gap) < 0.10 ? "#f59e0b" : "#ef4444";
+        const gapStr = gap > 0 ? `+${(gap*100).toFixed(0)}%` : `${(gap*100).toFixed(0)}%`;
+        html += `<div class="mh-bucket" title="${b.bucket_low}-${b.bucket_high}%: predicho ${(b.predicted_avg*100).toFixed(0)}% real ${(b.actual_rate*100).toFixed(0)}%">
+          <span class="mh-bucket-range">${b.bucket_low}–${b.bucket_high}%</span>
+          <div class="mh-bucket-bar">
+            <div class="mh-bucket-fill" style="width:${b.actual_rate*100}%;background:${barColor}"></div>
+          </div>
+          <span class="mh-bucket-gap" style="color:${barColor}">${gapStr}</span>
+          <span class="mh-bucket-n muted">(${b.n})</span>
+        </div>`;
+      }
+      html += `</div>`;
+    }
+  } else {
+    html += `<h3 class="sr-section">📐 Calibración</h3><p class="muted small">${cal.message || "Sin datos"}</p>`;
+  }
+
+  // Bias
+  html += `<h3 class="sr-section">🔍 Detección de Sesgos</h3>`;
+  if (bias.status === "ok") {
+    html += `<p class="muted small">${bias.narrative}</p>`;
+    if (bias.biases && bias.biases.length) {
+      for (const b of bias.biases) {
+        const color = b.severity === "warning" ? "#f59e0b" : "#94a3b8";
+        html += `<div class="mh-bias-item" style="border-left:3px solid ${color}">
+          <strong style="color:${color}">${b.type}</strong>: ${b.message}
+          ${b.fix ? `<div class="muted small">💡 ${b.fix}</div>` : ""}
+        </div>`;
+      }
+    } else {
+      html += `<p class="muted small" style="color:#22c55e">✅ Sin sesgos sistemáticos detectados.</p>`;
+    }
+    if (bias.insights && bias.insights.length) {
+      for (const ins of bias.insights) {
+        html += `<div class="mh-bias-item" style="border-left:3px solid #22c55e"><span class="muted small">ℹ️ ${ins.message}</span></div>`;
+      }
+    }
+  } else {
+    html += `<p class="muted small">${bias.message || "Sin datos suficientes."}</p>`;
+  }
+
+  // Source health
+  html += `<h3 class="sr-section">🌐 Salud de Fuentes</h3>`;
+  if (sources && Object.keys(sources).length) {
+    for (const [src, info] of Object.entries(sources)) {
+      const ok = info.last_status === "ok";
+      const dot = ok ? "🟢" : "🔴";
+      html += `<div class="mh-source-row">
+        <span>${dot} <strong>${src}</strong></span>
+        <span class="muted small">${info.uptime_24h}% uptime · ${info.avg_latency_ms|0}ms · ${info.checks_24h} checks</span>
+      </div>`;
+    }
+  } else {
+    html += `<p class="muted small">Sin datos de fuentes aún (se registran cada 15 min).</p>`;
+  }
+
+  html += `<p class="muted small" style="margin-top:14px;text-align:right">Calculado: ${(health.computed_at||"").slice(0,19).replace("T"," ")} UTC</p>`;
+  return html;
+}
 
 function insightsHeader(m) {
   const ko = fmtKickoff(m.kickoffUtc);
@@ -1396,24 +1584,59 @@ function renderInsights(p, m) {
     </div>
   </div>
 
-  <div class="section-label">${t("resultProb")}</div>
+  <div class="section-label" id="mainProbLabel">${t("resultProb")}</div>
   <div class="probbar">
-    <div class="probseg home" style="width:${ph}%">${ph >= 12 ? Math.round(ph) + "%" : ""}</div>
-    <div class="probseg draw" style="width:${pd}%">${pd >= 12 ? Math.round(pd) + "%" : ""}</div>
-    <div class="probseg away" style="width:${pa}%">${pa >= 12 ? Math.round(pa) + "%" : ""}</div>
+    <div class="probseg home" id="mainProbSegH" style="width:${ph}%">${ph >= 12 ? Math.round(ph) + "%" : ""}</div>
+    <div class="probseg draw" id="mainProbSegD" style="width:${pd}%">${pd >= 12 ? Math.round(pd) + "%" : ""}</div>
+    <div class="probseg away" id="mainProbSegA" style="width:${pa}%">${pa >= 12 ? Math.round(pa) + "%" : ""}</div>
   </div>
-  <div class="prob-legend">
+  <div class="prob-legend" id="mainProbLegend">
     <span>🟢 ${escapeHtml(m.home)} ${pct(ph)}</span>
     <span>${t("draw")} ${pct(pd)}</span>
     <span>${escapeHtml(m.away)} ${pct(pa)} 🔵</span>
   </div>
+
+  ${(()=>{
+    const lo = p.liveOdds;
+    if (!lo || lo.mkt_home == null) return "";
+    const cn = lo.consensus || "low";
+    const icon = cn === "high" ? "🟢" : cn === "medium" ? "🟡" : "🔴";
+    const label = cn === "high"
+      ? "Consenso alto — modelo y mercado coinciden"
+      : cn === "medium"
+      ? "Divergencia moderada — evalúa con cuidado"
+      : "El mercado discrepa — Ryder puede estar equivocado";
+    const fav = p.favorite;
+    const isFavHome = fav === m.home;
+    const modelFav = isFavHome ? ph : pa;
+    const mktFav   = isFavHome ? lo.mkt_home : lo.mkt_away;
+    const bkCount  = lo.bookmakers_count || 1;
+    return `
+    <div class="consensus-block consensus-${cn}">
+      <div class="consensus-header">
+        <span class="consensus-badge">${icon} ${label}</span>
+        <span class="consensus-delta">Δ ${lo.delta}%</span>
+      </div>
+      <div class="consensus-row">
+        <div class="consensus-col">
+          <div class="consensus-col-label">🤖 Ryder (modelo)</div>
+          <div class="consensus-col-val">${escapeHtml(fav)} ${pct(modelFav)}</div>
+        </div>
+        <div class="consensus-col">
+          <div class="consensus-col-label">📊 Casas de apuestas (${bkCount})</div>
+          <div class="consensus-col-val">${escapeHtml(fav)} ${pct(mktFav)}</div>
+        </div>
+      </div>
+      ${lo.best_home ? `<div class="consensus-odds">Cuotas: 1 ${lo.best_home}  ·  X ${lo.best_draw}  ·  2 ${lo.best_away}</div>` : ""}
+    </div>`;
+  })()}
 
   <div class="section-label">${t("keyMarkets")}</div>
   <div class="tiles">
     ${splitTile(t("whoFirst"), m, sf.home, sf.away, sf.none)}
     ${splitTile(t("firstCorner"), m, fc.home, fc.away)}
     ${tile(t("xg"), `${eg.home} – ${eg.away}`, t("modelGoals"))}
-    ${tile(t("xCorners"), `${ec.total}`, `${escapeHtml(m.home)} ${ec.home} · ${escapeHtml(m.away)} ${ec.away}`)}
+    ${tile(t("xCorners"), `${ec.total}`, `${escapeHtml(m.home)} ${ec.home} · ${escapeHtml(m.away)} ${ec.away} <span class="est-badge">est.</span>`)}
     ${tile(t("btts"), pct(p.btts), p.btts >= 50 ? t("leanYes") : t("leanNo"))}
     ${tile(t("ou25"), pct(p.over25), t("underX", pct(p.under25)))}
   </div>
@@ -1439,6 +1662,107 @@ function renderInsights(p, m) {
     <span>${t("draw")} ${pct(ht.draw)}</span>
     <span>${escapeHtml(m.away)} ${pct(ht.away)} 🔵</span>
   </div>
+
+  ${(() => {
+    const bh = p.byHalves;
+    if (!bh) return '';
+    const fh = bh.firstHalf, sh = bh.secondHalf;
+    const labels = bh.goals15Labels || ["0-15","15-30","30-45","45-60","60-75","75-90"];
+    const all15  = bh.goals15All || [];
+    const maxG   = all15.length ? Math.max(...all15) : 1;
+    const barW   = v => Math.max(4, Math.round(v / maxG * 100));
+    const homeN  = escapeHtml(m.home), awayN = escapeHtml(m.away);
+
+    const halfBlock = (half, label, isFirst) => {
+      const g15 = half.goals15 || [];
+      const c15 = half.corners15 || [];
+      const k15 = half.cards15 || [];
+      const g15lbl = isFirst ? labels.slice(0,3) : labels.slice(3);
+      const ec = half.expCorners || {};
+      const ek = half.expCards || {};
+
+      const barsHtml = g15.map((g, i) => {
+        const isBreak = (i === 2);
+        return `<div class="bh-bar-row${isBreak ? ' bh-break-bar' : ''}">
+          <span class="bh-bar-lbl">${g15lbl[i]}'</span>
+          <div class="bh-bar-wrap">
+            <div class="bh-bar-track"><div class="bh-bar-fill bh-fill-goal" style="width:${barW(g)}%"></div></div>
+            <span class="bh-bar-val">${g.toFixed(2)}</span>
+          </div>
+          <div class="bh-bar-wrap">
+            <div class="bh-bar-track"><div class="bh-bar-fill bh-fill-corner" style="width:${barW(c15[i]||0)}%"></div></div>
+            <span class="bh-bar-val">${(c15[i]||0).toFixed(1)}</span>
+          </div>
+          <div class="bh-bar-wrap">
+            <div class="bh-bar-track"><div class="bh-bar-fill bh-fill-card" style="width:${barW((k15[i]||0)*5)}%"></div></div>
+            <span class="bh-bar-val">${(k15[i]||0).toFixed(2)}</span>
+          </div>
+          ${isBreak ? `<span class="bh-break-tag">pausa ~${half.hydBreakMin}'</span>` : ''}
+        </div>`;
+      }).join('');
+
+      const htRow = isFirst && half.htResult ? `
+        <div class="bh-ht-row">
+          <span class="bh-ht-label">Al descanso</span>
+          <span class="bh-ht-seg bh-seg-h">${homeN} ${half.htResult.home}%</span>
+          <span class="bh-ht-sep">·</span>
+          <span class="bh-ht-seg bh-seg-d">X ${half.htResult.draw}%</span>
+          <span class="bh-ht-sep">·</span>
+          <span class="bh-ht-seg bh-seg-a">${awayN} ${half.htResult.away}%</span>
+        </div>` : '';
+
+      return `<div class="bh-half">
+        <div class="bh-half-title">${label}</div>
+        <div class="bh-stats-grid">
+          <div class="bh-stat"><span class="bh-stat-lbl">xG total</span><span class="bh-stat-val">${half.expGoals}</span></div>
+          <div class="bh-stat"><span class="bh-stat-lbl">${homeN}</span><span class="bh-stat-val">${half.expHome}</span></div>
+          <div class="bh-stat"><span class="bh-stat-lbl">${awayN}</span><span class="bh-stat-val">${half.expAway}</span></div>
+          <div class="bh-stat"><span class="bh-stat-lbl">P(gol)</span><span class="bh-stat-val bh-pct-g">${half.over05}%</span></div>
+          <div class="bh-stat"><span class="bh-stat-lbl">+1.5G</span><span class="bh-stat-val">${half.over15||'—'}%</span></div>
+          <div class="bh-stat"><span class="bh-stat-lbl">BTTS</span><span class="bh-stat-val">${half.btts||'—'}%</span></div>
+        </div>
+        <div class="bh-market-row">
+          <div class="bh-market">
+            <span class="bh-mkt-icon">⛳</span>
+            <div class="bh-mkt-body">
+              <span class="bh-mkt-label">Córners esperados</span>
+              <span class="bh-mkt-total">${ec.total||'—'}</span>
+              <span class="bh-mkt-sub">${homeN} ${ec.home||'—'} · ${awayN} ${ec.away||'—'}</span>
+            </div>
+          </div>
+          <div class="bh-market">
+            <span class="bh-mkt-icon">🟨</span>
+            <div class="bh-mkt-body">
+              <span class="bh-mkt-label">Tarjetas esperadas</span>
+              <span class="bh-mkt-total">${ek.total||'—'}</span>
+              <span class="bh-mkt-sub">${homeN} ${ek.home||'—'} · ${awayN} ${ek.away||'—'}</span>
+            </div>
+          </div>
+        </div>
+        <div class="bh-score1st">
+          Marca primero: <strong>${homeN} ${half.scoreFirst ? half.scoreFirst.home : '—'}%</strong> · <strong>${awayN} ${half.scoreFirst ? half.scoreFirst.away : '—'}%</strong>
+        </div>
+        ${htRow}
+        <div class="bh-bars-header">
+          <span class="bh-bh-tramo">Tramo</span>
+          <span class="bh-bh-col">xGoles</span>
+          <span class="bh-bh-col">Córners</span>
+          <span class="bh-bh-col">Tarjetas</span>
+        </div>
+        <div class="bh-bars">${barsHtml}</div>
+        <div class="bh-break-info">
+          Pausa hidratación ~${half.hydBreakMin}' · P(gol en 10 min post-pausa): <strong>${half.pGoalPostBreak}%</strong>
+        </div>
+      </div>`;
+    };
+
+    return `<div class="section-label">Análisis por tiempos — WC 2026</div>
+  <div class="bh-container">
+    ${halfBlock(fh, "1er Tiempo  (0'–45')", true)}
+    <div class="bh-divider"></div>
+    ${halfBlock(sh, "2do Tiempo  (45'–90')", false)}
+  </div>`;
+  })()}
 
   <div class="section-label">${t("scorelines")}</div>
   <div class="scorelines">
@@ -1475,6 +1799,35 @@ function renderInsights(p, m) {
         <div><span class="read-title">${r.title}:</span> ${r.text}</div>
       </div>`).join("")}
   </div>
+
+  ${(() => {
+    const c = buildCombos(p, m);
+    if (!c.top3 || !c.top3.legs.length) return '';
+    const t3Odds = c.top3.combined  > 0 ? (100 / c.top3.combined).toFixed(2)  : '—';
+    const r5Odds = c.risky5.combined > 0 ? (100 / c.risky5.combined).toFixed(2) : '—';
+    return `
+  <div class="section-label">🎯 Picks combinables mismo partido <span class="est-badge">mercados estimados</span> <span class="read-free-badge">${t('freeBadge')}</span></div>
+  <div class="alt-combos-wrap">
+    <div class="alt-combo-card alt-secure">
+      <div class="alt-combo-head">🛡️ <strong>3 más seguras</strong> <span class="alt-combo-pct">~${c.top3.combined}%</span> <span class="alt-combo-odds">~${t3Odds}x</span></div>
+      <div class="alt-combo-note">Mismo partido · DoradoBet → <strong>Crear Apuesta</strong></div>
+      ${c.top3.legs.map(l => `
+        <div class="alt-combo-leg">
+          <span class="alt-leg-label">${escapeHtml(l.label)}</span>
+          <span class="alt-leg-prob">${l.prob}%</span>
+        </div>`).join('')}
+    </div>
+    <div class="alt-combo-card alt-parlay">
+      <div class="alt-combo-head">⚡ <strong>Risky — 5 picks seguros distintos</strong> <span class="alt-combo-pct">~${c.risky5.combined}%</span> <span class="alt-combo-odds">~${r5Odds}x</span></div>
+      <div class="alt-combo-note">Distintos a los 3 anteriores · <strong>Crear Apuesta</strong> en DoradoBet</div>
+      ${c.risky5.legs.map(l => `
+        <div class="alt-combo-leg">
+          <span class="alt-leg-label">${escapeHtml(l.label)}</span>
+          <span class="alt-leg-prob">${l.prob}%</span>
+        </div>`).join('')}
+    </div>
+  </div>`;
+  })()}
 
   <div class="scout-agent-out" id="deepdiveOut">
     <div class="scout-agent-loading">
@@ -1514,11 +1867,11 @@ async function syncLiveScore(home, away) {
       body.innerHTML = '<div class="lap-not-found">Sin datos en vivo disponibles aún</div>';
       return;
     }
-    const isLive = ['live','halftime','extra_time'].includes(d.status);
-    const isFin  = d.status === 'finished';
+    const isLive = ['live','halftime','extra_time','1H','2H','in'].includes(d.status);
+    const isFin  = ['finished','post','FT','completed'].includes(d.status);
     const hs = d.scoreHome ?? 0;
     const as_ = d.scoreAway ?? 0;
-    const minVal = isLive ? 45 : (isFin ? 90 : 0);
+    const minVal = d.minuteNum ?? (isLive ? 45 : (isFin ? 90 : 0));
 
     if (badge) {
       badge.textContent = isFin ? '✓ FINALIZADO' : isLive ? '🔴 EN VIVO' : '⏰ PROGRAMADO';
@@ -1568,7 +1921,7 @@ async function syncLiveScore(home, away) {
               <div class="lap-row lap-row-sep lap-row-compare" id="lapRowCorners">
                 <span>🚩 Córneres</span>
                 <div class="lap-compare-wrap">
-                  <span class="lap-compare-exp">Esp. ${ld.expectedCorners.total}</span>
+                  <span class="lap-compare-exp">Esp. ${ld.expectedCorners.total} <span class="est-badge">est.</span></span>
                   <span class="lap-live-stat" id="lc_corners_live"></span>
                   <span class="lap-compare-status" id="lcs_corners"></span>
                 </div>
@@ -1577,7 +1930,7 @@ async function syncLiveScore(home, away) {
               <div class="lap-row lap-row-compare" id="lapRowCards">
                 <span>🟨 Tarjetas</span>
                 <div class="lap-compare-wrap">
-                  <span class="lap-compare-exp">Esp. ${ld.expectedCards.total}</span>
+                  <span class="lap-compare-exp">Esp. ${ld.expectedCards.total} <span class="est-badge">est.</span></span>
                   <span class="lap-live-stat" id="lc_cards_live"></span>
                   <span class="lap-compare-status" id="lcs_cards"></span>
                 </div>
@@ -1875,16 +2228,30 @@ function buildCombos(p, m) {
   };
   const combined = (legs) => +(legs.reduce((acc, l) => acc * l.prob / 100, 100)).toFixed(1);
 
-  // ── SECURE (3 patas) — solo mercados 100% combinables, máxima probabilidad ──
+  // ── SECURE (3 patas) — mercados principales primero, córners solo si no alcanza ──
+  // Prioridad: DC, victoria directa, goles, BTTS, clean sheet → corners/tarjetas como fallback
+  const ecS = p.expectedCorners || { home: 5, away: 3, total: 8 };
+  const ecdS = p.expectedCards   || { home: 1.5, away: 1.5, total: 3 };
+  const ecTotalS = ecS.total || 8;
+  const ecdTotalS = ecdS.total || 3;
+  const cLineLowS = ecTotalS >= 10 ? 7.5 : ecTotalS >= 8 ? 6.5 : 5.5;
+  const cLineFavS = Math.max(ecS.home||5, ecS.away||3) >= 5 ? 4.5 : 3.5;
+  const probCLowS  = Math.min(88, Math.max(55, 58 + (ecTotalS - cLineLowS) * 8));
+  const probCFavS  = Math.min(88, Math.max(58, 62 + (Math.max(ecS.home||5,ecS.away||3) - cLineFavS) * 10));
+  const probCards1S= Math.min(88, Math.max(52, 55 + (ecdTotalS - 1.5) * 12));
   const securePool = [
-    { market: "dc",      label: t("legDC", fav),     prob: favDC },
-    { market: "o15",     label: t("legO15"),           prob: p.over15 },
-    { market: "u35",     label: t("legU35"),           prob: under35 },
+    // Mercados principales — alta prioridad
+    { market: "dc",          label: `${fav} o empate`,                    prob: favDC },
+    { market: "o15",         label: t("legO15"),                           prob: p.over15 },
+    { market: "u35",         label: t("legU35"),                           prob: under35 },
+    { market: "btts_no",     label: t("legBttsNo"),                        prob: noBtts },
+    { market: "u25",         label: "Menos de 2.5 goles",                  prob: under25 },
+    { market: "wtn",         label: `${fav} gana sin recibir gol`,         prob: favWTN },
+    // Fallback: córners/tarjetas solo si nada más llega a prob ≥ 60
+    { market: "corner_fav",  label: `${fav} córners Over ${cLineFavS}`,   prob: +probCFavS.toFixed(1) },
+    { market: "corner_tot",  label: `Total córners Over ${cLineLowS}`,    prob: +probCLowS.toFixed(1) },
+    { market: "cards_15",    label: `Tarjetas amarillas Over 1.5`,        prob: +probCards1S.toFixed(1) },
   ];
-  if (favScores >= 65) securePool.push({ market: "tscore", label: t("legToScore", fav), prob: favScores });
-  if (noBtts >= 60)    securePool.push({ market: "btts",   label: t("legBttsNo"),       prob: noBtts });
-  if (p.btts >= 62)    securePool.push({ market: "btts",   label: t("legBttsYes"),      prob: p.btts });
-  if (under25 >= 55)   securePool.push({ market: "u25",    label: t("legU25") || "Menos de 2.5 goles", prob: under25 });
 
   // ── RISKY (5 patas) — mercados combinables de menor probabilidad pero mayor cuota ──
   const riskyPool = [
@@ -1899,13 +2266,120 @@ function buildCombos(p, m) {
   if (dogWin >= 20)  riskyPool.push({ market: "dogwin", label: t("legToWin", dog),   prob: dogWin });
   if (p.over35 >= 25) riskyPool.push({ market: "o35",   label: "Más de 3.5 goles",   prob: p.over35 });
 
-  const secure = pickLegs(securePool, 3);
+  const secure = pickLegs(securePool, 5);
   const risky  = pickLegs(riskyPool, 5);
   const ps = p.predictedScore;
+
+  // ── MERCADOS ALTERNATIVOS (córners, amarillas, faltas) ───────────────────
+  const ec = p.expectedCorners || { home: 5, away: 3, total: 8 };
+  const ecd = p.expectedCards   || { home: 1.5, away: 1.5, total: 3 };
+  const homeIsStr = p.prob.home >= p.prob.away;
+  const strongTeam = homeIsStr ? m.home : m.away;
+  const weakTeam   = homeIsStr ? m.away : m.home;
+  const ecHome = ec.home || 5, ecAway = ec.away || 3, ecTotal = ec.total || 8;
+  const ecdHome = ecd.home || 1.5, ecdAway = ecd.away || 1.5, ecdTotal = ecd.total || 3;
+
+  // Córner lines basadas en expectedCorners del modelo
+  const cornersTotal = ecTotal;
+  const cLineHigh = cornersTotal >= 10 ? 8.5 : cornersTotal >= 8 ? 7.5 : 6.5;
+  const cLineLow  = cornersTotal >= 10 ? 6.5 : cornersTotal >= 8 ? 5.5 : 4.5;
+  const cLineFav  = Math.max(ecHome, ecAway) >= 5 ? 4.5 : 3.5;
+  const probCornerHigh = Math.min(92, Math.max(45, 50 + (cornersTotal - cLineHigh) * 10));
+  const probCornerLow  = Math.min(92, Math.max(55, 60 + (cornersTotal - cLineLow)  * 8));
+  const probCornerFav  = Math.min(90, Math.max(60, 65 + (Math.max(ecHome,ecAway) - cLineFav) * 10));
+
+  // Amarillas basadas en expectedCards
+  const cardLine = ecdTotal >= 4 ? 2.5 : ecdTotal >= 3 ? 1.5 : 1.5;
+  const probCards15 = Math.min(90, Math.max(50, 55 + (ecdTotal - 1.5) * 12));
+  const probCards25 = Math.min(82, Math.max(35, 40 + (ecdTotal - 2.5) * 12));
+  const probWeakCard = Math.min(85, Math.max(50, 55 + ecdTotal * 5));
+
+  // Faltas (estimadas desde xG y estilos — no tenemos dato directo pero lo derivamos)
+  const probFaultsHigh = Math.min(80, Math.max(55, 58 + (favWin >= 70 ? 8 : favWin >= 55 ? 4 : 0)));
+
+  const altPool = [
+    { key: "corner_low",   label: `${strongTeam} córners Over ${cLineFav}`,       prob: +probCornerFav.toFixed(1),  group: "corner" },
+    { key: "corner_total", label: `Total córners Over ${cLineLow}`,                prob: +probCornerLow.toFixed(1),  group: "corner" },
+    { key: "cards_15",     label: `Tarjetas amarillas Over 1.5`,                   prob: +probCards15.toFixed(1),   group: "cards" },
+    { key: "weak_card",    label: `${weakTeam} recibe tarjeta amarilla`,           prob: +probWeakCard.toFixed(1),  group: "cards" },
+    { key: "fouls_high",   label: `Total faltas Over 20.5`,                        prob: +probFaultsHigh.toFixed(1),group: "fouls" },
+    { key: "corner_high",  label: `Total córners Over ${cLineHigh}`,               prob: +probCornerHigh.toFixed(1),group: "corner" },
+    { key: "cards_25",     label: `Tarjetas amarillas Over 2.5`,                   prob: +probCards25.toFixed(1),   group: "cards" },
+  ].filter(x => x.prob >= 45).sort((a, b) => b.prob - a.prob);
+
+  // Combinada segura ×3 de mercados alternativos (distinto grupo, sin repetir)
+  const altSecure = [];
+  const usedGroups = new Set();
+  for (const leg of altPool) {
+    if (!usedGroups.has(leg.group) && leg.prob >= 60) {
+      usedGroups.add(leg.group);
+      altSecure.push(leg);
+      if (altSecure.length === 3) break;
+    }
+  }
+  // Si no llega a 3, rellena con los siguientes sin importar grupo
+  for (const leg of altPool) {
+    if (altSecure.length >= 3) break;
+    if (!altSecure.find(x => x.key === leg.key)) altSecure.push(leg);
+  }
+
+  // 5 picks más seguros combinables — más seguras primero, córners como fallback
+  // Córners Over 2.5 y Más de 0.5 goles son las dos apuestas más seguras del fútbol
+  const probO05  = Math.min(97, Math.max(88, 90 + (p.over15 - 75) * 0.4)); // derivado de O1.5
+  const probC25  = Math.min(99, Math.max(92, 94 + (ecTotal - 8) * 0.5));   // derivado de córners esperados
+  const parlay5Pool = [
+    // Las dos más seguras del fútbol — casi certeza matemática
+    { key: "c25",      label: `Córners Over 2.5`,                          prob: +probC25.toFixed(1),  group: "corners_safe" },
+    { key: "o05",      label: `Más de 0.5 goles`,                          prob: +probO05.toFixed(1),  group: "goals_safe" },
+    // Mercados principales de alta probabilidad
+    { key: "dc",       label: `${fav} o empate`,                           prob: favDC,    group: "dc" },
+    { key: "o15",      label: `Más de 1.5 goles`,                          prob: p.over15, group: "goals" },
+    { key: "u35",      label: `Menos de 3.5 goles`,                        prob: under35,  group: "goals" },
+    { key: "u25",      label: `Menos de 2.5 goles`,                        prob: under25,  group: "goals" },
+    { key: "o25",      label: `Más de 2.5 goles`,                          prob: p.over25, group: "goals" },
+    { key: "btts_no",  label: `Ambos equipos NO anotan`,                   prob: noBtts,   group: "btts" },
+    { key: "result",   label: `${fav} gana`,                               prob: favWin,   group: "result" },
+    { key: "wtn",      label: `${fav} gana sin recibir gol`,               prob: favWTN,   group: "wtn" },
+    { key: "ht",       label: `${fav} gana el primer tiempo`,              prob: favHT,    group: "ht" },
+    { key: "htdraw",   label: `Empate al descanso`,                        prob: drawHT,   group: "ht" },
+    { key: "tscore",   label: `${fav} anota`,                              prob: favScores, group: "score" },
+    // Resto de córners/tarjetas como último recurso
+    ...altPool.slice(0, 3).map(x => ({ ...x, key: `alt_${x.key}`, group: `alt_${x.group}` })),
+  ].filter(x => x.prob >= 50).sort((a, b) => b.prob - a.prob);
+
+  // ── TOP 3 más seguras ────────────────────────────────────────
+  const top3 = [];
+  const usedKeysT3 = new Set();
+  const usedGroupsT3 = new Set();
+  for (const leg of parlay5Pool) {
+    if (usedKeysT3.has(leg.key)) continue;
+    if (leg.group === 'goals' && usedGroupsT3.has('goals')) continue;
+    usedKeysT3.add(leg.key);
+    usedGroupsT3.add(leg.group);
+    top3.push(leg);
+    if (top3.length === 3) break;
+  }
+
+  // ── RISKY 5 — siguientes 5 picks seguros, distintos a los top3 ──
+  const risky5 = [];
+  const usedKeysR5 = new Set([...usedKeysT3]);
+  const usedGroupsR5 = new Set([...usedGroupsT3]);
+  for (const leg of parlay5Pool) {
+    if (usedKeysR5.has(leg.key)) continue;
+    if (leg.group === 'goals' && usedGroupsR5.has('goals')) continue;
+    usedKeysR5.add(leg.key);
+    usedGroupsR5.add(leg.group);
+    risky5.push(leg);
+    if (risky5.length === 5) break;
+  }
+
   return {
     secure: { legs: secure, combined: combined(secure) },
     risky:  { legs: risky,  combined: combined(risky) },
     longshot: { label: t("exactScore", m.home, ps.home, ps.away, m.away), prob: ps.p },
+    altSecure: { legs: altSecure, combined: combined(altSecure) },
+    top3:   { legs: top3,   combined: combined(top3)   },
+    risky5: { legs: risky5, combined: combined(risky5) },
   };
 }
 
@@ -2356,7 +2830,11 @@ function setupAutoRefresh() {
   if (state.autoTimer) clearInterval(state.autoTimer);
   if ($("autoRefresh").checked) {
     state.autoTimer = setInterval(() => {
-      // only refresh when viewing a day that could have live/near games
+      // Advance date if the calendar day changed (app left open overnight)
+      const today = localDateStr();
+      if (state.date === today || state.date > today) {
+        state.date = today;
+      }
       loadMatches();
     }, 45000);
   }
@@ -2410,6 +2888,7 @@ function init() {
   $("langBtn").onclick = () => setLang(state.lang === "es" ? "en" : "es");
   $("settingsModal").onclick = (e) => { if (e.target.id === "settingsModal") closeSettings(); };
 
+  initImageUpload();
   $("chatForm").onsubmit = (e) => { e.preventDefault(); sendChat($("chatInput").value); };
   $("chatInput").oninput = (e) => autoGrow(e.target);
   $("chatInput").onkeydown = (e) => {
@@ -2418,7 +2897,7 @@ function init() {
   document.querySelectorAll(".chip:not(.chip-bets)").forEach(c => c.onclick = () => sendChat(c.textContent));
 
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") { closeInsights(); closeNotes(); closeSettings(); closeTopPicksModal(); closeInvest(); }
+    if (e.key === "Escape") { closeInsights(); closeNotes(); closeSettings(); closeTopPicksModal(); closeInvest(); closeModelHealth(); }
   });
 
 $("investBtn").onclick = openInvest;

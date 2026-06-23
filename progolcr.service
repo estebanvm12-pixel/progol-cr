@@ -1,0 +1,42 @@
+[Unit]
+Description=ProGolCR — Inteligencia Deportiva WC2026
+Documentation=https://github.com/progolcr/worldcup-warroom
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=progolcr
+Group=progolcr
+WorkingDirectory=/home/progolcr/worldcup-warroom
+ExecStart=/usr/bin/python3 /home/progolcr/worldcup-warroom/server.py
+ExecReload=/bin/kill -HUP $MAINPID
+
+# Restart on crash, wait 5s between attempts
+Restart=on-failure
+RestartSec=5
+StartLimitInterval=60
+StartLimitBurst=3
+
+# Logging
+StandardOutput=append:/home/progolcr/worldcup-warroom/logs/server.log
+StandardError=append:/home/progolcr/worldcup-warroom/logs/server_error.log
+
+# Security: restrict what the process can access
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/home/progolcr/worldcup-warroom/data
+ReadWritePaths=/home/progolcr/worldcup-warroom/logs
+
+# Environment
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+
+# Resource limits
+LimitNOFILE=65536
+TimeoutStartSec=30
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target

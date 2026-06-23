@@ -1,0 +1,46 @@
+{
+  "_meta": {
+    "source": "web scrape khelnow/nbcsports/france24",
+    "updated": "2026-06-16",
+    "note": "Stats del torneo WC2026 — se actualizan con fetch_wc2026_stats.py"
+  },
+  "top_scorers": [
+    {"player": "Folarin Balogun",    "team": "USA",         "goals": 2, "assists": 0},
+    {"player": "Kai Havertz",        "team": "Germany",     "goals": 2, "assists": 0},
+    {"player": "Yasin Ayari",        "team": "Sweden",      "goals": 2, "assists": 0},
+    {"player": "Cyle Larin",         "team": "Canada",      "goals": 1, "assists": 0},
+    {"player": "Julian Quinones",    "team": "Mexico",      "goals": 1, "assists": 0},
+    {"player": "Raul Jimenez",       "team": "Mexico",      "goals": 1, "assists": 0},
+    {"player": "Vinicius Junior",    "team": "Brazil",      "goals": 1, "assists": 0},
+    {"player": "Alexander Isak",     "team": "Sweden",      "goals": 1, "assists": 0},
+    {"player": "Viktor Gyokeres",    "team": "Sweden",      "goals": 1, "assists": 0},
+    {"player": "Mattias Svanberg",   "team": "Sweden",      "goals": 1, "assists": 0},
+    {"player": "Virgil van Dijk",    "team": "Netherlands", "goals": 1, "assists": 0},
+    {"player": "Crysencio Summerville","team":"Netherlands", "goals": 1, "assists": 0},
+    {"player": "Jamal Musiala",      "team": "Germany",     "goals": 1, "assists": 0},
+    {"player": "Felix Nmecha",       "team": "Germany",     "goals": 1, "assists": 0},
+    {"player": "Denis Undav",        "team": "Germany",     "goals": 1, "assists": 0},
+    {"player": "Keito Nakamura",     "team": "Japan",       "goals": 1, "assists": 0},
+    {"player": "Daichi Kamada",      "team": "Japan",       "goals": 1, "assists": 0},
+    {"player": "John McGinn",        "team": "Scotland",    "goals": 1, "assists": 0},
+    {"player": "Nestory Irankunda",  "team": "Australia",   "goals": 1, "assists": 0},
+    {"player": "Connor Metcalfe",    "team": "Australia",   "goals": 1, "assists": 0},
+    {"player": "Breel Embolo",       "team": "Switzerland", "goals": 1, "assists": 0},
+    {"player": "Amad Diallo",        "team": "Ivory Coast", "goals": 1, "assists": 0},
+    {"player": "Hwang In-Beom",      "team": "South Korea", "goals": 1, "assists": 1},
+    {"player": "Oh Hyeon-gyu",       "team": "South Korea", "goals": 1, "assists": 0},
+    {"player": "Jovo Lukic",         "team": "Serbia",      "goals": 1, "assists": 0},
+    {"player": "Mauricio",           "team": "Brazil",      "goals": 1, "assists": 0},
+    {"player": "Ladislav Krejci",    "team": "Czech Republic","goals":1, "assists": 0},
+    {"player": "Gio Reyna",          "team": "USA",         "goals": 1, "assists": 0}
+  ],
+  "top_assists": [
+    {"player": "Christian Pulisic",  "team": "USA",         "assists": 1, "goals": 0},
+    {"player": "Roberto Alvarado",   "team": "Mexico",      "assists": 1, "goals": 0},
+    {"player": "Lee Kang-In",        "team": "South Korea", "assists": 1, "goals": 0},
+    {"player": "Hwang In-Beom",      "team": "South Korea", "assists": 1, "goals": 1},
+    {"player": "Joshua Kimmich",     "team": "Germany",     "assists": 2, "goals": 0},
+    {"player": "Denis Undav",        "team": "Germany",     "assists": 2, "goals": 1},
+    {"player": "Sead Kolasinac",     "team": "Bosnia",      "assists": 1, "goals": 0}
+  ]
+}

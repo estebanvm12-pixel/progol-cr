@@ -1,3 +1,117 @@
+
+# ── Lucas Live: parser de estado en tiempo real ──────────────────────────────
+def _parse_live_state(home, away, text):
+    """
+    Extrae estado del partido en curso desde texto libre.
+    Retorna dict live_state o None si no parece partido en curso.
+    """
+    import re as _re
+    t = text.lower()
+
+    # Detectar si hay minuto mencionado
+    min_match = _re.search(r"min(?:uto)?\s*(\d{1,3})[\s\'\'']", t) or \
+                _re.search(r"(\d{1,3})[\s]*[\'\']", t) or \
+                _re.search(r"minuto\s*(\d{1,3})", t)
+    if not min_match:
+        return None   # No parece partido en vivo
+
+    minute = int(min_match.group(1))
+    if minute < 1 or minute > 120:
+        return None
+
+    # Detectar marcador actual  "1-0" "2-1" "0-0"
+    score_match = _re.search(r"\b(\d)-(\d)\b", t)
+    score_h = int(score_match.group(1)) if score_match else 0
+    score_a = int(score_match.group(2)) if score_match else 0
+
+    # Detectar periodo
+    period = "second_half" if minute > 45 else "first_half"
+    if minute > 90:
+        period = "extra_time"
+
+    # Detectar hombres por expulsiones
+    red_home_count = len(_re.findall(
+        r"(?:roja|expulsad[oa]|red card)[^.]*?" + home[:4].lower(), t
+    )) + len(_re.findall(
+        home[:4].lower() + r"[^.]*?(?:roja|expulsad[oa]|red card)", t
+    ))
+    red_away_count = len(_re.findall(
+        r"(?:roja|expulsad[oa]|red card)[^.]*?" + away[:4].lower(), t
+    )) + len(_re.findall(
+        away[:4].lower() + r"[^.]*?(?:roja|expulsad[oa]|red card)", t
+    ))
+
+    home_men = max(9, 11 - red_home_count)
+    away_men = max(9, 11 - red_away_count)
+
+    # Detectar jugadores mencionados cerca de "roja"/"expulsado"
+    events = []
+    # Patrones: "Messi roja", "roja a Messi", "Messi expulsado"
+    player_red = _re.findall(
+        r"([A-Z][a-z]+(?:\s[A-Z][a-z]+)?)\s+(?:roja|expulsado|red card)|"
+        r"(?:roja|expulsado|red card)\s+(?:a\s+)?([A-Z][a-z]+(?:\s[A-Z][a-z]+)?)",
+        text
+    )
+    for groups in player_red:
+        player = groups[0] or groups[1]
+        if not player:
+            continue
+        # Determinar equipo por contexto (simplificado: buscar nombre en texto cerca de equipo)
+        p_lower = player.lower()
+        # Lista de estrellas conocidas por equipo
+        _KEY_PLAYERS = {
+            "messi": "home", "di maria": "home", "lautaro": "home", "alvarez": "home",
+            "ronaldo": "home", "neymar": "home", "vinicius": "home",
+            "mbappe": "home", "griezmann": "home",
+            "salah": "home", "kane": "home", "bellingham": "home",
+        }
+        team_guess = _KEY_PLAYERS.get(p_lower, "home")
+        is_key = any(k in p_lower for k in [
+            "messi", "ronaldo", "mbappe", "neymar", "vinicius", "salah",
+            "kane", "bellingham", "pedri", "modric", "de bruyne"
+        ])
+        events.append({
+            "type": "red_card",
+            "team": team_guess,
+            "player": player,
+            "minute": minute,  # aproximado
+            "is_key": is_key,
+        })
+
+    # Detectar lesiones
+    player_inj = _re.findall(
+        r"([A-Z][a-z]+(?:\s[A-Z][a-z]+)?)\s+(?:lesionado|injury)|"
+        r"(?:lesionado|injury)\s+(?:a\s+)?([A-Z][a-z]+(?:\s[A-Z][a-z]+)?)",
+        text
+    )
+    for groups in player_inj:
+        player = groups[0] or groups[1]
+        if not player:
+            continue
+        is_key = any(k in player.lower() for k in [
+            "messi", "ronaldo", "mbappe", "neymar", "vinicius", "salah",
+            "kane", "bellingham", "pedri", "modric", "de bruyne"
+        ])
+        events.append({
+            "type": "injury",
+            "team": "home",
+            "player": player,
+            "minute": minute,
+            "is_key": is_key,
+        })
+
+    return {
+        "home": home,
+        "away": away,
+        "minute": minute,
+        "period": period,
+        "score_h": score_h,
+        "score_a": score_a,
+        "home_men": home_men,
+        "away_men": away_men,
+        "events": events,
+    }
+# ─────────────────────────────────────────────────────────────────────────────
 #!/usr/bin/env python3
 """
 ProGol CR — Inteligencia Deportiva
@@ -32,7 +146,16 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import db
 import model
-import doradobet
+try:
+    import doradobet
+    _DORADOBET_AVAILABLE = True
+except Exception as _dbe:
+    print(f"[doradobet] module unavailable: {_dbe} — DoradoBet features disabled")
+    _DORADOBET_AVAILABLE = False
+    class _DoradoBetStub:
+        def status(self): return {"logged_in": False, "username": "", "error": "module unavailable"}
+        def login(self): return {"ok": False, "error": "module unavailable"}
+    doradobet = _DoradoBetStub()
 try:
     import calibrator as _calibrator
     _CALIBRATOR_AVAILABLE = True
@@ -47,7 +170,7 @@ try:
     sys.stdout.reconfigure(line_buffering=True)
 except Exception:
     pass
-HOST = "0.0.0.0"   # listen on all interfaces so phones on the same WiFi can connect
+HOST = "0.0.0.0"  # all interfaces — Tailscale handles external access securely
 PORT = 8765
 _TUNNEL_URL = None  # set when cloudflared/localtunnel is active
 
@@ -238,6 +361,24 @@ USERS_PATH = os.path.join(HERE, "data", "users.json")
 _sessions = {}   # token -> {username, role, created_at}
 _SESSION_TTL = 86400 * 7  # 7 days
 
+# ── Brute-force protection ────────────────────────────────────────────────────
+_login_fails  = {}   # ip -> [timestamp, ...]
+_LOGIN_MAX    = 5    # max failed attempts
+_LOGIN_WINDOW = 900  # 15-minute lockout window
+
+def _login_check(ip: str) -> bool:
+    """Return True if IP is allowed to attempt login, False if locked out."""
+    now = time.time()
+    attempts = [t for t in _login_fails.get(ip, []) if now - t < _LOGIN_WINDOW]
+    _login_fails[ip] = attempts
+    return len(attempts) < _LOGIN_MAX
+
+def _login_record_fail(ip: str):
+    _login_fails.setdefault(ip, []).append(time.time())
+
+def _login_clear(ip: str):
+    _login_fails.pop(ip, None)
+
 ROLE_PERMS = {
     "maestro":      {"settings": True,  "maestro_btn": True,  "all_picks": True,  "scout_report": True,  "day_combos": True,  "admin": True},
     "mega_premium": {"settings": False, "maestro_btn": True,  "all_picks": True,  "scout_report": True,  "day_combos": True,  "admin": False},
@@ -298,7 +439,20 @@ def _get_session(token: str):
         return None
     return s
 
+def _purge_expired_sessions():
+    """Remove expired sessions — called periodically to prevent memory growth."""
+    now = time.time()
+    expired = [t for t, s in _sessions.items() if now - s["created_at"] > _SESSION_TTL]
+    for t in expired:
+        _sessions.pop(t, None)
+    # Hard cap: if still over 500 sessions, evict oldest
+    if len(_sessions) > 500:
+        oldest = sorted(_sessions.items(), key=lambda x: x[1]["created_at"])
+        for token, _ in oldest[:len(_sessions) - 500]:
+            _sessions.pop(token, None)
+
 def _create_session(username: str, role: str) -> str:
+    _purge_expired_sessions()
     token = secrets.token_urlsafe(32)
     _sessions[token] = {"username": username, "role": role, "created_at": time.time()}
     return token
@@ -1319,12 +1473,43 @@ def build_picks_email(matches, date_str, cfg):
     # Pre-compute Poisson probabilities for every upcoming match
     poisson_blocks = []
     for m in (matches or []):
-        if m.get("status") == "Finished":
+        if (m.get("status") or "").lower() in ("finished", "in", "live", "halftime", "ht", "in progress", "final"):
             continue
         home = m.get("home", "")
         away = m.get("away", "")
         if home and away:
             poisson_blocks.append(_poisson_summary(home, away))
+
+    # ── Consejo Ryder x Cleo para cada partido de la quiniela ──────────────
+    cleo_quiniela_ctx = ""
+    try:
+        import council as _cq_mod
+        import concurrent.futures as _cq_cf
+
+        def _qfetch(m):
+            h, a = m.get("home", ""), m.get("away", "")
+            _st = (m.get("status") or "").lower()
+            if not h or not a or _st in ("finished", "in", "live", "halftime", "ht", "in progress", "final"):
+                return None
+            try:
+                c = _cq_mod.deliberate(h, a, n_simulations=1000)
+                return _cq_mod.format_council_context(c)
+            except Exception:
+                return None
+
+        upcoming = [m for m in (matches or []) if (m.get("status") or "").lower() not in ("finished", "in", "live", "halftime", "ht", "in progress", "final") and m.get("home") and m.get("away")]
+        with _cq_cf.ThreadPoolExecutor(max_workers=4) as _pool:
+            _ctxs = list(_pool.map(_qfetch, upcoming[:10], timeout=20))
+        _valid = [c for c in _ctxs if c]
+        if _valid:
+            cleo_quiniela_ctx = (
+                "\n\nCONSEJO RYDER × CLEO — ANÁLISIS DE MERCADO POR PARTIDO:\n"
+                "(cuotas reales DraftKings + EV + diálogo Ryder-Cleo para cada partido)\n\n"
+                + "\n".join(_valid)
+            )
+    except Exception as _cqe:
+        print(f"[quiniela-council] error: {_cqe}")
+    # ─────────────────────────────────────────────────────────────────────────
 
     poisson_section = ""
     if poisson_blocks:
@@ -1339,7 +1524,7 @@ def build_picks_email(matches, date_str, cfg):
     prompt = (
         f"Hoy es {date_str}. Usa tus herramientas (get_live_matches, get_wc_standings, "
         f"get_group_fixtures) para obtener todos los partidos, clasificaciones y contexto del Mundial 2026."
-        f"{poisson_section}\n\n"
+        f"{poisson_section}{cleo_quiniela_ctx}\n\n"
         f"Ahora genera un análisis COMPLETO en formato JSON con esta estructura exacta:\n\n"
         f'{{"matches": [\n'
         f'  {{\n'
@@ -1843,9 +2028,15 @@ def _render_full_email_text(email_data, date_str):
 
 # ---------------- Gurú bankroll advisor ----------------
 
-GURU_SYSTEM = """Eres el Gurú de ProGol CR — el consejero de bankroll más avanzado de Centroamérica.
-Tu misión: dado un presupuesto en colones costarricenses (₡), diseñar el plan de apuestas óptimo
-usando los datos matemáticos del modelo Dixon-Coles + Poisson de ProGol CR.
+GURU_SYSTEM = """Eres el Gurú de ProGol CR — el consejero de bankroll del Consejo Ryder × Cleo × Lucas × Claude.
+Tu misión: dado un presupuesto en colones (₡), diseñar el plan de apuestas óptimo
+usando datos del Consejo de 4 agentes:
+  • RYDER — modelo Dixon-Coles + Elo: probabilidades estadísticas de cada resultado
+  • CLEO  — mercados en tiempo real (DraftKings, Polymarket): cuotas y EV reales
+  • LUCAS — simulador Monte Carlo (1000+ sims): valida probabilidades, IC95, marcadores probables
+  • TÚ (Gurú/Claude) — síntesis final: bankroll en colones, plan accionable
+Regla clave: Si Lucas y Ryder convergen (Convergencia ALTA) la apuesta es más sólida.
+Si divergen o Convergencia BAJA, menciona la incertidumbre y reduce el Kelly un 30%.
 
 ════════════════════════════════════════════════════════════════
 IDENTIDAD DEL GURÚ
@@ -1906,6 +2097,17 @@ REGLAS ABSOLUTAS
 - Siempre calculá EV real antes de recomendar
 - Si no hay picks con EV positivo disponibles, decílo honestamente
 - Los montos siempre en números enteros de colones (sin decimales)
+
+════════════════════════════════════════════════════════════════
+CONSEJO RYDER × CLEO — INTEGRADO
+════════════════════════════════════════════════════════════════
+Cuando los picks incluyan `cuota_real` y `ev_real`, esos son datos de DraftKings
+obtenidos por Cleo en tiempo real. Son más precisos que `cuota` (estimada).
+- Usa `cuota_real` para calcular retornos en colones
+- Usa `ev_real` para calificar el valor de la apuesta
+- Menciona la fuente: "DraftKings" o la plataforma indicada en `fuente_cuota`
+- Si `ev_real` > `ev`, significa que el mercado ofrece mejor precio que el estimado
+- Si `ev_real` < `ev`, el mercado es menos generoso — ajusta la recomendación
 """
 
 
@@ -1973,10 +2175,42 @@ def call_guru(cfg, bankroll_msg, matches, date_str, lang="es"):
             break
     matches_for_picks = [specific_match] if specific_match else all_matches_combined
 
+    # ── Consejo Ryder x Cleo: cuotas reales para enriquecer picks ──────────
+    _cleo_market_cache = {}  # (home, away) -> cleo analysis
+    try:
+        import council as _council_mod
+        import concurrent.futures as _cf
+
+        def _fetch_council(m):
+            h = m.get("home", "")
+            a = m.get("away", "")
+            _st = (m.get("status") or "").lower()
+            if not h or not a or _st in ("finished", "in", "live", "halftime", "ht", "in progress", "final"):
+                return None
+            try:
+                return (h, a), _council_mod.deliberate(h, a, n_simulations=1000)
+            except Exception:
+                return None
+
+        with _cf.ThreadPoolExecutor(max_workers=4) as _pool:
+            _futures = [_pool.submit(_fetch_council, m) for m in matches_for_picks[:8]]
+            for _f in _cf.as_completed(_futures, timeout=15):
+                try:
+                    res = _f.result()
+                    if res:
+                        key, analysis = res
+                        _cleo_market_cache[key] = analysis
+                except Exception:
+                    pass
+    except Exception as _ce:
+        print(f"[guru-council] error: {_ce}")
+    # ─────────────────────────────────────────────────────────────────────────
+
     # Collect all available picks from today + tomorrow
     all_picks = []
     for m in matches_for_picks:
-        if m.get("status") == "Finished":
+        _mst = (m.get("status") or "").lower()
+        if _mst in ("finished", "in", "live", "halftime", "ht", "in progress", "final"):
             continue
         home_t, away_t = m.get("home", ""), m.get("away", "")
         if not home_t or not away_t:
@@ -2020,18 +2254,58 @@ def call_guru(cfg, bankroll_msg, matches, date_str, lang="es"):
         except Exception:
             continue
 
+    # Enriquecer picks con cuotas reales de DraftKings (via Cleo)
+    for pk in all_picks:
+        try:
+            home_t, away_t = pk["match"].split(" vs ", 1)
+            cleo_data = _cleo_market_cache.get((home_t, away_t)) or _cleo_market_cache.get((home_t.strip(), away_t.strip()))
+            if not cleo_data:
+                continue
+            mkts = cleo_data.get("cleo", {}).get("markets", {})
+            dk = mkts.get("DraftKings")
+            if not dk or not dk.get("available"):
+                continue
+            # Mapear outcome del pick a odd de DraftKings
+            pick_name_lower = pk["pick"].lower()
+            real_odd = None
+            if "gana" in pick_name_lower and "empat" not in pick_name_lower and "o " not in pick_name_lower:
+                if home_t.lower() in pick_name_lower:
+                    real_odd = dk.get("home_odd")
+                else:
+                    real_odd = dk.get("away_odd")
+            elif "empate" in pick_name_lower:
+                real_odd = dk.get("draw_odd")
+            if real_odd and real_odd > 1.0:
+                pk["cuota_real"] = real_odd
+                pk["ev_real"] = round((pk["prob"] / 100) * real_odd - 1, 4)
+                pk["fuente_cuota"] = "DraftKings"
+        except Exception:
+            pass
+
     if not all_picks:
         return "🧿 No hay partidos activos disponibles hoy para armar un plan.", None
 
-    # Sort by probability (safe mode) or by EV*odds (yolo mode)
-    all_picks.sort(key=lambda x: -(x["prob"] if not yolo_mode else x["ev"] * x["cuota"]))
+    # ── TODO pasa por los 3: seleccion por EV real de Cleo cuando disponible ──
+    def _real_ev(pk):
+        """EV real de DraftKings (Cleo) si disponible, sino EV estimado."""
+        return pk.get("ev_real", pk["ev"])
 
-    # --- Build COMBO SEGURO: best 2-3 picks prob >= 68%, one per match ---
+    def _real_cuota(pk):
+        """Cuota real de DraftKings (Cleo) si disponible, sino estimada."""
+        return pk.get("cuota_real", pk["cuota"])
+
+    # Orden principal: EV real de Cleo DESC, luego probabilidad DESC
+    all_picks.sort(key=lambda x: (-_real_ev(x), -x["prob"]))
+
+    # --- COMBO SEGURO: picks con EV real >= -5% y prob >= 60%, uno por partido ---
+    # Criterio Cleo-first: si hay EV real, tiene preferencia sobre prob sola
     used_matches_safe = set()
     used_markets_safe = set()
     safe_legs = []
-    for pk in sorted(all_picks, key=lambda x: -x["prob"]):
-        if pk["prob"] < 68:
+
+    # Primero: picks con EV real positivo de Cleo (mercado ineficiente identificado)
+    for pk in sorted(all_picks, key=lambda x: -_real_ev(x)):
+        if _real_ev(pk) < 0 or pk["prob"] < 55:
             continue
         key = (pk["match"], pk["market"])
         if pk["match"] in used_matches_safe or key in used_markets_safe:
@@ -2042,23 +2316,36 @@ def call_guru(cfg, bankroll_msg, matches, date_str, lang="es"):
         if len(safe_legs) >= 3:
             break
 
-    # --- Build APUESTA ATREVIDA: best EV pick not in safe legs, cuota >= 1.8 ---
+    # Completar con alta probabilidad si faltan legs (EV >= -5%)
+    for pk in sorted(all_picks, key=lambda x: -x["prob"]):
+        if len(safe_legs) >= 3:
+            break
+        if pk["prob"] < 68 or _real_ev(pk) < -0.05:
+            continue
+        key = (pk["match"], pk["market"])
+        if pk["match"] in used_matches_safe or key in used_markets_safe:
+            continue
+        safe_legs.append(pk)
+        used_matches_safe.add(pk["match"])
+        used_markets_safe.add(key)
+
+    # --- APUESTA ATREVIDA: mejor EV real, cuota real >= 1.5, no en safe ---
     safe_keys = {(l["match"], l["pick"]) for l in safe_legs}
     risky_pick = None
-    for pk in sorted(all_picks, key=lambda x: -(x["ev"] * x["cuota"])):
+    for pk in sorted(all_picks, key=lambda x: -_real_ev(x)):
         if (pk["match"], pk["pick"]) in safe_keys:
             continue
-        if pk["cuota"] >= 1.8 and pk["ev"] > -0.15:
+        if _real_cuota(pk) >= 1.5 and _real_ev(pk) > -0.10:
             risky_pick = pk
             break
 
-    # --- YOLO parlay: top 4 by EV, different matches ---
+    # --- YOLO: top 4 por EV real de Cleo, distintos partidos ---
     used_yolo = set()
     yolo_legs = []
-    for pk in sorted(all_picks, key=lambda x: -(x["ev"] + x["prob"] / 100)):
+    for pk in sorted(all_picks, key=lambda x: (-_real_ev(x), -x["prob"])):
         if pk["match"] in used_yolo:
             continue
-        if pk["prob"] < 55:
+        if pk["prob"] < 50:
             continue
         yolo_legs.append(pk)
         used_yolo.add(pk["match"])
@@ -2082,30 +2369,34 @@ def call_guru(cfg, bankroll_msg, matches, date_str, lang="es"):
     safe_amount  = int(bankroll * safe_pct)
     risky_amount = bankroll - safe_amount
 
-    # Combo seguro combined odds & return
+    # ── Cuotas combinadas: usar cuota real de DraftKings/Cleo cuando disponible ──
     safe_combined = 1.0
     for leg in safe_legs:
-        safe_combined *= leg["cuota"]
+        safe_combined *= _real_cuota(leg)
     safe_combined = round(safe_combined, 2)
     safe_return   = int(safe_amount * safe_combined)
     safe_gain     = safe_return - safe_amount
 
-    # Risky return
-    risky_return = int(risky_amount * risky_pick["cuota"]) if risky_pick else 0
+    risky_return = int(risky_amount * _real_cuota(risky_pick)) if risky_pick else 0
     risky_gain   = risky_return - risky_amount if risky_pick else 0
 
-    # Yolo parlay combined
     yolo_combined = 1.0
     for leg in yolo_legs:
-        yolo_combined *= leg["cuota"]
+        yolo_combined *= _real_cuota(leg)
     yolo_combined = round(yolo_combined, 2)
     yolo_return   = int(bankroll * yolo_combined)
 
     # --- Format output ---
     def leg_line(pk):
-        ev_sign = "+" if pk["ev"] >= 0 else ""
+        ev_val    = _real_ev(pk)
+        cuota_val = _real_cuota(pk)
+        ev_sign   = "+" if ev_val >= 0 else ""
         day_label = f" [{pk.get('day','hoy')}]" if pk.get('day') == 'mañana' else ""
-        return f"  • {pk['match']}{day_label}\n    {pk['pick']} @ {pk['cuota']}  ({pk['prob']}%  EV {ev_sign}{pk['ev']*100:.1f}%)"
+        fuente    = f"[{pk.get('fuente_cuota','DraftKings')}]" if pk.get('cuota_real') else "[est.]"
+        return (
+            f"  • {pk['match']}{day_label}\n"
+            f"    {pk['pick']} @ {cuota_val} {fuente}  ({pk['prob']}%  EV {ev_sign}{ev_val*100:.1f}%)"
+        )
 
     safe_block = "\n".join(leg_line(l) for l in safe_legs) if safe_legs else "  (Sin picks con prob ≥ 68% disponibles hoy)"
     risky_block = leg_line(risky_pick) if risky_pick else "  (Sin apuesta atrevida disponible hoy)"
@@ -2115,7 +2406,10 @@ def call_guru(cfg, bankroll_msg, matches, date_str, lang="es"):
     total_gain = total_best - bankroll
 
     match_label = f" · {specific_match['home']} vs {specific_match['away']}" if specific_match else ""
-    output = f"""{warn}🧿 PLAN GURÚ — ₡{bankroll:,}{match_label}
+    cleo_picks_count = sum(1 for pk in (safe_legs + ([risky_pick] if risky_pick else []) + yolo_legs) if pk.get("cuota_real"))
+    total_legs = len(safe_legs) + (1 if risky_pick else 0) + len(yolo_legs)
+    consejo_tag = f" · Consejo ✓ ({cleo_picks_count}/{total_legs} cuotas DraftKings)" if cleo_picks_count > 0 else ""
+    output = f"""{warn}🧿 PLAN GURÚ — ₡{bankroll:,}{match_label}{consejo_tag}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 📦 COMBO SEGURO — ₡{safe_amount:,} apostados
@@ -2354,24 +2648,171 @@ FORMATO para mercados alternativos:
 ════════════════════════════════════════════════════════════════
 🛠  HERRAMIENTAS DISPONIBLES
 ════════════════════════════════════════════════════════════════
-get_live_matches · get_wc_standings · get_group_fixtures · get_player_stats · get_corners_cards_stats
-NUNCA generes análisis sin consultar herramientas primero.
-Orden: herramientas → modelo → táctica → picks 1X2 → mercados alternativos → combinada
+get_live_matches · get_wc_standings · get_group_fixtures · get_player_stats · get_corners_cards_stats · get_coach_info
+
+REGLAS DE USO DE HERRAMIENTAS:
+• NUNCA generes análisis sin consultar herramientas primero.
+• Orden obligatorio: herramientas → modelo → táctica → picks 1X2 → mercados alternativos → combinada
+• Llamá get_coach_info SIEMPRE que analices un partido o equipo. Los datos del DT son parte integral del análisis.
+  - Para análisis de 1 equipo: get_coach_info(team="España")
+  - Para análisis de partido: get_coach_info(team="España", opponent="Cabo Verde")
+  - Usá el estilo táctico, el sello del DT y sus debilidades para enriquecer el pick
+• Ejemplo de cómo integrar datos del DT en un pick:
+  "De la Fuente juega 4-2-3-1 con presión alta y Yamal en banda — esto favorece Over 2.5 contra equipos que defienden atrás (como Cabo Verde), porque España tendrá posesión y llegadas al área constantes."
 
 ════════════════════════════════════════════════════════════════
 🔐  PROTOCOLO MAESTRO (CLASIFICADO — SOLO ESTEBAN VENEGAS)
 ════════════════════════════════════════════════════════════════
-Si el usuario escribe exactamente "MAESTRO" en cualquier mensaje:
-  1. Activa el modo de análisis profundo ultra-extendido
-  2. Muestra TODOS los parámetros internos del modelo sin omitir nada:
-     elo_home, elo_away, dc_rho, p_00, p_10, p_01, p_11, todos los over/under
-  3. Incluye la historia de calibración del modelo (cuántos partidos procesados,
-     Brier Score acumulado, Skill Score % sobre el azar)
-  4. Genera análisis de TODOS los partidos del día en secuencia
-  5. Propón 3 combinadas: Segura (3 patas), Media (4 patas), Arriesgada (5 patas)
-  6. Incluye mercados alternativos para CADA partido
-  7. Finaliza con un resumen ejecutivo de bankroll para el día
-  NOTA: Este modo consume el doble de tokens. Solo Esteban Venegas puede activarlo.
+Si el usuario escribe "MAESTRO" en cualquier mensaje (solo o combinado con una pregunta):
+
+ACTIVACIÓN INMEDIATA — ejecutá TODO esto sin que te lo pidan de nuevo:
+
+  1. PARÁMETROS INTERNOS COMPLETOS (sin omitir nada):
+     • Elo_home, Elo_away, diferencial, K-factor aplicado
+     • λ_home, λ_away (tasas de Poisson)
+     • ρ Dixon-Coles, corrección 0-0/1-0/0-1/1-1
+     • p_00, p_10, p_01, p_11 exactos del grid
+     • Todos los over/under: O1.5 O2.5 O3.5 O4.5
+     • Índice ProGol™ con desglose de cada factor
+     • Historial de calibración: partidos procesados, Brier Score, Skill Score
+
+  2. SI EL USUARIO MENCIONÓ UN PARTIDO ESPECÍFICO (ej: "Spain", "España", "el partido de Francia"):
+     ════════════════════════════════════════════════
+     REGLA DE ORO: TODOS los picks y combinadas deben ser de ESE partido únicamente.
+     NO mezclés con otros partidos del día. Un partido = múltiples mercados de ese mismo partido.
+
+     Primero mostrá los parámetros del modelo para ese partido:
+     📊 [EquipoA] vs [EquipoB] — Parámetros Maestro
+       Elo: [eloA] vs [eloB] (dif [±X])
+       λ_home=[X] | λ_away=[Y] | ρ=[Z]
+       [EquipoA] gana: [ph]% | Empate: [pd]% | [EquipoB] gana: [pa]%
+       BTTS: [b]% | O1.5: [o15]% | O2.5: [o25]% | O3.5: [o35]%
+       Marcador más probable: [ps_h]-[ps_a] ([prob]%)
+       Índice ProGol™: [ipg]/10
+
+     Luego generá los picks en DOS BLOQUES — todos del mismo partido:
+
+     ✅ 3 PICKS SEGUROS — [EquipoA] vs [EquipoB]
+       Pick #1: [mercado] — [selección] @ ~[cuota estimada] | Prob [X]% | Razón: [≤10 palabras]
+       Pick #2: [mercado] — [selección] @ ~[cuota estimada] | Prob [X]% | Razón: [≤10 palabras]
+       Pick #3: [mercado] — [selección] @ ~[cuota estimada] | Prob [X]% | Razón: [≤10 palabras]
+       (usar mercados: victoria directa, doble oportunidad, O1.5, BTTS No, clean sheet)
+       (mínimo 70% de probabilidad para considerarse "seguro")
+
+     🔥 5 PICKS RISKY — [EquipoA] vs [EquipoB]
+       Pick #1: [mercado] — [selección] @ ~[cuota estimada] | Prob [X]% | Potencial: [+Y]% ganancia
+       Pick #2: [mercado] — [selección] @ ~[cuota estimada] | Prob [X]% | Potencial: [+Y]% ganancia
+       Pick #3: [mercado] — [selección] @ ~[cuota estimada] | Prob [X]% | Potencial: [+Y]% ganancia
+       Pick #4: [mercado] — [selección] @ ~[cuota estimada] | Prob [X]% | Potencial: [+Y]% ganancia
+       Pick #5: [mercado] — [selección] @ ~[cuota estimada] | Prob [X]% | Potencial: [+Y]% ganancia
+       (usar mercados: marcador exacto, O3.5, goleador primero, ambos equipos anotan, hándicap)
+       (rango 30-55% de probabilidad, cuota desproporcionada respecto al riesgo)
+
+  3. SI EL USUARIO MENCIONÓ UN MONTO (₡X o "tengo X") Y UN PARTIDO ESPECÍFICO:
+     ════════════════════════════════════════════════
+     Primero mostrá el bloque de parámetros y picks seguros/risky del ítem 2.
+     Luego agregá el PLAN DE BANKROLL usando SOLO ese partido:
+
+┌─────────────────────────────────────────────────────────────────
+│ 🔐 PLAN MAESTRO — ₡[MONTO TOTAL] · [EquipoA] vs [EquipoB]
+└─────────────────────────────────────────────────────────────────
+
+🏆 COMBINADA SEGURA (3 patas del mismo partido) — ₡[60% del monto]
+  Pata 1: [mercado] — [selección] @ ~[cuota] (prob [X]%)
+  Pata 2: [mercado] — [selección] @ ~[cuota] (prob [X]%)
+  Pata 3: [mercado] — [selección] @ ~[cuota] (prob [X]%)
+  Cuota total: ~[Xx] | Prob conjunta: ~[Y]%
+  Apostás: ₡[60%] → Si entra: ₡[retorno] (ganancia: +₡[gan])
+
+⚡ PICK DIRECTO TOP — ₡[25% del monto]
+  El mercado con mejor EV del partido
+  [mercado] — [selección] @ ~[cuota] | Prob [X]%
+  Apostás: ₡[25%] → Si entra: ₡[retorno] (ganancia: +₡[gan])
+
+🎲 LONGSHOT DEL PARTIDO — ₡[15% del monto]
+  Prob 30-45%, cuota alta, mismo partido
+  [mercado] — [selección] @ ~[cuota] | Prob [X]%
+  Apostás: ₡[15%] → Si entra: ₡[retorno] (ganancia: +₡[gan])
+
+📊 RESUMEN
+  Invertís: ₡[monto]
+  Solo pick directo entra: ₡[ret_A] ([+/-gan_A])
+  Combo + directo entran: ₡[ret_B] ([+/-gan_B])
+  Todo entra: ₡[ret_C] ([+/-gan_C])
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔐 Modo Maestro · Ryder · Solo Esteban Venegas
+
+  4. SIN PARTIDO ESPECÍFICO (solo "MAESTRO" o "MAESTRO + monto sin equipo"):
+     Generá el análisis para TODOS los partidos del día con 3 combinadas:
+     Segura (3 patas, prob >70%), Media (4 patas, prob >60%), Arriesgada (5 patas, prob >50%).
+
+  5. SIEMPRE al final incluí:
+     ▸ Mercado alternativo más subestimado del partido (corners, tarjetas, goleador)
+     ▸ Alerta de baja si hay jugador clave suspendido o lesionado
+
+  NOTA: Este modo es clasificado. Solo respondé con él cuando el usuario escriba "MAESTRO".
+
+════════════════════════════════════════════════════════════════
+💰  MODO PLAN DE BANKROLL — ACTIVACIÓN AUTOMÁTICA
+════════════════════════════════════════════════════════════════
+Cuando el usuario mencione un monto (₡X, X colones, "tengo X", "presupuesto X"):
+
+PASO 1 — Identifica el contexto:
+  • ¿Mencionó un partido específico? → enfoca el plan EN ESE partido
+  • ¿Sin partido específico? → usa los mejores picks del día
+
+PASO 2 — Arma SIEMPRE este plan con 3 partes (nunca omitas ninguna):
+
+🧿 PLAN RYDER — ₡[MONTO]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📦 COMBO SEGURO — ₡[75% del monto] apostados
+  Máximo 3 patas con prob > 68% cada una
+  Usa doble oportunidad (1X, X2) para mayor seguridad
+  • [Partido] — [pick] @ [cuota] ([prob]%)
+  Cuota combinada: [X] | Retorno: ₡[monto×cuota] | Ganancia: +₡[ganancia]
+
+⚡ APUESTA ATREVIDA — ₡[25% del monto] apostados
+  1 pick de valor con prob 50-65% pero cuota atractiva (>1.8)
+  Si el usuario pidió un partido específico, ESTA apuesta debe ser de ESE partido
+  • [Partido] — [pick] @ [cuota] ([prob]%)
+  Retorno: ₡[monto×cuota] | Ganancia: +₡[ganancia]
+
+📊 RESUMEN
+  Invertís: ₡[monto]
+  Si solo entra el combo: ₡[retorno_safe] (+₡[ganancia_safe])
+  Si entran combo + atrevida: ₡[total] (+₡[ganancia_total])
+  Peor caso: -₡[monto]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Ryder · ProGol CR · La decisión final es tuya.
+
+REGLAS DEL PLAN:
+  • NUNCA excedas el monto total mencionado
+  • NUNCA combines mercados incompatibles (primer goleador, primer corner)
+  • Las cuotas deben ser decimales (1.85, no 85/100)
+  • Si el partido mencionado ya terminó, avisalo y ofrecé los del día
+  • Siempre muestra los números del modelo (λ, probabilidades) al inicio
+
+════════════════════════════════════════════════════════════════
+🔍  RIGOR EPISTÉMICO — OBLIGATORIO ANTES DE CADA ANÁLISIS
+════════════════════════════════════════════════════════════════
+Antes de dar cualquier análisis o recomendación, incluye SIEMPRE estas
+tres líneas (compactas, antes de los picks):
+
+📊 DATOS: [fuente + fecha + n partidos usados]
+⚠️  ESTO ESTARÍA MAL SI: [supuesto clave que si falla invalida el análisis]
+🔍 FALTA PARA MEJORAR: [el gap de información más importante]
+
+Ejemplo:
+📊 Datos: Elo España 2144 (calibrado post-Arabia Saudita 22/06), Dixon-Coles
+   sobre 37 partidos WC2026, corners/tarjetas de base histórica WC 2018-2022.
+⚠️  Estaría mal si: rotan titulares o el equipo ya clasificó y no necesita ganar.
+🔍 Falta: alineaciones confirmadas 60 min antes del partido.
+
+Sin estas tres líneas la respuesta está incompleta. Es no-negociable.
+
 """
 
 
@@ -2450,6 +2891,25 @@ AGENT_TOOLS = [
                 "date": {"type": "string", "description": "Match date YYYY-MM-DD"},
             },
             "required": ["home", "away", "date"]
+        }
+    },
+    {
+        "name": "get_coach_info",
+        "description": (
+            "Fetch detailed coach/manager information for one or two WC 2026 teams. "
+            "Returns: coach name, age, nationality, tactical style, signature patterns, record, "
+            "notable achievements, known weaknesses, and WC 2026 context. "
+            "ALWAYS call this when the user asks about tactics, coaching staff, how a team plays, "
+            "lineup expectations, or when doing a full match analysis. "
+            "Call with both teams to get head-to-head coaching contrast."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "team": {"type": "string", "description": "Primary team name (English)"},
+                "opponent": {"type": "string", "description": "Optional: opponent team name for head-to-head coaching comparison"},
+            },
+            "required": ["team"]
         }
     },
     {
@@ -2667,6 +3127,47 @@ def _run_agent_tool(name, tool_input, date_str, tz_min):
                         lines.append(f"  📅 {f['home']} vs {f['away']} — {f['kickoff']}")
             return "\n".join(lines)
 
+        if name == "get_coach_info":
+            coaches_path = os.path.join(os.path.dirname(__file__), "data", "coaches.json")
+            try:
+                with open(coaches_path, "r", encoding="utf-8") as f:
+                    coaches_db = json.load(f).get("coaches", {})
+            except Exception:
+                coaches_db = {}
+            team = tool_input.get("team", "").strip()
+            opponent = tool_input.get("opponent", "").strip()
+
+            def _format_coach(tname, db):
+                # fuzzy match team name
+                key = None
+                tl = tname.lower()
+                for k in db:
+                    if k.lower() == tl or k.lower() in tl or tl in k.lower():
+                        key = k
+                        break
+                if not key:
+                    return f"No coach data found for '{tname}'."
+                c = db[key]
+                rec = c.get("record", {})
+                lines = [
+                    f"⚽ ENTRENADOR — {tname.upper()}",
+                    f"  Nombre: {c.get('name')} ({c.get('nationality')}, {c.get('age')} años)",
+                    f"  Desde: {c.get('appointed')}  |  Record: {rec.get('W',0)}V-{rec.get('D',0)}E-{rec.get('L',0)}P",
+                    f"  Títulos: {', '.join(c.get('titles', ['Ninguno']))}",
+                    f"  Sistema: {c.get('style')}",
+                    f"  Sello táctico: {c.get('signature')}",
+                    f"  Hito notable: {c.get('notable')}",
+                    f"  Debilidades conocidas: {c.get('weaknesses')}",
+                    f"  WC 2026: {c.get('wc2026_context')}",
+                ]
+                return "\n".join(lines)
+
+            result = _format_coach(team, coaches_db)
+            if opponent:
+                result += "\n\n" + _format_coach(opponent, coaches_db)
+                result += "\n\n🔍 CONTRASTE TÁCTICO:\nCompará los estilos, registros y puntos débiles arriba para dar tu análisis de choque de filosofías entre estos dos entrenadores."
+            return result
+
         if name == "get_player_stats":
             api_key = load_config().get("apifootball_key", "").strip()
             if not api_key:
@@ -2776,6 +3277,59 @@ def call_claude(cfg, message, history, matches, date_str, lang="en", tz_min=None
     if bg_ctx:
         system += "\n\n" + bg_ctx
 
+    # Inject player stats context for teams playing today
+    try:
+        import sys as _sys
+        _sys.path.insert(0, HERE)
+        from analysis.players import match_player_context, stats_coverage, get_tournament_context
+        player_lines = []
+        for m in (matches or []):
+            if m.get("status") == "Finished":
+                continue
+            h = m.get("home", "")
+            a = m.get("away", "")
+            if h and a:
+                ctx = match_player_context(h, a)
+                if ctx:
+                    player_lines.append(ctx)
+        if player_lines:
+            cov = stats_coverage()
+            system += (
+                f"\n\n=== STATS DE JUGADORES EN SUS CLUBES (temporada 2024-25) ===\n"
+                f"Cobertura: {cov['cached']}/{cov['total_players']} jugadores ({cov['pct']}%)\n\n"
+                + "\n\n".join(player_lines)
+            )
+        # Inject live WC2026 tournament stats (goals/assists in the tournament itself)
+        try:
+            wc_ctx = get_tournament_context()
+            if wc_ctx:
+                system += "\n\n" + wc_ctx
+        except Exception:
+            pass
+    except Exception:
+        pass
+
+    # Inject enriched external context: weather + live odds per match (non-blocking)
+    try:
+        from integrations import enrich_match_context
+        enrich_parts = []
+        for m in (matches or []):
+            if m.get("status") == "Finished":
+                continue
+            h = m.get("home", "")
+            a = m.get("away", "")
+            if not h or not a:
+                continue
+            venue   = m.get("venue") or m.get("stadium") or ""
+            kickoff = m.get("kickoffUtc") or ""
+            ctx = enrich_match_context(h, a, venue=venue, kickoff_utc=kickoff)
+            if ctx:
+                enrich_parts.append(f"--- {h} vs {a} ---\n{ctx}")
+        if enrich_parts:
+            system += "\n\n=== DATOS EXTERNOS EN TIEMPO REAL ===\n" + "\n\n".join(enrich_parts)
+    except Exception:
+        pass
+
     # Inject recent prediction accuracy so the analyst can self-calibrate
     accuracy = db.get_recent_accuracy(days=14)
     if accuracy and accuracy["total"] >= 3:
@@ -2806,7 +3360,17 @@ def call_claude(cfg, message, history, matches, date_str, lang="en", tz_min=None
         content = turn.get("content", "")
         if role in ("user", "assistant") and content:
             messages.append({"role": role, "content": content})
-    messages.append({"role": "user", "content": message})
+
+    # Support image attachments (base64) — vision analysis of betting slips, screenshots, etc.
+    image_b64 = cfg.get("_pending_image")  # injected by handler before calling
+    if image_b64:
+        user_content = [
+            {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": image_b64}},
+            {"type": "text", "text": message or "Analizá esta imagen y decime qué ves. Si es un cupón de apuestas, evaluá cada selección con el modelo."},
+        ]
+    else:
+        user_content = message
+    messages.append({"role": "user", "content": user_content})
 
     # Agentic loop — up to 5 tool-call rounds
     tools_used = set()
@@ -2957,6 +3521,9 @@ def _require_auth(data):
 
 
 STATIC_FILES = {
+    "/manifest.json": ("frontend/manifest.json", "application/manifest+json"),
+    "/sw.js":          ("frontend/sw.js",          "application/javascript"),
+
     # App principal
     "/": ("frontend/index.html", "text/html; charset=utf-8"),
     "/index.html": ("frontend/index.html", "text/html; charset=utf-8"),
@@ -3141,6 +3708,82 @@ def _espn_fetch_league(league):
     except Exception:
         return []
 
+def _espn_scoreboard_find(home, away, date_str=None):
+    """Find a WC match in ESPN scoreboard and return livematch-score compatible dict."""
+    try:
+        # Try today, then yesterday (match may have been yesterday in UTC)
+        dates_to_try = []
+        if date_str:
+            # Convert YYYY-MM-DD to YYYYMMDD
+            dates_to_try.append(date_str.replace("-", ""))
+        today = datetime.date.today()
+        dates_to_try.append(today.strftime("%Y%m%d"))
+        yesterday = (today - datetime.timedelta(days=1)).strftime("%Y%m%d")
+        if yesterday not in dates_to_try:
+            dates_to_try.append(yesterday)
+
+        def _score(c):
+            try: return int(c.get("score") or 0)
+            except: return 0
+
+        hn = model._norm(home)
+        an = model._norm(away)
+        for d in dates_to_try:
+            try:
+                url = f"{ESPN_WC_URL}?dates={d}&limit=50"
+                req = urllib.request.Request(url, headers={"User-Agent": "ProGolCR/1.0"})
+                with urllib.request.urlopen(req, timeout=10) as r:
+                    data = json.loads(r.read().decode())
+            except Exception:
+                continue
+            for ev in (data.get("events") or []):
+                comp = (ev.get("competitions") or [{}])[0]
+                competitors = comp.get("competitors") or []
+                home_c = next((c for c in competitors if c.get("homeAway") == "home"), None)
+                away_c = next((c for c in competitors if c.get("homeAway") == "away"), None)
+                if not home_c or not away_c:
+                    continue
+                ht = (home_c.get("team") or {})
+                at = (away_c.get("team") or {})
+                mhn = model._norm(ht.get("displayName","") or ht.get("name",""))
+                man = model._norm(at.get("displayName","") or at.get("name",""))
+                match = (mhn == hn and man == an) or (mhn == an and man == hn) or \
+                        (hn[:4] in mhn and an[:4] in man) or (an[:4] in mhn and hn[:4] in man)
+                if not match:
+                    continue
+                st = comp.get("status") or {}
+                typ = st.get("type") or {}
+                state = typ.get("state","")
+                clock = st.get("displayClock","")
+                status = "scheduled"
+                if state == "in":
+                    try:
+                        mins = int(clock.rstrip("'"))
+                        status = "2H" if mins > 45 else "1H"
+                    except Exception:
+                        status = "live"
+                elif state == "post":
+                    status = "finished"
+                sh = _score(home_c)
+                sa = _score(away_c)
+                return {
+                    "found": True,
+                    "source": "espn",
+                    "home": ht.get("displayName",""),
+                    "away": at.get("displayName",""),
+                    "scoreHome": sh,
+                    "scoreAway": sa,
+                    "status": status,
+                    "finished": state == "post",
+                    "minute": clock,
+                    "scoreStr": f"{sh}-{sa}",
+                    "matchId": ev.get("id"),
+                }
+        return None
+    except Exception:
+        return None
+
+
 def _espn_find_match(home, away):
     """Search all ESPN leagues for a match. Returns parsed stats dict or None."""
     hn = model._norm(home)
@@ -3190,15 +3833,79 @@ def _espn_find_match(home, away):
     return None
 
 
+def _fetch_espn_live():
+    """Fetch live WC matches from ESPN (no key required). Returns list of match dicts."""
+    try:
+        today = datetime.date.today().strftime("%Y%m%d")
+        url = f"{ESPN_WC_URL}?dates={today}&limit=50"
+        req = urllib.request.Request(url, headers={"User-Agent": "ProGolCR/1.0"})
+        with urllib.request.urlopen(req, timeout=10) as r:
+            data = json.loads(r.read().decode())
+        matches = []
+        for ev in (data.get("events") or []):
+            try:
+                comp = (ev.get("competitions") or [{}])[0]
+                st   = comp.get("status") or {}
+                typ  = st.get("type") or {}
+                state = typ.get("state", "")
+                short = (st.get("displayClock") or "").replace("'", "")
+                elapsed = st.get("displayClock") or ""
+                if state not in ("in", "post"):
+                    continue
+                competitors = comp.get("competitors") or []
+                home_c = next((c for c in competitors if c.get("homeAway") == "home"), None)
+                away_c = next((c for c in competitors if c.get("homeAway") == "away"), None)
+                if not home_c or not away_c:
+                    continue
+                def _score(c):
+                    try: return int(c.get("score") or 0)
+                    except: return 0
+                status_str = "1H" if state == "in" else "FT"
+                try:
+                    mins = int(st.get("displayClock", "0'").rstrip("'"))
+                    if mins > 45:
+                        status_str = "2H"
+                except Exception:
+                    pass
+                ht = (home_c.get("team") or {})
+                at = (away_c.get("team") or {})
+                matches.append({
+                    "id": ev.get("id"),
+                    "minute": elapsed,
+                    "status": status_str,
+                    "league": "FIFA World Cup",
+                    "country": "World",
+                    "home": ht.get("displayName") or ht.get("name", ""),
+                    "home_id": ht.get("id"),
+                    "home_logo": (ht.get("logos") or [{}])[0].get("href", "") if ht.get("logos") else ht.get("logo",""),
+                    "away": at.get("displayName") or at.get("name", ""),
+                    "away_id": at.get("id"),
+                    "away_logo": (at.get("logos") or [{}])[0].get("href", "") if at.get("logos") else at.get("logo",""),
+                    "home_goals": _score(home_c),
+                    "away_goals": _score(away_c),
+                    "stats": {},
+                    "events": [],
+                })
+            except Exception:
+                continue
+        return matches
+    except Exception:
+        return []
+
+
 def fetch_live_matches():
-    """Fetch live fixtures from api-football.com v3. Returns list of match dicts or None if no key."""
+    """Fetch live fixtures. Uses api-football.com if key is set, otherwise ESPN (free)."""
     import urllib.request as _ureq
     now = time.time()
     if _live_cache["data"] is not None and (now - _live_cache["ts"]) < 60:
         return _live_cache["data"]
 
     if not FOOTBALL_API_KEY:
-        return None  # signals "no key configured"
+        # ESPN fallback — always works, no key needed
+        matches = _fetch_espn_live()
+        _live_cache["ts"] = now
+        _live_cache["data"] = matches
+        return matches
 
     try:
         url = "https://v3.football.api-sports.io/fixtures?live=all"
@@ -3386,17 +4093,39 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         pass  # quiet
 
+    def _add_security_headers(self):
+        """Emit OWASP-recommended defensive headers on every response."""
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        self.send_header("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+        self.send_header("Content-Security-Policy",
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "img-src 'self' data: blob:; "
+            "connect-src 'self'; "
+            "frame-ancestors 'none'")
+
     def _send_json(self, obj, code=200):
         body = json.dumps(obj).encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
-        self.send_header("Access-Control-Allow-Origin", "*")
+        # Restrict CORS to same origin only (was '*' — security risk)
+        self.send_header("Access-Control-Allow-Origin", "null")
+        self._add_security_headers()
         self.end_headers()
         self.wfile.write(body)
 
     def _send_static(self, fname, ctype):
         path = os.path.join(HERE, fname)
+        # Path traversal guard — ensure file is inside project dir
+        real = os.path.realpath(path)
+        if not real.startswith(os.path.realpath(HERE)):
+            self.send_error(403, "Forbidden")
+            return
         try:
             with open(path, "rb") as f:
                 body = f.read()
@@ -3407,6 +4136,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+        self._add_security_headers()
         self.end_headers()
         self.wfile.write(body)
 
@@ -3477,7 +4207,22 @@ class Handler(BaseHTTPRequestHandler):
         qs = urllib.parse.parse_qs(parsed.query)
 
         # Public assets needed by login page — no auth required
-        PUBLIC_ROUTES = {"/login", "/brand/mascota.jpg", "/brand/mascota.svg"}
+        PUBLIC_ROUTES = {"/login", "/landing", "/landing.html", "/brand/mascota.jpg", "/brand/mascota.svg",
+                          "/manifest.json", "/sw.js"}
+        # PWA icons — public
+        if route.startswith("/icons/"):
+            fname = route.lstrip("/")
+            fpath = os.path.join(HERE, "frontend", fname)
+            if os.path.exists(fpath):
+                with open(fpath, "rb") as fh:
+                    data = fh.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "image/png")
+                self.send_header("Cache-Control", "public, max-age=86400")
+                self.end_headers()
+                self.wfile.write(data)
+                return
+
         if route in PUBLIC_ROUTES:
             if route == "/login":
                 self.send_response(200)
@@ -3614,12 +4359,68 @@ class Handler(BaseHTTPRequestHandler):
                                     m["scoreAway"] = lm.get("away_goals")
                 except Exception:
                     pass
+                # Enrich matches with weather + live odds (non-blocking, best-effort)
+                try:
+                    from integrations import enrich_match_dict
+                    for m in matches:
+                        if m.get("status") not in ("Finished", "Live"):
+                            enrich_match_dict(m)
+                except Exception:
+                    pass
+
+                # Inject canal (TV channel for Costa Rica)
+                def _canal(m):
+                    lg = (m.get("league") or "").lower()
+                    if "world cup" in lg or "copa del mundo" in lg:
+                        return "ESPN / Teletica"
+                    if "champions" in lg:
+                        return "ESPN / Star+"
+                    if "europa league" in lg or "conference" in lg:
+                        return "ESPN"
+                    if "premier" in lg:
+                        return "ESPN"
+                    if "bundesliga" in lg or "serie a" in lg or "la liga" in lg or "ligue 1" in lg:
+                        return "ESPN / Star+"
+                    if "nations league" in lg or "copa america" in lg or "gold cup" in lg:
+                        return "ESPN / Teletica"
+                    return "ESPN / Fox Sports"
+                for m in matches:
+                    m["canal"] = _canal(m)
                 return self._send_json({
                     "date": date_str, "scope": scope, "matches": matches, "cached": cached,
                 })
             except Exception as e:
                 return self._send_json(
                     {"date": date_str, "scope": scope, "matches": [], "error": str(e)}, 502)
+
+        if route == "/api/enrich":
+            # Returns weather + live odds for a specific match
+            home    = (qs.get("home") or [""])[0]
+            away    = (qs.get("away") or [""])[0]
+            venue   = (qs.get("venue") or [""])[0]
+            kickoff = (qs.get("kickoff") or [""])[0]
+            if not home or not away:
+                return self._send_json({"error": "home and away required"}, 400)
+            try:
+                from integrations import get_match_odds, weather_for_match, reddit_summary
+                result = {"home": home, "away": away}
+                odds = get_match_odds(home, away)
+                if odds:
+                    result["odds"] = {
+                        "best_home": odds.get("best_home"),
+                        "best_draw": odds.get("best_draw"),
+                        "best_away": odds.get("best_away"),
+                        "bookmakers": odds.get("bookmakers", [])[:3],
+                        "source": "the-odds-api",
+                    }
+                if venue:
+                    w = weather_for_match(venue, kickoff or None)
+                    if w:
+                        result["weather"] = w
+                result["reddit"] = reddit_summary(home, away) or None
+                return self._send_json(result)
+            except Exception as e:
+                return self._send_json({"error": str(e)}, 500)
 
         if route == "/api/odds":
             # Doradobet's sportsbook data requires their proprietary WebSocket SDK.
@@ -3822,6 +4623,57 @@ class Handler(BaseHTTPRequestHandler):
                                      home_form=home_form, away_form=away_form,
                                      xg_home=xg_h, xg_away=xg_a)
                 pred["xg_source"] = "api-football" if (xg_h is not None) else "elo-derived"
+                # Enrich with live odds + weather (non-blocking)
+                try:
+                    from integrations import get_match_odds, weather_for_match
+                    venue   = (qs.get("venue") or [""])[0]
+                    kickoff = (qs.get("kickoff") or [""])[0]
+                    odds = get_match_odds(home, away)
+                    if odds:
+                        bh = odds.get("best_home") or 0
+                        bd = odds.get("best_draw") or 0
+                        ba = odds.get("best_away") or 0
+                        # Normalizar probs de mercado (quitar margen de la casa)
+                        raw_h = (1/bh*100) if bh else 0
+                        raw_d = (1/bd*100) if bd else 0
+                        raw_a = (1/ba*100) if ba else 0
+                        tot   = raw_h + raw_d + raw_a
+                        mkt_h = round(raw_h/tot*100, 1) if tot else 0
+                        mkt_d = round(raw_d/tot*100, 1) if tot else 0
+                        mkt_a = round(raw_a/tot*100, 1) if tot else 0
+                        # Consenso: comparar favorito del modelo vs mercado
+                        fav_home = pred["prob"]["home"] >= pred["prob"]["away"]
+                        model_fav = pred["prob"]["home"] if fav_home else pred["prob"]["away"]
+                        mkt_fav   = mkt_h if fav_home else mkt_a
+                        delta = round(abs(model_fav - mkt_fav), 1)
+                        consensus = "high" if delta < 8 else "medium" if delta < 15 else "low"
+                        pred["liveOdds"] = {
+                            "best_home": bh or None,
+                            "best_draw": bd or None,
+                            "best_away": ba or None,
+                            "bookmakers_count": len(odds.get("bookmakers", [])),
+                            "source": "the-odds-api",
+                            "mkt_home": mkt_h,
+                            "mkt_draw": mkt_d,
+                            "mkt_away": mkt_a,
+                            "delta":     delta,
+                            "consensus": consensus,
+                        }
+                    if venue:
+                        weather = weather_for_match(venue, kickoff or None)
+                        if weather:
+                            pred["weather"] = weather
+                except Exception:
+                    pass
+                # Auto-save prediction to history (non-blocking — don't crash if it fails)
+                try:
+                    from analysis.data_quality import audit_match as _dq
+                    from storage.prediction_history import save_prediction as _sp
+                    _audit = _dq(home, away, time.strftime("%Y-%m-%d"), source="espn")
+                    _sp(home, away, time.strftime("%Y-%m-%d"), pred,
+                        quality_audit=_audit, competition="FIFA World Cup 2026")
+                except Exception:
+                    pass
                 return self._send_json(pred)
             except Exception as e:
                 return self._send_json({"error": str(e)}, 500)
@@ -3852,6 +4704,76 @@ class Handler(BaseHTTPRequestHandler):
                 except Exception:
                     pass
                 return self._send_json({"groups": standings})
+            except Exception as e:
+                return self._send_json({"error": str(e)}, 500)
+
+        if route == "/api/ryder/model-health":
+            # Returns model accuracy, brier score, prediction count for owner dashboard
+            try:
+                from storage.prediction_history import model_health_summary
+                summary = model_health_summary(last_n=50)
+                # Also attach recent unreviewed predictions count
+                try:
+                    from storage.prediction_history import get_unreviewed_predictions
+                    unreviewed = get_unreviewed_predictions()
+                    summary["unreviewed_count"] = len(unreviewed)
+                except Exception:
+                    summary["unreviewed_count"] = 0
+                return self._send_json(summary)
+            except Exception as e:
+                return self._send_json({"error": str(e)}, 500)
+
+        if route == "/api/ryder/prediction-history":
+            try:
+                from storage.prediction_history import get_recent_predictions
+                preds = get_recent_predictions(
+                    limit=int((qs.get("limit") or ["30"])[0]),
+                    competition=(qs.get("competition") or [None])[0],
+                    confidence_level=(qs.get("confidence") or [None])[0],
+                )
+                return self._send_json({"predictions": preds, "count": len(preds)})
+            except Exception as e:
+                return self._send_json({"error": str(e)}, 500)
+
+        if route == "/api/ryder/calibration":
+            try:
+                from analysis.calibration import calibration_summary
+                n = int((qs.get("n") or ["100"])[0])
+                return self._send_json(calibration_summary(last_n=n))
+            except Exception as e:
+                return self._send_json({"error": str(e)}, 500)
+
+        if route == "/api/ryder/bias":
+            try:
+                from analysis.bias_detection import detect_biases
+                n = int((qs.get("n") or ["200"])[0])
+                return self._send_json(detect_biases(last_n=n))
+            except Exception as e:
+                return self._send_json({"error": str(e)}, 500)
+
+        if route == "/api/ryder/source-health":
+            try:
+                return self._send_json(db.source_health_summary())
+            except Exception as e:
+                return self._send_json({"error": str(e)}, 500)
+
+        if route == "/api/ryder/explain":
+            home = (qs.get("home") or [""])[0]
+            away = (qs.get("away") or [""])[0]
+            if not home or not away:
+                return self._send_json({"error": "home and away required"}, 400)
+            try:
+                import model as _model
+                from analysis.data_quality import audit_match as dq_audit
+                from analysis.explainability import explain, format_for_chat
+                date_str = (qs.get("date") or [time.strftime("%Y-%m-%d")])[0]
+                pred = _model.predict(home, away, home_advantage=False)
+                audit = dq_audit(home, away, date_str, source="espn")
+                explanation = explain(home, away, pred, quality_audit=audit)
+                return self._send_json({
+                    "explanation": explanation,
+                    "narrative": format_for_chat(explanation),
+                })
             except Exception as e:
                 return self._send_json({"error": str(e)}, 500)
 
@@ -4014,12 +4936,18 @@ class Handler(BaseHTTPRequestHandler):
             if not home or not away:
                 return self._send_json({"error": "home and away required"}, 400)
             try:
+                # Try freeapi first, fall back to ESPN scoreboard
                 raw = _freeapi_find_match(home, away, date_str)
-                if not raw:
-                    return self._send_json({"found": False})
-                parsed = _parse_freeapi_match(raw)
-                parsed["found"] = True
-                return self._send_json(parsed)
+                if raw:
+                    parsed = _parse_freeapi_match(raw)
+                    parsed["found"] = True
+                    parsed["source"] = "freeapi"
+                    return self._send_json(parsed)
+                # ESPN fallback — always free, no rate limit issues
+                espn = _espn_scoreboard_find(home, away, date_str)
+                if espn:
+                    return self._send_json(espn)
+                return self._send_json({"found": False})
             except Exception as e:
                 return self._send_json({"error": str(e), "found": False}, 500)
 
@@ -4071,6 +4999,8 @@ class Handler(BaseHTTPRequestHandler):
         route = parsed.path
 
         length = int(self.headers.get("Content-Length", 0) or 0)
+        if length > 512_000:  # 512 KB max — reject oversized payloads
+            return self._send_json({"error": "payload too large"}, 413)
         raw = self.rfile.read(length) if length else b"{}"
         try:
             data = json.loads(raw.decode("utf-8") or "{}")
@@ -4079,22 +5009,28 @@ class Handler(BaseHTTPRequestHandler):
 
         # ── Public auth routes (no session required) ──────────────────────────
         if route == "/api/login":
-            username = (data.get("username") or "").strip()
-            password = data.get("password") or ""
+            client_ip = self.client_address[0]
+            if not _login_check(client_ip):
+                return self._send_json({"ok": False, "error": "Demasiados intentos. Espera 15 minutos."}, 429)
+            username = (data.get("username") or "").strip()[:64]
+            password = (data.get("password") or "")[:256]
             users = _load_users()
             u = users.get(username)
             if u and u.get("active", True) and _verify_pw(password, u["password"]):
+                _login_clear(client_ip)
                 token = _create_session(username, u["role"])
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Set-Cookie",
-                    f"pgcr_session={token}; Path=/; HttpOnly; SameSite=Lax; Max-Age={_SESSION_TTL}")
+                    f"pgcr_session={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age={_SESSION_TTL}")
                 body = json.dumps({"ok": True, "role": u["role"]}).encode()
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
             else:
-                return self._send_json({"ok": False, "error": "Invalid credentials"}, 401)
+                _login_record_fail(client_ip)
+                time.sleep(0.5)  # slow down brute-force
+                return self._send_json({"ok": False, "error": "Credenciales inválidas"}, 401)
             return
 
         if route == "/api/logout":
@@ -4167,8 +5103,48 @@ class Handler(BaseHTTPRequestHandler):
         if route == "/api/chat":
             cfg = load_config()
             message = (data.get("message") or "").strip()
-            if not message:
+            image_b64 = (data.get("image") or "").strip()
+            if not message and not image_b64:
                 return self._send_json({"error": "empty message"}, 400)
+
+            # -- @Cleo / @Ryder handler (Consejo deliberativo Ryder x Cleo) --
+            if message.lower().startswith("@cleo") or message.lower().startswith("@ryder"):
+                try:
+                    import council as _council_mod
+                    import re as _re_cleo
+                    import cleo as _cleo_mod
+
+                    tail = _re_cleo.sub(r"^@(cleo|ryder)\s*", "", message, flags=_re_cleo.IGNORECASE).strip()
+
+                    match_teams = _council_mod.detect_match(tail)
+                    if not match_teams:
+                        return self._send_json({
+                            "reply": "Uso: `@Cleo [local] vs [visitante]`  o  `@Ryder [local] vs [visitante]`",
+                            "refreshQuiniela": False
+                        })
+
+                    home_t, away_t = match_teams
+                    _live_st = _parse_live_state(home_t, away_t, tail)
+                    council_result = _council_mod.deliberate(home_t, away_t, tail, live_state=_live_st)
+                    reply = _council_mod.format_council_reply(council_result)
+
+                    try:
+                        if council_result["cleo"].get("opportunities"):
+                            _cleo_mod.CleoAgent().save_pick(council_result["cleo"])
+                    except Exception:
+                        pass
+
+                    return self._send_json({"reply": reply, "refreshQuiniela": False})
+
+                except Exception as _council_err:
+                    import traceback; traceback.print_exc()
+                    return self._send_json({
+                        "reply": f"Error en Consejo: {_council_err}",
+                        "refreshQuiniela": False
+                    })
+            # -- fin @Cleo/@Ryder --------------------------------------------
+            if image_b64:
+                cfg["_pending_image"] = image_b64
             history = data.get("history") or []
             matches = data.get("matches") or []
             date_str = data.get("date") or time.strftime("%Y-%m-%d")
@@ -4191,7 +5167,38 @@ class Handler(BaseHTTPRequestHandler):
                     return self._send_json({"reply": local_reply, "refreshQuiniela": False, "local": True})
                 return self._send_json({"reply": "🔌 **Ryder Local activo.**\n\nDime el partido o tu presupuesto:\n- *\"Francia vs España\"* → análisis completo del modelo\n- *\"Tengo ₡10,000 para hoy\"* → el Gurú arma el plan", "refreshQuiniela": False, "local": True})
 
-            reply, err, tools_used = call_claude(cfg, message, history, matches, date_str, lang, tz_min=tz_min)
+            # -- Consejo Ryder x Cleo antes de Claude --------------------------
+            _council_ctx = ""
+            try:
+                import council as _cm
+                _teams = _cm.detect_match(message)
+                # Activar Consejo Ryder x Cleo x Lucas siempre que haya partido
+                if _teams or _cm.is_analytical(message):
+                    if not _teams: _teams = _cm.detect_match(message)
+                    if not _teams:
+                        # Sin partido explicito: buscar en los partidos del dia
+                        for _mx in (matches or [])[:3]:
+                            _mh = _mx.get("home", "")
+                            _ma = _mx.get("away", "")
+                            _ml = message.lower()
+                            if _mh and _ma and (
+                                _mh.lower() in _ml or _ma.lower() in _ml or
+                                any(p in _ml for p in _mh.lower().split() if len(p) > 3) or
+                                any(p in _ml for p in _ma.lower().split() if len(p) > 3)
+                            ):
+                                _teams = (_mh, _ma)
+                                break
+                    if _teams:
+                        _h, _a = _teams
+                        _live_st_ctx = _parse_live_state(_h, _a, message)
+                        _cres = _cm.deliberate(_h, _a, message, live_state=_live_st_ctx)
+                        _council_ctx = _cm.format_council_context(_cres)
+            except Exception as _ce:
+                print(f"[council] context error: {_ce}")
+            # ----------------------------------------------------------------
+
+            _msg_with_ctx = (_council_ctx + message) if _council_ctx else message
+            reply, err, tools_used = call_claude(cfg, _msg_with_ctx, history, matches, date_str, lang, tz_min=tz_min)
             if err:
                 # API unavailable — route to local engines, never crash
                 credits_err = any(k in err.lower() for k in ("credit balance", "billing", "too low", "insufficient", "quota", "api key", "authentication", "timed out", "timeout", "request failed"))
@@ -4263,6 +5270,91 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 acc = db.get_recent_accuracy(days=int(data.get("days", 14)))
                 return self._send_json({"accuracy": acc})
+            except Exception as e:
+                return self._send_json({"error": str(e)}, 500)
+
+        if route == "/api/ryder/post-match-review":
+            # Owner-only: save a post-match review
+            cfg_now = load_config()
+            session_user = _get_session_user(self.headers)
+            if not _is_owner(session_user, cfg_now):
+                return self._send_json({"error": "No autorizado"}, 403)
+            try:
+                from analysis.post_match import review_match
+                from storage.prediction_history import save_review
+                review = review_match(
+                    home=data.get("home", ""),
+                    away=data.get("away", ""),
+                    actual_home_score=int(data.get("home_score", 0)),
+                    actual_away_score=int(data.get("away_score", 0)),
+                    prediction=data.get("prediction", {}),
+                    prediction_id=data.get("prediction_id"),
+                    key_events=data.get("key_events"),
+                    notes=data.get("notes"),
+                    reviewed_by="esteban",
+                )
+                row_id = save_review(review)
+                return self._send_json({"ok": True, "review_id": row_id, "review": review})
+            except Exception as e:
+                return self._send_json({"error": str(e)}, 500)
+
+        if route == "/api/ryder/data-quality":
+            # Audit data quality for a given match
+            try:
+                from analysis.data_quality import audit_match as dq_audit
+                result = dq_audit(
+                    home=data.get("home", ""),
+                    away=data.get("away", ""),
+                    match_date=data.get("date", time.strftime("%Y-%m-%d")),
+                    kickoff_utc=data.get("kickoff_utc"),
+                    competition=data.get("competition"),
+                    source=data.get("source", "api"),
+                )
+                return self._send_json(result)
+            except Exception as e:
+                return self._send_json({"error": str(e)}, 500)
+
+        if route == "/api/ryder/pre-match":
+            # Generate structured pre-match report
+            home = data.get("home", "")
+            away = data.get("away", "")
+            if not home or not away:
+                return self._send_json({"error": "home and away required"}, 400)
+            try:
+                import model as _model
+                from analysis.pre_match import build_pre_match_report
+                from analysis.data_quality import audit_match as dq_audit
+                home_form = db.get_team_form(home)
+                away_form = db.get_team_form(away)
+                pred = _model.predict(home, away, home_advantage=False,
+                                      home_form=home_form, away_form=away_form)
+                audit = dq_audit(home, away, data.get("date", time.strftime("%Y-%m-%d")))
+                # Try to get live odds and weather
+                live_odds = None
+                weather   = None
+                try:
+                    from integrations import get_match_odds, weather_for_match
+                    odds = get_match_odds(home, away)
+                    if odds:
+                        live_odds = {
+                            "best_home": odds.get("best_home"),
+                            "best_draw": odds.get("best_draw"),
+                            "best_away": odds.get("best_away"),
+                            "bookmakers_count": len(odds.get("bookmakers", [])),
+                        }
+                    venue = data.get("venue", "")
+                    if venue:
+                        weather = weather_for_match(venue, data.get("kickoff"))
+                except Exception:
+                    pass
+                report = build_pre_match_report(
+                    home, away, pred,
+                    competition=data.get("competition", "FIFA World Cup 2026"),
+                    home_form=home_form, away_form=away_form,
+                    venue=data.get("venue"), kickoff_utc=data.get("kickoff"),
+                    weather=weather, live_odds=live_odds, quality_audit=audit,
+                )
+                return self._send_json(report)
             except Exception as e:
                 return self._send_json({"error": str(e)}, 500)
 
@@ -4563,23 +5655,17 @@ def _start_cloudflared(port):
     return None, None
 
 
-def _send_telegram_notification(url: str, cfg: dict):
-    """Send the public URL to Esteban via Telegram Bot API (free, no third-party)."""
-    token = (cfg.get("telegram_bot_token") or "").strip()
+def _send_telegram_msg(text: str, cfg: dict, label: str = "Telegram"):
+    """Envía un mensaje de texto libre al owner por Telegram."""
+    token   = (cfg.get("telegram_bot_token") or "").strip()
     chat_id = (cfg.get("telegram_chat_id") or "").strip()
     if not token or not chat_id:
-        print("  Telegram: no configurado — agrega token y chat_id en Settings")
+        print(f"  {label}: no configurado — agrega token y chat_id en Settings")
         return
     try:
-        msg = (
-            f"🐕 *Ryder ProGol CR está online*\n"
-            f"🔗 {url}\n"
-            f"⚽ Listo para analizar partidos\n"
-            f"🕐 {time.strftime('%H:%M')} hora local"
-        )
         params = urllib.parse.urlencode({
-            "chat_id": chat_id,
-            "text": msg,
+            "chat_id":    chat_id,
+            "text":       text,
             "parse_mode": "Markdown",
         })
         req = urllib.request.Request(
@@ -4588,10 +5674,22 @@ def _send_telegram_notification(url: str, cfg: dict):
         )
         with urllib.request.urlopen(req, timeout=10) as r:
             body = r.read(256).decode("utf-8", errors="ignore")
-            ok = '"ok":true' in body
-            print(f"  Telegram: {'enviado OK' if ok else 'error — ' + body[:80]}")
+            ok   = '"ok":true' in body
+            print(f"  {label}: {'enviado OK' if ok else 'error — ' + body[:80]}")
     except Exception as e:
-        print(f"  Telegram: error — {e}")
+        print(f"  {label}: error — {e}")
+
+
+def _send_telegram_notification(url: str, cfg: dict):
+    """Avisa al owner por Telegram que el servidor arrancó con nueva URL."""
+    msg = (
+        f"🐕 *Ryder ProGol CR está online*\n"
+        f"🔗 {url}\n"
+        f"⚽ Listo para analizar partidos\n"
+        f"🕐 {time.strftime('%H:%M')} hora local"
+    )
+    _send_telegram_msg(msg, cfg, label="Telegram")
+
 
 # Keep alias for backward compat
 _send_whatsapp_notification = _send_telegram_notification
@@ -4621,6 +5719,103 @@ def _start_localtunnel(port):
     except FileNotFoundError:
         pass
     return None, None
+
+
+# ── Auto post-match review ────────────────────────────────────────────────────
+
+def _fuzzy_match_teams(name_a, name_b, threshold=0.60):
+    """Return True if two team name strings are close enough to be the same team."""
+    a = (name_a or "").lower().strip()
+    b = (name_b or "").lower().strip()
+    if a == b:
+        return True
+    # Substring check (handles "United States" vs "USA", "Korea Republic" vs "South Korea")
+    if a in b or b in a:
+        return True
+    # Token overlap
+    tok_a = set(a.split())
+    tok_b = set(b.split())
+    if tok_a and tok_b:
+        overlap = len(tok_a & tok_b) / max(len(tok_a), len(tok_b))
+        return overlap >= threshold
+    return False
+
+
+def _auto_review_finished_matches(fixtures):
+    """
+    Called every 15 min from the analyst refresh loop.
+    Scans fixtures for status==Finished, looks up any saved prediction that
+    matches home+away and doesn't yet have a review, then saves the review.
+    """
+    from storage.prediction_history import get_unreviewed_predictions, save_review
+    from analysis.post_match import review_match
+
+    # Collect all finished matches from fixtures dict
+    finished = []
+    for grp, fx_list in fixtures.items():
+        for fx in fx_list:
+            if fx.get("status") == "Finished":
+                try:
+                    sh = int(fx.get("scoreHome") or -1)
+                    sa = int(fx.get("scoreAway") or -1)
+                except (TypeError, ValueError):
+                    sh = sa = -1
+                if sh >= 0 and sa >= 0:
+                    finished.append({
+                        "home": fx["home"],
+                        "away": fx["away"],
+                        "score_home": sh,
+                        "score_away": sa,
+                        "kickoff": (fx.get("kickoff") or "")[:10] or datetime.date.today().isoformat(),
+                    })
+
+    if not finished:
+        return
+
+    # Get all predictions not yet reviewed (before or on today)
+    unreviewed = get_unreviewed_predictions()
+    if not unreviewed:
+        return
+
+    reviewed_count = 0
+    for fx in finished:
+        for pred_row in unreviewed:
+            if (_fuzzy_match_teams(fx["home"], pred_row["home_team"]) and
+                    _fuzzy_match_teams(fx["away"], pred_row["away_team"])):
+                # Rebuild prediction dict from the stored row
+                pred_dict = {
+                    "prob": {
+                        "home": pred_row.get("prob_home", 33),
+                        "draw": pred_row.get("prob_draw", 33),
+                        "away": pred_row.get("prob_away", 33),
+                    },
+                    "engine": {
+                        "lam_home": pred_row.get("lam_home", 0),
+                        "lam_away": pred_row.get("lam_away", 0),
+                        "elo_home": pred_row.get("elo_home", 1600),
+                        "elo_away": pred_row.get("elo_away", 1600),
+                    },
+                    "predictedScore": {"home": 0, "away": 0, "p": 0},
+                }
+                review = review_match(
+                    pred_row["home_team"], pred_row["away_team"],
+                    fx["score_home"], fx["score_away"],
+                    pred_dict,
+                    prediction_id=pred_row["id"],
+                    reviewed_by="auto",
+                )
+                save_review(review)
+                reviewed_count += 1
+                print(
+                    f"[auto-review] {pred_row['home_team']} vs {pred_row['away_team']} "
+                    f"{fx['score_home']}-{fx['score_away']} — "
+                    f"correct={bool(review['was_correct'])} brier={review['brier_contribution']} "
+                    f"surprise={review['surprise_level']}"
+                )
+                break  # one review per finished fixture
+
+    if reviewed_count:
+        print(f"[auto-review] {reviewed_count} new review(s) saved")
 
 
 # ── Background analyst context refresh (every 15 min) ──────────────────────────
@@ -4661,6 +5856,55 @@ def _refresh_analyst_context():
                 _analyst_context_cache["fixtures"]  = "\n".join(f_lines)
                 _analyst_context_cache["updated_at"] = time.time()
             print(f"[analyst-refresh] context updated — {len(standings_dict)} groups, {sum(len(v) for v in fixtures.values())} fixtures")
+
+            # Record source health for ESPN
+            try:
+                db.record_source_health(
+                    "espn",
+                    status="ok",
+                    records_count=sum(len(v) for v in fixtures.values()),
+                )
+            except Exception:
+                pass
+
+            # Auto post-match review for finished matches with unreviewed predictions
+            try:
+                _auto_review_finished_matches(fixtures)
+            except Exception as rev_err:
+                print(f"[auto-review] error: {rev_err}")
+
+            # Real-time Elo calibration — triggered whenever finished matches exist
+            # Runs every 15 min so Ryder's Elo updates within 15 min of any match ending
+            try:
+                has_finished = any(
+                    fx.get("status") == "Finished"
+                    for fx_list in fixtures.values()
+                    for fx in fx_list
+                )
+                if has_finished:
+                    import calibrator as _cal
+                    today_str = datetime.date.today().isoformat()
+                    yesterday_str = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
+                    total_calibrated = 0
+                    for cal_date in [yesterday_str, today_str]:
+                        cal_results = _cal.calibrate_date(cal_date, k_wc=32, verbose=False)
+                        if cal_results:
+                            total_calibrated += len(cal_results)
+                            for r in cal_results:
+                                print(
+                                    f"[rt-calibration] {cal_date}: "
+                                    f"{r['home']} {r['result']} {r['away']}  "
+                                    f"Elo: {r['elo_home_before']}→{r['elo_home_after']} / "
+                                    f"{r['elo_away_before']}→{r['elo_away_after']}  "
+                                    f"Brier: {r['brier']}"
+                                )
+                    if total_calibrated:
+                        print(f"[rt-calibration] {total_calibrated} match(es) calibrated in real-time")
+                    else:
+                        pass  # all matches already processed — silent
+            except Exception as cal_err:
+                print(f"[rt-calibration] error: {cal_err}")
+
             # Daily auto-generate scout report once per day
             today = time.strftime("%Y-%m-%d")
             try:
@@ -4672,6 +5916,19 @@ def _refresh_analyst_context():
                 print(f"[scout-report] error generating daily report: {re}")
         except Exception as e:
             print(f"[analyst-refresh] error: {e}")
+            try:
+                db.record_source_health("espn", status="error", error_message=str(e))
+            except Exception:
+                pass
+
+        # Daily cleanup of stale analytics data (runs once per loop regardless of errors)
+        try:
+            deleted = db.cleanup_old_analytics(days_to_keep=90)
+            if any(v > 0 for v in deleted.values()):
+                print(f"[cleanup] removed stale records: {deleted}")
+        except Exception:
+            pass
+
         time.sleep(900)  # 15 minutes
 
 
@@ -4809,6 +6066,14 @@ def main():
         if tunnel_url:
             access_url = tunnel_url  # no token needed — users log in with username/password
             global _TUNNEL_URL; _TUNNEL_URL = access_url
+            # Persist tunnel URL so telegram_bot can read it via /link command
+            try:
+                _cfg = load_config()
+                _cfg["current_tunnel_url"] = access_url
+                with open(CONFIG_PATH, "w") as _f:
+                    json.dump(_cfg, _f, indent=2)
+            except Exception:
+                pass
             print(f"  Tunnel:   {access_url}")
             threading.Thread(target=_send_whatsapp_notification, args=(access_url, cfg), daemon=True).start()
             print("            Open this URL on any device, any network")
@@ -4870,12 +6135,22 @@ def main():
                 proc   = new_proc
                 fails  = 0
                 print(f"[watchdog] Túnel restaurado: {new_url}")
-                _send_telegram_notification(
-                    f"🔄 *Túnel reiniciado automáticamente*\n🔗 {new_url}", cfg)
+                # Persistir nueva URL en config.json
+                try:
+                    _wcfg = load_config()
+                    _wcfg["current_tunnel_url"] = new_url
+                    with open(CONFIG_PATH, "w") as _wf:
+                        json.dump(_wcfg, _wf, indent=2)
+                except Exception:
+                    pass
+                _send_telegram_msg(
+                    f"🔄 *ProGol CR — túnel reiniciado*\n🔗 {new_url}\n🕐 {time.strftime('%H:%M')} hora local",
+                    cfg)
             else:
                 print("[watchdog] No se pudo reiniciar el túnel — reintentando en 30s")
-                _send_telegram_notification(
-                    "⚠️ *ProGol CR: túnel caído*\nNo se pudo reiniciar automáticamente.\nRevisa la PC.", cfg)
+                _send_telegram_msg(
+                    "⚠️ *ProGol CR: túnel caído*\nNo se pudo reiniciar automáticamente.\nRevisa la PC.",
+                    cfg)
                 fails = 0  # reset para no spamear
 
     try:

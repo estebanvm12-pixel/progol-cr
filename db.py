@@ -11,6 +11,7 @@ Tables:
   competitions  catalog of international competitions we track
 """
 
+import datetime
 import hashlib
 import json
 import math
@@ -127,10 +128,125 @@ def init_db():
         );
         """)
     _migrate()
+    _migrate_analytics()
     # Indexes on migrated columns must be created AFTER the columns exist.
     with get_conn() as c:
         c.execute("CREATE INDEX IF NOT EXISTS idx_matches_club ON matches(date, is_club)")
     seed_competitions()
+
+
+def _migrate_analytics():
+    """Create Ryder analytics tables if they don't exist yet."""
+    with get_conn() as c:
+        c.executescript("""
+        CREATE TABLE IF NOT EXISTS prediction_history (
+            id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+            match_id            TEXT,
+            match_date          TEXT NOT NULL,
+            competition         TEXT,
+            home_team           TEXT NOT NULL,
+            away_team           TEXT NOT NULL,
+            predicted_result    TEXT,
+            prob_home           REAL,
+            prob_draw           REAL,
+            prob_away           REAL,
+            confidence_level    TEXT,
+            confidence_score    REAL,
+            progol_index        REAL,
+            data_quality_score  REAL,
+            data_quality_flags  TEXT,
+            model_version       TEXT,
+            lam_home            REAL,
+            lam_away            REAL,
+            elo_home            REAL,
+            elo_away            REAL,
+            corners_est_home    REAL,
+            corners_est_away    REAL,
+            cards_est_total     REAL,
+            source_snapshot     TEXT,
+            created_at          TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_ph_date ON prediction_history(match_date);
+        CREATE INDEX IF NOT EXISTS idx_ph_teams ON prediction_history(home_team, away_team);
+
+        CREATE TABLE IF NOT EXISTS match_reviews (
+            id                      INTEGER PRIMARY KEY AUTOINCREMENT,
+            prediction_id           INTEGER REFERENCES prediction_history(id),
+            match_date              TEXT NOT NULL,
+            home_team               TEXT NOT NULL,
+            away_team               TEXT NOT NULL,
+            actual_home_score       INTEGER,
+            actual_away_score       INTEGER,
+            actual_result           TEXT,
+            predicted_result        TEXT,
+            was_correct             INTEGER DEFAULT 0,
+            predicted_prob          REAL,
+            brier_contribution      REAL,
+            xg_error_home           REAL,
+            xg_error_away           REAL,
+            surprise_level          TEXT DEFAULT 'none',
+            key_events              TEXT,
+            what_worked             TEXT,
+            what_failed             TEXT,
+            model_error_summary     TEXT,
+            recommended_adjustment  TEXT,
+            reviewed_at             TEXT NOT NULL,
+            reviewed_by             TEXT DEFAULT 'auto'
+        );
+        CREATE INDEX IF NOT EXISTS idx_mr_date ON match_reviews(match_date);
+
+        CREATE TABLE IF NOT EXISTS model_metrics (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            metric_date     TEXT NOT NULL,
+            competition     TEXT,
+            model_version   TEXT,
+            sample_size     INTEGER,
+            accuracy        REAL,
+            brier_score     REAL,
+            log_loss        REAL,
+            draw_accuracy   REAL,
+            home_accuracy   REAL,
+            away_accuracy   REAL,
+            notes           TEXT,
+            created_at      TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS team_model_notes (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            team_name   TEXT NOT NULL,
+            note_type   TEXT,
+            note        TEXT NOT NULL,
+            confidence  TEXT DEFAULT 'medium',
+            source      TEXT,
+            valid_until TEXT,
+            created_at  TEXT NOT NULL,
+            updated_at  TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_tmn_team ON team_model_notes(team_name);
+
+        CREATE TABLE IF NOT EXISTS data_quality_issues (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            match_id    TEXT,
+            issue_type  TEXT,
+            severity    TEXT,
+            description TEXT,
+            source      TEXT,
+            impact      TEXT,
+            detected_at TEXT NOT NULL,
+            resolved_at TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS source_health (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_name   TEXT NOT NULL,
+            checked_at    TEXT NOT NULL,
+            status        TEXT NOT NULL,
+            latency_ms    INTEGER,
+            records_count INTEGER,
+            error_message TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_sh_source ON source_health(source_name, checked_at);
+        """)
 
 
 def _migrate():
@@ -734,6 +850,89 @@ def get_latest_scout_report():
         "vs_benchmark": json.loads(row["vs_benchmark"] or "{}"),
         "auto_insights": json.loads(row["notes"] or "[]"),
     }
+
+
+# ── Source health tracking ────────────────────────────────────────────────────
+
+def record_source_health(source_name, status, latency_ms=None, records_count=None, error_message=None):
+    """Log a source health check result."""
+    now = datetime.datetime.utcnow().isoformat() + "Z"
+    with get_conn() as c:
+        c.execute("""
+            INSERT INTO source_health (source_name, checked_at, status, latency_ms, records_count, error_message)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (source_name, now, status, latency_ms, records_count, error_message))
+
+
+def get_source_health(source_name=None, last_n=20):
+    """Fetch recent source health records. If source_name given, filter by it."""
+    with get_conn() as c:
+        if source_name:
+            rows = c.execute("""
+                SELECT * FROM source_health WHERE source_name = ?
+                ORDER BY checked_at DESC LIMIT ?
+            """, (source_name, last_n)).fetchall()
+        else:
+            rows = c.execute("""
+                SELECT * FROM source_health
+                ORDER BY checked_at DESC LIMIT ?
+            """, (last_n,)).fetchall()
+    return [dict(r) for r in rows]
+
+
+def source_health_summary():
+    """Latest status per source + uptime % in last 24h."""
+    with get_conn() as c:
+        sources = [r[0] for r in c.execute(
+            "SELECT DISTINCT source_name FROM source_health"
+        ).fetchall()]
+        result = {}
+        cutoff = (datetime.datetime.utcnow() - datetime.timedelta(hours=24)).isoformat() + "Z"
+        for src in sources:
+            rows = c.execute("""
+                SELECT status, latency_ms, checked_at FROM source_health
+                WHERE source_name = ? AND checked_at >= ?
+                ORDER BY checked_at DESC
+            """, (src, cutoff)).fetchall()
+            if not rows:
+                continue
+            ok_count   = sum(1 for r in rows if r["status"] == "ok")
+            uptime_pct = round(ok_count / len(rows) * 100, 1)
+            last       = rows[0]
+            avg_lat    = round(sum(r["latency_ms"] for r in rows if r["latency_ms"]) /
+                               max(1, sum(1 for r in rows if r["latency_ms"])), 0)
+            result[src] = {
+                "last_status":  last["status"],
+                "last_check":   last["checked_at"],
+                "uptime_24h":   uptime_pct,
+                "avg_latency_ms": avg_lat,
+                "checks_24h":   len(rows),
+            }
+    return result
+
+
+# ── Auto-cleanup of stale analytics data ────────────────────────────────────
+
+def cleanup_old_analytics(days_to_keep=90):
+    """
+    Remove old data_quality_issues and source_health records older than N days.
+    Safe to call periodically — does not touch prediction_history or match_reviews.
+    Returns dict with counts deleted.
+    """
+    cutoff = (datetime.datetime.utcnow() - datetime.timedelta(days=days_to_keep)).isoformat() + "Z"
+    deleted = {}
+    with get_conn() as c:
+        r1 = c.execute(
+            "DELETE FROM data_quality_issues WHERE detected_at < ? AND resolved_at IS NOT NULL",
+            (cutoff,)
+        )
+        deleted["data_quality_issues"] = r1.rowcount
+        r2 = c.execute(
+            "DELETE FROM source_health WHERE checked_at < ?",
+            (cutoff,)
+        )
+        deleted["source_health"] = r2.rowcount
+    return deleted
 
 
 if __name__ == "__main__":

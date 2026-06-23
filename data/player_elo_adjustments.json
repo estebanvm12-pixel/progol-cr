@@ -1,0 +1,42 @@
+{
+  "argentina": {
+    "nudge": 10.1,
+    "squad_xg": 0.321,
+    "coverage": 79
+  },
+  "brazil": {
+    "nudge": 14.1,
+    "squad_xg": 0.361,
+    "coverage": 74
+  },
+  "france": {
+    "nudge": 14.2,
+    "squad_xg": 0.362,
+    "coverage": 72
+  },
+  "england": {
+    "nudge": 27.2,
+    "squad_xg": 0.492,
+    "coverage": 67
+  },
+  "germany": {
+    "nudge": 20.4,
+    "squad_xg": 0.424,
+    "coverage": 100
+  },
+  "spain": {
+    "nudge": 1.5,
+    "squad_xg": 0.235,
+    "coverage": 71
+  },
+  "portugal": {
+    "nudge": 30,
+    "squad_xg": 0.599,
+    "coverage": 62
+  },
+  "netherlands": {
+    "nudge": 1.5,
+    "squad_xg": 0.235,
+    "coverage": 92
+  }
+}

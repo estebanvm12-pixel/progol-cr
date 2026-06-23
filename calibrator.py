@@ -118,20 +118,52 @@ def _save_brier(data):
 
 
 def _update_brier(home, away, score_h, score_a):
-    """Compute and persist Brier score for this match."""
+    """Compute and persist Brier score + pre-match probabilities + lambdas."""
     try:
-        pred = _model.predict(home, away)
+        pred = _model.predict(home, away, wc_mode=True)
         bs = _compute_brier(pred, score_h, score_a)
+        prob = pred.get("prob", {})
+        engine = pred.get("engine", {})
+        p_h = round(prob.get("home", 33.3) / 100, 4)
+        p_d = round(prob.get("draw", 33.3) / 100, 4)
+        p_a = round(prob.get("away", 33.3) / 100, 4)
+        lam_h = engine.get("lam_home")
+        lam_a = engine.get("lam_away")
+        # Marcador mas probable del grid Poisson
+        top_scores = pred.get("topScores", [])
+        pred_score = f"{top_scores[0][0]}-{top_scores[0][1]}" if top_scores else None
+        if score_h > score_a:
+            actual = "H"
+        elif score_h < score_a:
+            actual = "A"
+        else:
+            actual = "D"
+        score_hit = (pred_score == f"{score_h}-{score_a}") if pred_score else False
         data = _load_brier()
-        data["scores"].append({"match": f"{home} v {away}", "brier": bs, "result": f"{score_h}-{score_a}"})
+        data["scores"].append({
+            "match": f"{home} v {away}",
+            "brier": bs,
+            "result": f"{score_h}-{score_a}",
+            "actual": actual,
+            "p_home": p_h,
+            "p_draw": p_d,
+            "p_away": p_a,
+            "lam_home": lam_h,
+            "lam_away": lam_a,
+            "pred_score": pred_score,
+            "score_hit": score_hit,
+        })
         data["n"] += 1
         data["total"] = round(data["total"] + bs, 4)
         data["mean"] = round(data["total"] / data["n"], 4)
-        data["scores"] = data["scores"][-200:]  # keep last 200
+        # Acumular score accuracy
+        data["score_hits"] = data.get("score_hits", 0) + (1 if score_hit else 0)
+        data["score_hit_rate"] = round(data["score_hits"] / data["n"], 4)
+        data["scores"] = data["scores"][-500:]
         _save_brier(data)
-        return bs
+        return bs, p_h, p_d, p_a
     except Exception:
-        return None
+        return None, None, None, None
 
 
 # ── Calibration log ─────────────────────────────────────────────────────────
@@ -201,14 +233,32 @@ def calibrate_date(date_str, k_wc=32, k_other=20, verbose=False):
             old_h = overrides.get(h_key) or _model.RATINGS.get(h_key) or _model.DEFAULT_RATING
             old_a = overrides.get(a_key) or _model.RATINGS.get(a_key) or _model.DEFAULT_RATING
 
-            # Brier score (uses pre-match ratings)
-            brier = _update_brier(m["home"], m["away"], m["score_h"], m["score_a"])
+            # Brier score + probabilidades pre-partido
+            brier, pre_p_home, pre_p_draw, pre_p_away = _update_brier(
+                m["home"], m["away"], m["score_h"], m["score_a"]
+            )
 
             # Update Elo
             new_h, new_a = _model.update_elo_after_match(
                 m["home"], m["away"], m["score_h"], m["score_a"], k=k
             )
 
+            if m["score_h"] > m["score_a"]:
+                actual_outcome = "H"
+            elif m["score_h"] < m["score_a"]:
+                actual_outcome = "A"
+            else:
+                actual_outcome = "D"
+            # Extra: lam y marcador predicho del modelo
+            try:
+                _pred_ex = _model.predict(m["home"], m["away"], wc_mode=True)
+                _eng = _pred_ex.get("engine", {})
+                _lam_h = _eng.get("lam_home")
+                _lam_a = _eng.get("lam_away")
+                _top = _pred_ex.get("topScores", [])
+                _pred_sc = f"{_top[0][0]}-{_top[0][1]}" if _top else None
+            except Exception:
+                _lam_h = _lam_a = _pred_sc = None
             entry = {
                 "ts": datetime.datetime.utcnow().isoformat(),
                 "date": date_str,
@@ -216,10 +266,18 @@ def calibrate_date(date_str, k_wc=32, k_other=20, verbose=False):
                 "home": m["home"],
                 "away": m["away"],
                 "result": f"{m['score_h']}-{m['score_a']}",
+                "actual": actual_outcome,
                 "k": k,
                 "elo_home_before": old_h, "elo_home_after": new_h,
                 "elo_away_before": old_a, "elo_away_after": new_a,
                 "brier": brier,
+                "p_home": pre_p_home,
+                "p_draw": pre_p_draw,
+                "p_away": pre_p_away,
+                "lam_home": _lam_h,
+                "lam_away": _lam_a,
+                "pred_score": _pred_sc,
+                "score_hit": _pred_sc == f"{m['score_h']}-{m['score_a']}",
             }
             log_entries.append(entry)
             results_out.append(entry)

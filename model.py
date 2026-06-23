@@ -257,6 +257,295 @@ def _dc_tau(i, j, lam_h, lam_a, rho=DC_RHO):
     return 1.0
 
 
+
+
+# ── Player/Coach data integration ────────────────────────────────────────────
+import os as _os_m
+
+_DATA_DIR = _os_m.path.join(_os_m.path.dirname(_os_m.path.abspath(__file__)), "data")
+_squad_xg_cache = {}
+_coach_cache = {}
+_tourney_cache = {}
+
+_BASELINE_SQUAD_XG = 0.35   # xG/90 promedio mundial para equipo con 3 atacantes
+_COACH_STYLE_MULT = {
+    "defensivo": 0.88,
+    "conservador": 0.90,
+    "equilibrado": 1.00,
+    "flexible": 1.00,
+    "ofensivo": 1.10,
+    "presion": 1.05,
+    "agresiv": 1.08,
+}
+
+
+def _get_squad_xg(team_name):
+    """
+    Devuelve factor multiplicador de ataque basado en xG del plantel.
+    Factor 1.0 = ataque promedio mundial. >1.0 = ataque por encima del promedio.
+    Fuentes: player_elo_adjustments.json (squad-level) o players_stats.json (calculado).
+    """
+    _XG_ALIASES = {
+        "usa": "united states", "usmnt": "united states",
+        "south korea": "south korea", "korea republic": "south korea",
+        "türkiye": "turkey", "turkiye": "turkey",
+        "czechia": "czech republic",
+    }
+    key = _XG_ALIASES.get(team_name.lower().strip(), team_name.lower().strip())
+    if key in _squad_xg_cache:
+        return _squad_xg_cache[key]
+
+    factor = 1.0  # default neutro
+    try:
+        import json as _json_m
+        # 1. Intentar player_elo_adjustments (ya calculado, 8 equipos top)
+        pea_path = _os_m.path.join(_DATA_DIR, "player_elo_adjustments.json")
+        with open(pea_path) as f:
+            pea = _json_m.load(f)
+        if key in pea and pea[key].get("squad_xg"):
+            raw_xg = pea[key]["squad_xg"]
+            # squad_xg es xG/90 promedio de jugadores cubiertos
+            # Normalizar contra baseline: mayor squad_xg = más goles esperados
+            factor = min(1.30, max(0.75, raw_xg / _BASELINE_SQUAD_XG))
+            _squad_xg_cache[key] = factor
+            return factor
+
+        # 2. Fallback: calcular desde players_stats.json
+        ps_path = _os_m.path.join(_DATA_DIR, "players_stats.json")
+        with open(ps_path) as f:
+            ps = _json_m.load(f)
+
+        # Buscar atacantes (FW/AM) del equipo
+        attackers = []
+        for player_key, pdata in ps.items():
+            pnation = pdata.get("nation", "").lower()
+            ppos = pdata.get("pos", "")
+            if pnation == key and ppos in ("FW", "AM", "MF", "FW,MF", "MF,FW"):
+                stats = pdata.get("stats", {})
+                mins = stats.get("min", 0)
+                xg = stats.get("xg", 0)
+                if mins >= 500:  # solo con minutos significativos
+                    xg_per90 = (xg / mins * 90) if mins > 0 else 0
+                    attackers.append(xg_per90)
+
+        if len(attackers) >= 2:
+            # Top 4 atacantes en términos de xG/90
+            top4 = sorted(attackers, reverse=True)[:4]
+            squad_xg = sum(top4) / len(top4)
+            factor = min(1.30, max(0.75, squad_xg / _BASELINE_SQUAD_XG))
+    except Exception:
+        factor = 1.0
+
+    _squad_xg_cache[key] = factor
+    return factor
+
+
+def _get_coach_style(team_name):
+    """
+    Devuelve (attack_mult, defense_mult, draw_adj) basados en:
+    - Estilo de juego (keywords en style/signature)
+    - Record historico del DT (W%/D% como proxy de calidad y tendencia a empate)
+    - Solidez defensiva (formaciones y terminología)
+    attack_mult: multiplica lambda del equipo
+    defense_mult: multiplica lambda del rival (defensivo baja lambda rival)
+    draw_adj: ajuste bilateral (baja ambos lambdas en DTs con alta tendencia a empate)
+    """
+    key = team_name.title()
+    cache_key = key.lower()
+    if cache_key in _coach_cache:
+        return _coach_cache[cache_key]
+
+    atk_mult = 1.0
+    def_mult = 1.0
+    draw_adj = 1.0  # <1 = más empates (menos goles totales)
+    _LEAGUE_AVG_DRAW_PCT = 0.22
+    _LEAGUE_AVG_WIN_PCT  = 0.45
+
+    try:
+        import json as _json_m
+        coaches_path = _os_m.path.join(_DATA_DIR, "coaches.json")
+        with open(coaches_path) as f:
+            coaches_data = _json_m.load(f)
+        coaches = coaches_data.get("coaches", coaches_data)
+        coach = coaches.get(key) or coaches.get(team_name)
+        if coach:
+            style_raw = (coach.get("style", "") + " " +
+                         coach.get("signature", "") + " " +
+                         coach.get("notable", "")).lower()
+            weaknesses = coach.get("weaknesses", "").lower()
+            context   = coach.get("wc2026_context", "").lower()
+
+            # 1. Record: calidad del DT → ataque
+            rec = coach.get("record", {})
+            total = rec.get("W", 0) + rec.get("D", 0) + rec.get("L", 0)
+            if total >= 10:
+                win_pct  = rec.get("W", 0) / total
+                draw_pct = rec.get("D", 0) / total
+                # Calidad: DTs ganadores producen más goles (atacan más)
+                # Escala: win_pct 0.30 → 0.93, 0.50 → 1.00, 0.70 → 1.08
+                atk_quality = 0.85 + win_pct * 0.30
+                atk_mult *= min(1.15, max(0.85, atk_quality))
+                # Draw tendency: DTs con alto % empates generan partidos menos goleadores
+                draw_tendency = draw_pct / _LEAGUE_AVG_DRAW_PCT
+                # draw_adj < 1 si el DT tiende a empates (menos goles totales)
+                draw_adj = min(1.08, max(0.88, 1.0 - (draw_tendency - 1.0) * 0.15))
+
+            # 2. Style keywords
+            for kw, mult in _COACH_STYLE_MULT.items():
+                if kw in style_raw:
+                    if mult > 1.0:
+                        atk_mult = max(atk_mult, atk_mult * mult)
+                    else:
+                        atk_mult = min(atk_mult, atk_mult * mult)
+
+            # 3. Formaciones/terminología defensiva (penaliza lambda rival)
+            _DEF_SIGNALS = [
+                "5-4-1", "5-3-2", "4-1-4-1", "bloque bajo", "bloque medio",
+                "defensivo", "compacto", "bajo la pelota", "reactivo",
+                "contraataque", "transicion", "transición",
+            ]
+            def_signals_found = sum(1 for sig in _DEF_SIGNALS if sig in style_raw)
+            if def_signals_found >= 2:
+                def_mult = 0.88  # muy defensivo
+            elif def_signals_found == 1:
+                def_mult = 0.93  # algo defensivo
+
+            # 4. Debilidades que penalizan ataque
+            _ATK_WEAKNESS_KW = ["ataque", "goles", "ofensivo", "creatividad", "definicion"]
+            _PENALIZE_KW = ["bajo", "limitad", "pobre", "escaso", "depend", "falta", "sin"]
+            weak_lower = weaknesses + " " + context
+            has_atk_weakness = any(k in weak_lower for k in _ATK_WEAKNESS_KW)
+            has_penalize = any(k in weak_lower for k in _PENALIZE_KW)
+            if has_atk_weakness and has_penalize:
+                atk_mult *= 0.94
+
+            # Cap final
+            atk_mult = round(min(1.18, max(0.82, atk_mult)), 4)
+            def_mult = round(min(1.00, max(0.85, def_mult)), 4)
+            draw_adj = round(draw_adj, 4)
+
+    except Exception:
+        pass
+
+    result = (atk_mult, def_mult, draw_adj)
+    _coach_cache[cache_key] = result
+    return result
+
+
+# Cache de stats de torneo (attack_form, defense_form) por equipo
+_tourney_stats_raw = {}
+_tourney_stats_ts  = 0
+_TOURNEY_STATS_TTL = 300  # refrescar cada 5 min
+
+
+def _build_tourney_stats():
+    """Lee calibration_log.json y computa GF/GA/mp reales por equipo en WC2026."""
+    global _tourney_stats_raw, _tourney_stats_ts
+    import time as _t_mod, json as _json_m
+    now = _t_mod.time()
+    if _tourney_stats_raw and (now - _tourney_stats_ts) < _TOURNEY_STATS_TTL:
+        return _tourney_stats_raw
+
+    stats = {}
+    try:
+        cal_path = _os_m.path.join(_DATA_DIR, "calibration_log.json")
+        with open(cal_path) as f:
+            cal = _json_m.load(f)
+        total_gf = 0
+        total_mp = 0
+        for entry in cal:
+            if not isinstance(entry, dict):
+                continue
+            result = entry.get("result", "")
+            if "-" not in result:
+                continue
+            try:
+                sh, sa = map(int, result.split("-"))
+            except Exception:
+                continue
+            for team, gf, ga in [(entry.get("home", ""), sh, sa),
+                                  (entry.get("away", ""), sa, sh)]:
+                if not team:
+                    continue
+                k = team.lower()
+                if k not in stats:
+                    stats[k] = {"mp": 0, "gf": 0, "ga": 0}
+                stats[k]["mp"] += 1
+                stats[k]["gf"] += gf
+                stats[k]["ga"] += ga
+                total_gf += gf
+                total_mp += 1
+        # WC promedio real (goles por partido por equipo)
+        wc_avg_gpm = (total_gf / total_mp) if total_mp > 0 else 1.50
+        _tourney_stats_raw = {"teams": stats, "wc_avg_gpm": round(wc_avg_gpm, 3)}
+    except Exception:
+        _tourney_stats_raw = {"teams": {}, "wc_avg_gpm": 1.50}
+
+    _tourney_stats_ts = now
+    return _tourney_stats_raw
+
+
+def _get_tourney_form(team_name):
+    """
+    Devuelve (atk_form, def_form) basado en goles reales en el torneo WC2026.
+
+    atk_form: equipo que goleó en WC > 1.0 (Germany 4.5 G/P = boost grande)
+              equipo sin goles en WC   < 1.0 (Belgium 0.5 G/P = baja lambda)
+    def_form: equipo con defensa sólida en WC > 1.0 (reduce lambda rival)
+              equipo que encajó mucho < 1.0
+
+    Blend 35%: evita que partidos extremos dominen sobre el Elo histórico.
+    """
+    _TEAM_ALIASES = {
+        "usa": "united states", "united states": "united states",
+        "usmnt": "united states", "us": "united states",
+        "south korea": "south korea", "korea republic": "south korea",
+        "korea": "south korea", "republic of korea": "south korea",
+        "türkiye": "türkiye", "turkiye": "türkiye", "turkey": "türkiye",
+        "czechia": "czechia", "czech republic": "czechia", "czech": "czechia",
+        "bosnia": "bosnia-herzegovina", "bosnia-herzegovina": "bosnia-herzegovina",
+        "bosnia and herzegovina": "bosnia-herzegovina",
+        "ivory coast": "ivory coast", "cote d ivoire": "ivory coast",
+        "congo": "congo dr", "dr congo": "congo dr", "congo dr": "congo dr",
+        "cape verde": "cape verde", "cabo verde": "cape verde",
+        "curacao": "cura\u00e7ao", "cura\u00e7ao": "cura\u00e7ao",
+        "new zealand": "new zealand", "nz": "new zealand",
+        "saudi arabia": "saudi arabia", "ksa": "saudi arabia",
+    }
+    key = _TEAM_ALIASES.get(team_name.lower().strip(), team_name.lower().strip())
+    if key in _tourney_cache:
+        return _tourney_cache[key]
+
+    data = _build_tourney_stats()
+    wc_avg = data.get("wc_avg_gpm", 1.50)
+    team = data["teams"].get(key)
+
+    if not team or team["mp"] == 0:
+        result = (1.0, 1.0)
+        _tourney_cache[key] = result
+        return result
+
+    mp   = team["mp"]
+    gpm  = team["gf"] / mp   # goles/partido atacando
+    gapm = team["ga"] / mp   # goles/partido encajando
+
+    # Factor de ataque: equipo que mete más que el promedio del torneo → boost lambda
+    atk_ratio = gpm / wc_avg if wc_avg > 0 else 1.0
+    # Blend 35% tourney, 65% neutro: evita sobre-ajuste en equipos con 1-2 partidos
+    n_factor = min(1.0, mp / 3)   # escalar confianza con partidos jugados
+    blend = 0.25 + 0.15 * n_factor  # 25% si 0 partidos, 40% si 3+ partidos
+    atk_form = blend * atk_ratio + (1 - blend)
+    atk_form = round(min(1.25, max(0.75, atk_form)), 4)
+
+    # Factor de defensa: equipo que encaja poco → rival produce menos
+    def_ratio = wc_avg / gapm if gapm > 0 else 1.25  # si no encajó nada → tope
+    def_form  = blend * def_ratio + (1 - blend)
+    def_form  = round(min(1.20, max(0.80, def_form)), 4)
+
+    result = (atk_form, def_form)
+    _tourney_cache[key] = result
+    return result
+
 def predict(home, away, home_advantage=True, home_form=None, away_form=None,
             xg_home=None, xg_away=None, wc_mode=False):
     base_h, known_h = _lookup(home)
@@ -277,12 +566,50 @@ def predict(home, away, home_advantage=True, home_form=None, away_form=None,
     ea = base_a + form_delta_a
 
     if xg_home is not None and xg_away is not None:
-        # Use real xG data to set λ directly (blended 70% xG, 30% model)
+        # Use real xG data to set lambda directly (blended 70% xG, 30% model)
         lam_h_model, lam_a_model = _expected_goals(eh, ea, wc_mode=wc_mode)
         lam_h = round(0.7 * xg_home + 0.3 * lam_h_model, 3)
         lam_a = round(0.7 * xg_away + 0.3 * lam_a_model, 3)
     else:
         lam_h, lam_a = _expected_goals(eh, ea, wc_mode=wc_mode)
+
+    # ── Player/Coach/Tourney adjustments (wc_mode only) ──────────────────
+    # Combina: xG del plantel + estilo del DT + forma en el torneo
+    # Cada factor se aplica suavizado (blend 40% player data, 60% Elo base)
+    _player_adj_h = 1.0
+    _player_adj_a = 1.0
+    if wc_mode:
+        try:
+            # 1. Squad xG factor
+            _xg_h = _get_squad_xg(home)
+            _xg_a = _get_squad_xg(away)
+            # 2. Coach attack/defense style (returns atk, def, draw_adj)
+            _atk_h, _def_h, _draw_adj_h = _get_coach_style(home)
+            _atk_a, _def_a, _draw_adj_a = _get_coach_style(away)
+            # 3. WC tournament form (atk_form, def_form) desde calibration_log real
+            _form_atk_h, _form_def_h = _get_tourney_form(home)
+            _form_atk_a, _form_def_a = _get_tourney_form(away)
+            # Combinar: squad ataque x coach ataque x tourney form de ataque
+            _raw_adj_h = _xg_h * _atk_h * _form_atk_h
+            _raw_adj_a = _xg_a * _atk_a * _form_atk_a
+            # Defense del rival penaliza el lambda del atacante
+            # Usa TANTO la def del coach COMO la solidez defensiva real en el torneo
+            _raw_adj_h *= _def_a * _form_def_a   # coach_def + tourney_def del rival
+            _raw_adj_a *= _def_h * _form_def_h
+            # Draw tendency baja ambos lambdas (partido propicio a empate = menos goles)
+            _draw_adj_combined = (_draw_adj_h + _draw_adj_a) / 2
+            _raw_adj_h *= _draw_adj_combined
+            _raw_adj_a *= _draw_adj_combined
+            # Blend: 40% datos de jugadores, 60% modelo Elo puro
+            _player_adj_h = round(0.4 * _raw_adj_h + 0.6, 4)
+            _player_adj_a = round(0.4 * _raw_adj_a + 0.6, 4)
+            # Cap: max +-20% de ajuste total
+            _player_adj_h = max(0.80, min(1.20, _player_adj_h))
+            _player_adj_a = max(0.80, min(1.20, _player_adj_a))
+        except Exception:
+            _player_adj_h = _player_adj_a = 1.0
+    lam_h = round(lam_h * _player_adj_h, 3)
+    lam_a = round(lam_a * _player_adj_a, 3)
 
     # Dixon-Coles corrected score grid:
     # P(i,j) = τ(i,j,λ,μ,ρ) · Poisson(i,λ) · Poisson(j,μ)
@@ -354,7 +681,39 @@ def predict(home, away, home_advantage=True, home_form=None, away_form=None,
     if ht_s > 0:
         ht_ph /= ht_s; ht_pd /= ht_s; ht_pa /= ht_s
 
-    # confidence — probability edge + rating gap + form data quality
+    # Per-half & hydration break analysis
+    # Empirical WC: Goals FH=47/SH=53, Corners FH=46/SH=54, Cards FH=38/SH=62
+    fh_lam_h = lam_h * 0.47
+    fh_lam_a = lam_a * 0.47
+    sh_lam_h = lam_h * 0.53
+    sh_lam_a = lam_a * 0.53
+    fh_total = fh_lam_h + fh_lam_a
+    sh_total = sh_lam_h + sh_lam_a
+    fh_corners_h = corners_h * 0.46; fh_corners_a = corners_a * 0.46
+    sh_corners_h = corners_h * 0.54; sh_corners_a = corners_a * 0.54
+    fh_cards_h = cards_h * 0.38; fh_cards_a = cards_a * 0.38; fh_cards_t = total_cards * 0.38
+    sh_cards_h = cards_h * 0.62; sh_cards_a = cards_a * 0.62; sh_cards_t = total_cards * 0.62
+    fh_over05 = 1 - math.exp(-fh_total)
+    sh_over05 = 1 - math.exp(-sh_total)
+    fh_over15 = sum(_poisson_pmf(i, fh_lam_h) * _poisson_pmf(j, fh_lam_a) for i in range(8) for j in range(8) if i+j>=2)
+    sh_over15 = sum(_poisson_pmf(i, sh_lam_h) * _poisson_pmf(j, sh_lam_a) for i in range(8) for j in range(8) if i+j>=2)
+    fh_btts = sum(_poisson_pmf(i, fh_lam_h) * _poisson_pmf(j, fh_lam_a) for i in range(1,8) for j in range(1,8))
+    sh_btts = sum(_poisson_pmf(i, sh_lam_h) * _poisson_pmf(j, sh_lam_a) for i in range(1,8) for j in range(1,8))
+    fh_sf_h = fh_lam_h / fh_total if fh_total > 0 else 0.5
+    fh_sf_a = fh_lam_a / fh_total if fh_total > 0 else 0.5
+    sh_sf_h = sh_lam_h / sh_total if sh_total > 0 else 0.5
+    sh_sf_a = sh_lam_a / sh_total if sh_total > 0 else 0.5
+    HYD_BOOST = 1.15
+    fh_break_lam = fh_total * (10.0 / 45) * HYD_BOOST
+    sh_break_lam = sh_total * (10.0 / 45) * HYD_BOOST
+    p_goal_fh_break = 1 - math.exp(-fh_break_lam)
+    p_goal_sh_break = 1 - math.exp(-sh_break_lam)
+    _INT_W = [0.150, 0.165, 0.165, 0.175, 0.175, 0.170]
+    _total_lam = lam_h + lam_a
+    goals_15 = [round(_total_lam * w, 2) for w in _INT_W]
+    corners_15 = [round((corners_h + corners_a) * w, 1) for w in _INT_W]
+    cards_15 = [round(total_cards * w, 2) for w in _INT_W]
+        # confidence — probability edge + rating gap + form data quality
     elo_gap = abs(eh - ea)
     edge = max(p_home, p_draw, p_away)
     conf = 3 + (edge - 0.34) * 12
@@ -416,6 +775,29 @@ def predict(home, away, home_advantage=True, home_form=None, away_form=None,
             "draw": round(ht_pd * 100, 1),
             "away": round(ht_pa * 100, 1),
         },
+        "byHalves": {
+            "firstHalf": {
+                "expGoals": round(fh_total,2), "expHome": round(fh_lam_h,2), "expAway": round(fh_lam_a,2),
+                "over05": round(fh_over05*100,1), "over15": round(fh_over15*100,1), "btts": round(fh_btts*100,1),
+                "htResult": {"home": round(ht_ph*100,1), "draw": round(ht_pd*100,1), "away": round(ht_pa*100,1)},
+                "scoreFirst": {"home": round(fh_sf_h*100,1), "away": round(fh_sf_a*100,1)},
+                "expCorners": {"home": round(fh_corners_h,1), "away": round(fh_corners_a,1), "total": round(fh_corners_h+fh_corners_a,1)},
+                "expCards": {"home": round(fh_cards_h,1), "away": round(fh_cards_a,1), "total": round(fh_cards_t,1)},
+                "hydBreakMin": 30, "pGoalPostBreak": round(p_goal_fh_break*100,1),
+                "goals15": goals_15[:3], "corners15": corners_15[:3], "cards15": cards_15[:3],
+            },
+            "secondHalf": {
+                "expGoals": round(sh_total,2), "expHome": round(sh_lam_h,2), "expAway": round(sh_lam_a,2),
+                "over05": round(sh_over05*100,1), "over15": round(sh_over15*100,1), "btts": round(sh_btts*100,1),
+                "scoreFirst": {"home": round(sh_sf_h*100,1), "away": round(sh_sf_a*100,1)},
+                "expCorners": {"home": round(sh_corners_h,1), "away": round(sh_corners_a,1), "total": round(sh_corners_h+sh_corners_a,1)},
+                "expCards": {"home": round(sh_cards_h,1), "away": round(sh_cards_a,1), "total": round(sh_cards_t,1)},
+                "hydBreakMin": 75, "pGoalPostBreak": round(p_goal_sh_break*100,1),
+                "goals15": goals_15[3:], "corners15": corners_15[3:], "cards15": cards_15[3:],
+            },
+            "goals15Labels": ["0-15","15-30","30-45","45-60","60-75","75-90"],
+            "goals15All": goals_15, "corners15All": corners_15, "cards15All": cards_15,
+        },
         "formRecord": {
             "home": list(home_form or [])[:5],
             "away": list(away_form or [])[:5],
@@ -428,6 +810,9 @@ def predict(home, away, home_advantage=True, home_form=None, away_form=None,
         "engine": {
             "lam_home": round(lam_h, 3),
             "lam_away": round(lam_a, 3),
+            "player_adj_home": _player_adj_h,
+            "player_adj_away": _player_adj_a,
+            "draw_adj": round((_draw_adj_h if wc_mode else 1.0), 4) if wc_mode else 1.0,
             "dc_rho": DC_RHO,
             "elo_home": round(eh, 0),
             "elo_away": round(ea, 0),

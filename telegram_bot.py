@@ -283,7 +283,7 @@ def _get_free_pick():
     )
 
 def _send_free_pick_img(token, chat_id):
-    """Genera imagen del pick gratis y la envía. Fallback a texto."""
+    """Genera imagen del pick gratis y la envía con mensaje de hype CR."""
     d = _best_pick_data()
     if not d:
         _send(token, chat_id, "No hay partidos programados para hoy.")
@@ -306,10 +306,23 @@ def _send_free_pick_img(token, chat_id):
         )
     except Exception as e:
         print(f"[bot] gen_pick_img error: {e}")
+
+    import random
+    hype_msgs = [
+        f"Ryder analizó todos los partidos de hoy y este es el pick con mayor valor matematico. 🔥\n\n*{d['pick_text']}* — {d['prob_pct']}% de probabilidad.\n\nEsta pick es gratis. Los 10 restantes del dia estan en /comprar 👇",
+        f"Todos los dias demuestro que el analisis matematico gana. 💚\n\n*{d['pick_text']}* — Ryder lo dice con {d['conf']}/10 de confianza.\n\nQueres el paquete completo? /comprar 👇",
+        f"Pick gratuito de hoy ya esta listo. 📊\n\n*{d['pick_text']}* — Probabilidad real: {d['prob_pct']}%\nCuota justa segun Ryder: {d['fair']}\n\nPara los picks completos del dia: /comprar 👇",
+        f"Hoy Ryder tiene claridad total en este partido. 🎯\n\n*{d['pick_text']}* con {d['prob_pct']}% de respaldo matematico.\n\nSi queres todos los picks de hoy: /comprar 👇",
+    ]
+
     if img_path and os.path.exists(img_path):
-        caption = f"🐕 *Pick Gratis* · {d['pick_text']} · {d['prob_pct']}% confianza\n_ProGol CR · /comprar para más picks_"
-        if _send_photo(token, chat_id, caption, file_path=img_path):
+        caption = f"*PICK GRATUITO DEL DIA* 🐕\n_ProGol CR · Analisis con modelo matematico_"
+        img_ok = _send_photo(token, chat_id, caption, file_path=img_path)
+        if img_ok:
+            time.sleep(0.6)
+            _send(token, chat_id, random.choice(hype_msgs))
             return
+    # Fallback texto
     _send(token, chat_id, _get_free_pick())
 
 def _get_pro_picks():
@@ -454,41 +467,259 @@ def _get_informe():
         f"💚 ProGol CR · Queremos que todos ganen."
     )
 
-def _fetch_partidos_rows(limit=8):
-    """Devuelve lista de dicts con datos de partidos de hoy (sin terminados)."""
-    import db, sqlite3
-    db.init_db()
-    today = datetime.date.today().isoformat()
-    conn  = db.get_conn()
+ESPN_WC_API = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard"
+
+# ── Plan Gurú ─────────────────────────────────────────────────────────────────
+
+import re as _re
+
+def _parse_budget(text):
+    """Extrae monto en colones del mensaje. Ej: 'Tengo 5000' → 5000."""
+    t = text.replace("₡","").replace(",","").replace(".","")
+    m = _re.search(r'\b(\d{3,6})\b', t)
+    return int(m.group(1)) if m else None
+
+def _extract_team_filter(text):
+    """Detecta si el mensaje menciona un equipo específico."""
+    txt = text.lower()
+    for eng, esp in TEAM_ES.items():
+        if eng.lower() in txt or esp.lower() in txt:
+            return eng
+    return None
+
+def _guru_picks(budget, team_filter=None):
+    """Genera picks del día con el modelo de Ryder y arma el plan de apuesta."""
+    import db as _db, sqlite3
+    _db.init_db()
+    today_cr   = datetime.date.today()
+    window_start = datetime.datetime(today_cr.year, today_cr.month, today_cr.day, 6, 0)
+    window_end   = window_start + datetime.timedelta(hours=24)
+    ws = window_start.strftime("%Y-%m-%dT%H:%M")
+    we = window_end.strftime("%Y-%m-%dT%H:%M")
+
+    conn = _db.get_conn()
     conn.row_factory = sqlite3.Row
-    cur = conn.execute(
-        "SELECT home, away, kickoff_utc, competition, home_badge, away_badge "
-        "FROM matches WHERE date=? AND home!='' AND away!='' "
-        "AND NOT EXISTS ("
-        "  SELECT 1 FROM matches m2 "
-        "  WHERE m2.home=matches.home AND m2.away=matches.away "
-        "  AND m2.status IN ('Finished','Live','FT','AET','PEN')"
-        ") GROUP BY home, away ORDER BY kickoff_utc LIMIT ?",
-        (today, limit)
+    cur  = conn.execute(
+        "SELECT home, away, kickoff_utc, competition FROM matches "
+        "WHERE home!='' AND away!='' "
+        "AND ( (kickoff_utc >= ? AND kickoff_utc < ?) OR (kickoff_utc='' AND date=?) ) "
+        "AND status NOT IN ('Finished','FT','AET','PEN') "
+        "GROUP BY home, away ORDER BY kickoff_utc",
+        (ws, we, today_cr.isoformat())
     )
-    rows = []
-    for r in cur.fetchall():
-        d = dict(r)
-        d["home_es"] = es(d["home"])
-        d["away_es"] = es(d["away"])
-        hora = ""
-        if d["kickoff_utc"]:
-            try:
-                k  = d["kickoff_utc"].replace("Z", "").replace("T", " ")[:16]
-                dt = datetime.datetime.strptime(k, "%Y-%m-%d %H:%M")
-                dt_cr = dt - datetime.timedelta(hours=6)
-                hora  = dt_cr.strftime("%I:%M %p")
-            except Exception:
-                pass
-        d["hora_cr"] = hora
-        rows.append(d)
+    rows = [dict(r) for r in cur.fetchall()]
     conn.close()
-    return rows, today
+
+    # Si no hay partidos en DB, traer del ESPN
+    if not rows:
+        espn, _ = _fetch_espn_today()
+        rows = [{"home": r["home"], "away": r["away"],
+                 "kickoff_utc": r["kickoff_utc"], "competition": r["competition"]}
+                for r in espn if r.get("status") != "Finished"]
+
+    picks = []
+    for r in rows:
+        try:
+            p    = model.predict(r["home"], r["away"])
+            prob = p["prob"]
+            # Elegir el outcome con mayor probabilidad
+            home_p, draw_p, away_p = prob["home"], prob["draw"], prob["away"]
+            if home_p >= draw_p and home_p >= away_p:
+                outcome = f"Gana {es(r['home'])}"
+                outcome_p = home_p
+                market_key = "home"
+            elif away_p >= home_p and away_p >= draw_p:
+                outcome = f"Gana {es(r['away'])}"
+                outcome_p = away_p
+                market_key = "away"
+            else:
+                outcome = "Empate"
+                outcome_p = draw_p
+                market_key = "draw"
+            # Cuota implícita justa con margen de casa típico
+            fair_odd = round(1 / (outcome_p / 100) * 0.91, 2)  # ~9% margen casas CR
+            hora = ""
+            if r.get("kickoff_utc"):
+                try:
+                    k  = r["kickoff_utc"].replace("Z","").replace("T"," ")[:16]
+                    dt = datetime.datetime.strptime(k, "%Y-%m-%d %H:%M")
+                    hora = (dt - datetime.timedelta(hours=6)).strftime("%I:%M %p")
+                except Exception:
+                    pass
+            picks.append({
+                "home": r["home"], "away": r["away"],
+                "outcome": outcome, "prob": outcome_p,
+                "odd": fair_odd, "hora": hora,
+                "market_key": market_key,
+                "is_target": (team_filter and (
+                    team_filter.lower() in r["home"].lower() or
+                    team_filter.lower() in r["away"].lower()
+                )),
+            })
+        except Exception:
+            continue
+
+    picks.sort(key=lambda x: (-x["prob"], not x.get("is_target", False)))
+    return picks
+
+
+def _send_guru_plan(token, chat_id, budget, team_filter=None):
+    """Arma y envía el Plan Gurú para el presupuesto dado."""
+    picks = _guru_picks(budget, team_filter)
+    if not picks:
+        _send(token, chat_id, "No hay partidos disponibles para hoy todavía. Intentá más tarde.")
+        return
+
+    today_str = datetime.date.today().strftime("%d/%m/%Y")
+
+    # Si hay filtro de equipo, ponemos ese pick primero y lo marcamos como ATREVIDA
+    target_pick = next((p for p in picks if p.get("is_target")), None)
+    safe_picks   = [p for p in picks if not p.get("is_target") and p["prob"] >= 70][:3]
+    bold_pick    = target_pick or next((p for p in picks if p not in safe_picks and p["prob"] >= 55), None)
+
+    # Distribución del presupuesto: 75% combo seguro, 25% atrevida
+    budget_safe  = round(budget * 0.75)
+    budget_bold  = budget - budget_safe
+
+    lines = [
+        f"🧿 *PLAN GURÚ — ₡{budget:,}*",
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+        "",
+    ]
+
+    # COMBO SEGURO
+    if safe_picks:
+        combined_odd = 1.0
+        for p in safe_picks:
+            combined_odd *= p["odd"]
+        combined_odd = round(combined_odd, 2)
+        retorno_safe = round(budget_safe * combined_odd)
+        ganancia_safe = retorno_safe - budget_safe
+
+        lines += [
+            f"📦 *COMBO SEGURO — ₡{budget_safe:,} apostados*",
+        ]
+        for p in safe_picks:
+            hora_txt = f" · {p['hora']} CR" if p["hora"] else ""
+            lines.append(f"• *{es(p['home'])} vs {es(p['away'])}*{hora_txt}")
+            lines.append(f"  {p['outcome']} @ {p['odd']} ({p['prob']:.0f}% probabilidad)")
+        lines += [
+            f"Cuota combinada: {combined_odd}",
+            f"✅ Retorno si entra: ₡{retorno_safe:,} (ganancia: +₡{ganancia_safe:,})",
+            "",
+        ]
+
+    # APUESTA ATREVIDA
+    if bold_pick:
+        retorno_bold = round(budget_bold * bold_pick["odd"])
+        ganancia_bold = retorno_bold - budget_bold
+        hora_txt = f" · {bold_pick['hora']} CR" if bold_pick["hora"] else ""
+        lines += [
+            f"⚡ *APUESTA ATREVIDA — ₡{budget_bold:,} apostados*",
+            f"• *{es(bold_pick['home'])} vs {es(bold_pick['away'])}*{hora_txt}",
+            f"  {bold_pick['outcome']} @ {bold_pick['odd']} ({bold_pick['prob']:.0f}% probabilidad)",
+            f"✅ Retorno si entra: ₡{retorno_bold:,} (ganancia: +₡{ganancia_bold:,})",
+            "",
+        ]
+
+    # RESUMEN
+    lines += ["📊 *RESUMEN*"]
+    lines.append(f"Invertís: ₡{budget:,}")
+    if safe_picks:
+        lines.append(f"Si entra el combo seguro: ₡{retorno_safe:,} (+₡{ganancia_safe:,})")
+    if bold_pick and safe_picks:
+        total_retorno = retorno_safe + retorno_bold
+        total_ganancia = total_retorno - budget
+        lines.append(f"Si entran combo + atrevida: ₡{total_retorno:,} (+₡{total_ganancia:,})")
+    lines.append(f"Peor caso (todo falla): -₡{budget:,}")
+    lines += [
+        "",
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+        "_Análisis de Ryder · ProGol CR_",
+        "_La decisión final siempre es tuya._",
+    ]
+
+    _send(token, chat_id, "\n".join(lines))
+
+def _fetch_espn_today():
+    """Consulta el ESPN API y retorna partidos de HOY en hora CR (UTC-6)."""
+    today_cr = datetime.date.today()
+    # Ventana UTC que cubre el día completo en CR
+    window_start = datetime.datetime(today_cr.year, today_cr.month, today_cr.day, 6, 0)  # 00:00 CR = 06:00 UTC
+    window_end   = window_start + datetime.timedelta(hours=24)
+
+    results = []
+    seen_ids = set()
+    # Fechas UTC a consultar (el día de hoy y el siguiente para cubrir partidos nocturnos)
+    for utc_date in [today_cr, today_cr + datetime.timedelta(days=1)]:
+        compact = utc_date.strftime("%Y%m%d")
+        url = f"{ESPN_WC_API}?dates={compact}&limit=50"
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "ProGolCR-Bot/1.0"})
+            with urllib.request.urlopen(req, timeout=12) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+            for ev in (data.get("events") or []):
+                eid = ev.get("id")
+                if not eid or eid in seen_ids:
+                    continue
+                seen_ids.add(eid)
+                try:
+                    comp = (ev.get("competitions") or [{}])[0]
+                    competitors = comp.get("competitors") or []
+                    home_c = next((c for c in competitors if c.get("homeAway") == "home"), None)
+                    away_c = next((c for c in competitors if c.get("homeAway") == "away"), None)
+                    if not home_c or not away_c:
+                        continue
+                    kickoff_utc = ev.get("date") or ""
+                    if not kickoff_utc:
+                        continue
+                    # Verificar que está dentro de la ventana CR
+                    ko_str = kickoff_utc.replace("Z", "").replace("T", " ")[:16]
+                    ko_dt  = datetime.datetime.strptime(ko_str, "%Y-%m-%d %H:%M")
+                    if not (window_start <= ko_dt < window_end):
+                        continue
+                    ko_cr  = ko_dt - datetime.timedelta(hours=6)
+                    hora   = ko_cr.strftime("%I:%M %p")
+                    status_obj = comp.get("status") or {}
+                    status_type = (status_obj.get("type") or {}).get("name", "STATUS_SCHEDULED")
+                    if status_type in ("STATUS_FINAL", "STATUS_FULL_TIME"):
+                        status = "Finished"
+                    elif status_type in ("STATUS_IN_PROGRESS", "STATUS_HALFTIME"):
+                        status = "Live"
+                    else:
+                        status = "Scheduled"
+                    home_team = (home_c.get("team") or {})
+                    away_team = (away_c.get("team") or {})
+                    home_name = home_team.get("displayName") or home_team.get("name") or ""
+                    away_name = away_team.get("displayName") or away_team.get("name") or ""
+                    results.append({
+                        "home": home_name,
+                        "away": away_name,
+                        "home_es": es(home_name),
+                        "away_es": es(away_name),
+                        "kickoff_utc": kickoff_utc,
+                        "hora_cr": hora,
+                        "status": status,
+                        "competition": "FIFA World Cup 2026",
+                        "home_badge": (home_team.get("logos") or [{}])[0].get("href", "") if home_team.get("logos") else home_team.get("logo", ""),
+                        "away_badge": (away_team.get("logos") or [{}])[0].get("href", "") if away_team.get("logos") else away_team.get("logo", ""),
+                    })
+                except Exception:
+                    continue
+        except Exception:
+            pass
+    results.sort(key=lambda m: m.get("kickoff_utc") or "")
+    return results, today_cr.isoformat()
+
+
+def _fetch_partidos_rows(limit=8):
+    """Devuelve lista de dicts con partidos de HOY según hora CR (UTC-6).
+    Consulta el ESPN API directamente para evitar desfases con la DB local.
+    """
+    rows, today = _fetch_espn_today()
+    # Filtrar terminados
+    rows = [r for r in rows if r.get("status") != "Finished"]
+    return rows[:limit], today
 
 def _send_partidos_img(token, chat_id):
     """Genera imagen de partidos y la envía como foto. Fallback a texto."""
@@ -496,6 +727,17 @@ def _send_partidos_img(token, chat_id):
     if not rows:
         _send(token, chat_id, f"📅 No hay partidos programados para hoy ({today}).")
         return
+    # Enriquecer con cuotas reales
+    try:
+        from integrations import get_match_odds
+        for r in rows:
+            od = get_match_odds(r.get("home", ""), r.get("away", ""))
+            if od and od.get("best_home") and od.get("best_away"):
+                r["odds_line"] = (f"1:{od['best_home']:.2f}"
+                                  f"  X:{od['best_draw']:.2f}"
+                                  f"  2:{od['best_away']:.2f}")
+    except Exception as _oe:
+        print(f"[bot] odds enrich error: {_oe}")
     img_path = None
     try:
         import importlib.util, os as _os
@@ -509,7 +751,8 @@ def _send_partidos_img(token, chat_id):
     except Exception as e:
         print(f"[bot] gen_partidos_img error: {e}")
     if img_path and os.path.exists(img_path):
-        caption = "⚽ *Partidos de hoy* · Para picks detallados: /comprar 👇\n_ProGol CR_"
+        caption = "⚽ *Partidos de hoy* · Para picks detallados: /comprar\n_ProGol CR — Inteligencia Deportiva_"
+        # GIF → sendAnimation, PNG → sendPhoto
         ok = _send_photo(token, chat_id, caption, file_path=img_path)
         if ok:
             return
@@ -522,6 +765,162 @@ def _send_partidos_img(token, chat_id):
         lines.append("")
     lines.append("Para picks detallados: /comprar 👇")
     _send(token, chat_id, "\n".join(lines))
+
+# ── Documentos corporativos (comando secreto) ──────────────────────────────────
+def _html_to_text(path):
+    """Extrae texto plano de un HTML quitando tags y CSS."""
+    import re
+    try:
+        with open(path, encoding="utf-8") as f:
+            html = f.read()
+        # Eliminar <style> y <script>
+        html = re.sub(r'<style[^>]*>.*?</style>', '', html, flags=re.DOTALL|re.IGNORECASE)
+        html = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL|re.IGNORECASE)
+        # Convertir algunos tags a saltos de línea
+        html = re.sub(r'<(h[1-6]|p|li|tr|div|br)[^>]*>', '\n', html, flags=re.IGNORECASE)
+        html = re.sub(r'</?(strong|b)>', '*', html, flags=re.IGNORECASE)
+        # Quitar todos los demás tags
+        html = re.sub(r'<[^>]+>', '', html)
+        # Decodificar entidades HTML básicas
+        html = html.replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
+        html = html.replace('&nbsp;', ' ').replace('&#13;', '').replace('&mdash;', '—')
+        html = html.replace('&ldquo;', '"').replace('&rdquo;', '"').replace('&bull;', '•')
+        # Limpiar espacios y líneas vacías excesivas
+        lines = [l.strip() for l in html.splitlines()]
+        lines = [l for l in lines if l]
+        # Colapsar más de 2 líneas vacías seguidas
+        out, prev_blank = [], 0
+        for l in lines:
+            if not l:
+                prev_blank += 1
+                if prev_blank <= 1:
+                    out.append(l)
+            else:
+                prev_blank = 0
+                out.append(l)
+        return '\n'.join(out)
+    except Exception as e:
+        return f"[Error leyendo {os.path.basename(path)}: {e}]"
+
+def _send_corp_docs(token, chat_id):
+    """Envía todos los documentos corporativos de ProGol CR en partes."""
+    cfg = _load_config()
+
+    # ── 1. Portada ──
+    _send(token, chat_id,
+        "🔐 *DOCUMENTOS CORPORATIVOS — ProGol CR*\n"
+        "_Acceso restringido · Solo para uso interno_\n\n"
+        "Enviando todos los documentos en orden...")
+    time.sleep(0.8)
+
+    docs = [
+        ("📋 ESTRATEGIA DE NEGOCIO 2026",
+         os.path.join(HERE, "docs", "estrategia.html")),
+        ("🎯 PITCH DECK / PRESENTACIÓN",
+         os.path.join(HERE, "marketing", "pitch.html")),
+        ("📊 REPORTE / ANÁLISIS COMPETITIVO",
+         os.path.join(HERE, "marketing", "report.html")),
+        ("🌍 ANÁLISIS DE MERCADO",
+         os.path.join(HERE, "docs", "mercado.html")),
+        ("🎨 BRAND GUIDE — ProGol CR",
+         os.path.join(HERE, "docs", "progol-cr-brand.html")),
+        ("🛒 PICKS & PRODUCTOS",
+         os.path.join(HERE, "marketing", "picks.html")),
+    ]
+
+    for title, path in docs:
+        if not os.path.exists(path):
+            continue
+        text = _html_to_text(path)
+        # Telegram max 4096 chars por mensaje
+        MAX = 3800
+        header = f"━━━━━━━━━━━━━━━━━━━━━━━\n*{title}*\n━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        full = header + text
+        # Enviar en chunks si es necesario
+        chunk = ""
+        for line in full.splitlines(keepends=True):
+            if len(chunk) + len(line) > MAX:
+                if chunk.strip():
+                    _send(token, chat_id, chunk)
+                    time.sleep(0.4)
+                chunk = line
+            else:
+                chunk += line
+        if chunk.strip():
+            _send(token, chat_id, chunk)
+            time.sleep(0.5)
+
+    # ── 2. Config técnica (sin claves) ──
+    _send(token, chat_id,
+        "━━━━━━━━━━━━━━━━━━━━━━━\n"
+        "⚙️ *CONFIGURACIÓN TÉCNICA*\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"• Servidor: puerto 8765 (local)\n"
+        f"• Túnel: localtunnel (URL cambia al reiniciar)\n"
+        f"• Base de datos: SQLite (data/wc2026.db)\n"
+        f"• Bot Telegram: @progolcr_bot\n"
+        f"• Grupo comunidad: {_group_chat_id or 'no configurado'}\n"
+        f"• Modelo IA: Dixon-Coles + Elo (Ryder)\n"
+        f"• Startup: VBS en Windows Startup\n\n"
+        "⚠️ *Las claves API y contraseñas NO se envían por Telegram.*\n"
+        "Están guardadas en `config.json` en la PC (nunca en git).\n"
+        "Para verlas: abrí `config.json` directamente en la máquina."
+    )
+    time.sleep(0.5)
+
+    # ── 3. Usuarios activos ──
+    try:
+        import db as _db
+        _db.init_db()
+        conn = _db.get_conn()
+        conn.row_factory = __import__('sqlite3').Row
+        users = conn.execute(
+            "SELECT username, role, created_at FROM users ORDER BY created_at DESC LIMIT 20"
+        ).fetchall()
+        conn.close()
+        if users:
+            lines = ["━━━━━━━━━━━━━━━━━━━━━━━\n👥 *USUARIOS REGISTRADOS*\n━━━━━━━━━━━━━━━━━━━━━━━\n"]
+            for u in users:
+                lines.append(f"• `{u['username']}` — {u['role']} (desde {(u['created_at'] or '')[:10]})")
+            _send(token, chat_id, "\n".join(lines))
+            time.sleep(0.4)
+    except Exception as e:
+        _send(token, chat_id, f"[No se pudo leer usuarios: {e}]")
+
+    # ── 4. Proyecciones financieras ──
+    _send(token, chat_id,
+        "━━━━━━━━━━━━━━━━━━━━━━━\n"
+        "💰 *PROYECCIONES FINANCIERAS 2026*\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "*Planes y precios:*\n"
+        "• Scout (Pro del día) — ₡500/pick\n"
+        "• Pro Plan — ₡3,500/mes\n"
+        "• Premium — ₡6,000/mes\n"
+        "• Elite — ₡10,000/mes\n\n"
+        "*SINPE:* 8561-0677 (Esteban Venegas)\n\n"
+        "*Meta Fase 1 (Jun-Jul 2026):*\n"
+        "• 50 usuarios Scout → ₡175,000/mes\n"
+        "• 20 Pro → ₡70,000/mes\n"
+        "• 10 Premium → ₡60,000/mes\n"
+        "• *Total estimado: ₡305,000/mes*\n\n"
+        "*Meta Fase 2 (Mundial en marcha):*\n"
+        "• 200 usuarios activos\n"
+        "• ₡1,200,000+/mes\n"
+        "• Expansión: WhatsApp + web pública\n\n"
+        "💚 ProGol CR · Inteligencia deportiva costarricense"
+    )
+
+    _send(token, chat_id,
+        "✅ *Todos los documentos enviados.*\n"
+        "_Este mensaje es confidencial. No reenviar sin autorización._\n\n"
+        "💚 ProGol CR — Queremos que todos ganen.")
+
+def _load_config():
+    try:
+        with open(CONFIG_PATH) as f:
+            return json.load(f)
+    except Exception:
+        return {}
 
 def _get_goleadores():
     rows, today = _today_matches(8)
@@ -717,6 +1116,31 @@ def _handle_message(token, owner_chat_id, msg):
             _send(token, chat_id, "Grupo registrado en ProGol CR.")
         return
 
+    # Plan Gurú — detectar "Tengo X" o "Tengo X para [partido]" en privado (solo owner)
+    if not is_group and chat_id == str(owner_chat_id):
+        tl = text.lower()
+        if ("tengo" in tl or "presupuesto" in tl) and _re.search(r'\d{3,6}', text.replace(",","").replace(".","").replace("₡","")):
+            budget = _parse_budget(text)
+            if budget and budget >= 500:
+                team_filter = _extract_team_filter(text)
+                _send(token, chat_id, "Analizando con Ryder...")
+                _send_guru_plan(token, chat_id, budget, team_filter)
+                return
+
+    # /link — envía el URL público de la app
+    if cmd == "/link":
+        cfg_now = _load_config()
+        url = cfg_now.get("current_tunnel_url", "").strip()
+        if url:
+            _send(token, chat_id,
+                  f"🔗 *ProGol CR — App*\n\n{url}\n\n"
+                  f"Abrí ese link en el navegador para acceder a la app.")
+        else:
+            _send(token, chat_id,
+                  "El servidor no tiene un link público activo en este momento. "
+                  "Asegurate de que el servidor esté corriendo con tunnel activo.")
+        return
+
     # /grupos — desde chat privado del owner, lista los chats donde esta el bot
     if cmd == "/grupos" and chat_id == str(owner_chat_id):
         gid = _group_chat_id or "no configurado"
@@ -736,6 +1160,16 @@ def _handle_message(token, owner_chat_id, msg):
             _save_group_chat_id(gid)
             _send(token, chat_id, f"Grupo configurado: `{gid}`")
         return
+
+    # Clave secreta — documentos corporativos (solo owner, solo privado)
+    if not is_group and chat_id == str(owner_chat_id):
+        cfg_now = _load_config()
+        secret  = cfg_now.get("corp_secret", "").strip().lower()
+        if secret and text.strip().lower() == secret:
+            _send(token, chat_id, "🔐 Verificando identidad...")
+            time.sleep(0.5)
+            _send_corp_docs(token, chat_id)
+            return
 
     # Comandos de info
     if cmd in ("/partidos", "/hoy"):
@@ -955,14 +1389,24 @@ def _promo_loop(token, owner_chat_id, stop_event):
                                 pick_txt = f"\n🔮 Ryder ve a *{a}* como favorito ({prob['away']/100:.0%})"
                         except Exception:
                             pass
+                        import random
+                        intros = [
+                            f"En {int(mins_to_kick)} minutos arranca y Ryder ya tiene el analisis listo. 🔥",
+                            f"Faltan {int(mins_to_kick)} minutos. Este es el partido del dia. 🎯",
+                            f"ProGol CR tiene el pick para este partido. Quedan {int(mins_to_kick)} minutos. ⏱",
+                        ]
+                        ctas = [
+                            "Queres el pick completo con probabilidades y cuota justa? Escribi /comprar antes del pitazo.",
+                            "El analisis completo de Ryder esta en /comprar. No apostes sin verlo.",
+                            "Todos los picks del dia con analisis matematico estan en /comprar.",
+                        ]
                         msg = (
-                            f"⚽🔔 *¡PARTIDO EN {int(mins_to_kick)} MINUTOS!*\n\n"
-                            f"🏆 *Copa del Mundo 2026*\n"
-                            f"*{h} vs {a}*\n"
-                            f"🕐 {hora_cr} (hora Costa Rica){pick_txt}\n\n"
-                            f"💡 ¿Querés los picks completos para este partido?\n"
-                            f"Escribí /comprar y Ryder te da todo antes del pitazo.\n\n"
-                            f"💚 *ProGol CR · Queremos que todos ganen* 🐕"
+                            f"⚽ *{h} vs {a}*\n"
+                            f"🏆 Copa del Mundo 2026 · {hora_cr} CR\n\n"
+                            f"{random.choice(intros)}"
+                            f"{pick_txt}\n\n"
+                            f"{random.choice(ctas)}\n\n"
+                            f"💚 *ProGol CR · Queremos que todos ganen*"
                         )
                         targets = [owner_chat_id]
                         if _group_chat_id and _group_chat_id != owner_chat_id:
@@ -988,15 +1432,27 @@ def _promo_loop(token, owner_chat_id, stop_event):
 # ── Loop de polling ────────────────────────────────────────────────────────────
 def run_bot(token, owner_chat_id, stop_event=None):
     offset = 0
+    conflict_backoff = 5
     print(f"[bot] Polling activo (owner={owner_chat_id})")
+    # Cerrar cualquier sesión de polling/webhook anterior para evitar 409
+    try:
+        _api(token, "deleteWebhook", {"drop_pending_updates": True})
+        print("[bot] Webhook eliminado + updates pendientes descartados")
+    except Exception:
+        pass
+    time.sleep(1)  # dar tiempo a que otras instancias detecten el cierre
     # Limpiar updates acumulados para que botones viejos no fallen
-    res = _api(token, "getUpdates", {"offset": -1, "timeout": 1})
-    if res.get("result"):
-        offset = res["result"][-1]["update_id"] + 1
-        print(f"[bot] Saltando {len(res['result'])} updates acumulados, offset={offset}")
+    try:
+        res = _api(token, "getUpdates", {"offset": -1, "timeout": 1})
+        if res.get("result"):
+            offset = res["result"][-1]["update_id"] + 1
+            print(f"[bot] Saltando {len(res['result'])} updates acumulados, offset={offset}")
+    except Exception:
+        pass
     while not (stop_event and stop_event.is_set()):
         try:
             res = _api(token, "getUpdates", {"offset": offset, "timeout": 25})
+            conflict_backoff = 5  # reset on success
             for update in res.get("result", []):
                 offset = update["update_id"] + 1
                 try:
@@ -1007,8 +1463,15 @@ def run_bot(token, owner_chat_id, stop_event=None):
                 except Exception as e:
                     print(f"[bot] handler error: {e}")
         except Exception as e:
-            print(f"[bot] polling error: {e}")
-            time.sleep(5)
+            err = str(e)
+            if "409" in err or "Conflict" in err:
+                # Another instance polling — back off and let it win or timeout
+                print(f"[bot] 409 conflicto — esperando {conflict_backoff}s para reconectar...")
+                time.sleep(conflict_backoff)
+                conflict_backoff = min(conflict_backoff * 2, 60)  # exp backoff up to 60s
+            else:
+                print(f"[bot] polling error: {e}")
+                time.sleep(5)
 
 def start_bot_thread(cfg):
     global _group_chat_id

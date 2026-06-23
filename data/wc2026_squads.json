@@ -1,0 +1,498 @@
+{
+  "version": "2026-06-16",
+  "source": "ProGolCR — plantillas confirmadas Mundial 2026",
+  "teams": {
+    "Argentina": {
+      "fifa_code": "ARG",
+      "players": [
+        {"name": "Lionel Messi", "pos": "FW", "club": "Inter Miami", "league": "MLS"},
+        {"name": "Julian Alvarez", "pos": "FW", "club": "Atlético de Madrid", "league": "La Liga"},
+        {"name": "Lautaro Martinez", "pos": "FW", "club": "Inter Milan", "league": "Serie A"},
+        {"name": "Paulo Dybala", "pos": "FW", "club": "Roma", "league": "Serie A"},
+        {"name": "Angel Di Maria", "pos": "FW", "club": "Benfica", "league": "Primeira Liga"},
+        {"name": "Rodrigo De Paul", "pos": "MF", "club": "Atlético de Madrid", "league": "La Liga"},
+        {"name": "Leandro Paredes", "pos": "MF", "club": "Roma", "league": "Serie A"},
+        {"name": "Enzo Fernandez", "pos": "MF", "club": "Chelsea", "league": "Premier League"},
+        {"name": "Mac Allister", "pos": "MF", "club": "Liverpool", "league": "Premier League"},
+        {"name": "Giovani Lo Celso", "pos": "MF", "club": "Villarreal", "league": "La Liga"},
+        {"name": "Exequiel Palacios", "pos": "MF", "club": "Bayer Leverkusen", "league": "Bundesliga"},
+        {"name": "Nicolas Otamendi", "pos": "DF", "club": "Benfica", "league": "Primeira Liga"},
+        {"name": "Lisandro Martinez", "pos": "DF", "club": "Manchester United", "league": "Premier League"},
+        {"name": "Cristian Romero", "pos": "DF", "club": "Tottenham", "league": "Premier League"},
+        {"name": "Nicolas Tagliafico", "pos": "DF", "club": "Lyon", "league": "Ligue 1"},
+        {"name": "Gonzalo Montiel", "pos": "DF", "club": "Nottingham Forest", "league": "Premier League"},
+        {"name": "Nahuel Molina", "pos": "DF", "club": "Atlético de Madrid", "league": "La Liga"},
+        {"name": "Emiliano Martinez", "pos": "GK", "club": "Aston Villa", "league": "Premier League"},
+        {"name": "Franco Armani", "pos": "GK", "club": "River Plate", "league": "Liga Profesional Argentina"}
+      ]
+    },
+    "Brazil": {
+      "fifa_code": "BRA",
+      "players": [
+        {"name": "Vinicius Junior", "pos": "FW", "club": "Real Madrid", "league": "La Liga"},
+        {"name": "Rodrygo", "pos": "FW", "club": "Real Madrid", "league": "La Liga"},
+        {"name": "Raphinha", "pos": "FW", "club": "Barcelona", "league": "La Liga"},
+        {"name": "Gabriel Martinelli", "pos": "FW", "club": "Arsenal", "league": "Premier League"},
+        {"name": "Richarlison", "pos": "FW", "club": "Tottenham", "league": "Premier League"},
+        {"name": "Gabriel Jesus", "pos": "FW", "club": "Arsenal", "league": "Premier League"},
+        {"name": "Endrick", "pos": "FW", "club": "Real Madrid", "league": "La Liga"},
+        {"name": "Bruno Guimaraes", "pos": "MF", "club": "Newcastle", "league": "Premier League"},
+        {"name": "Lucas Paqueta", "pos": "MF", "club": "West Ham", "league": "Premier League"},
+        {"name": "Casemiro", "pos": "MF", "club": "Manchester United", "league": "Premier League"},
+        {"name": "Gerson", "pos": "MF", "club": "Flamengo", "league": "Brasileirao"},
+        {"name": "Andreas Pereira", "pos": "MF", "club": "Fulham", "league": "Premier League"},
+        {"name": "Marquinhos", "pos": "DF", "club": "PSG", "league": "Ligue 1"},
+        {"name": "Eder Militao", "pos": "DF", "club": "Real Madrid", "league": "La Liga"},
+        {"name": "Gabriel Magalhaes", "pos": "DF", "club": "Arsenal", "league": "Premier League"},
+        {"name": "Danilo", "pos": "DF", "club": "Juventus", "league": "Serie A"},
+        {"name": "Alex Telles", "pos": "DF", "club": "Sevilla", "league": "La Liga"},
+        {"name": "Alisson", "pos": "GK", "club": "Liverpool", "league": "Premier League"},
+        {"name": "Ederson", "pos": "GK", "club": "Manchester City", "league": "Premier League"}
+      ]
+    },
+    "France": {
+      "fifa_code": "FRA",
+      "players": [
+        {"name": "Kylian Mbappe", "pos": "FW", "club": "Real Madrid", "league": "La Liga"},
+        {"name": "Antoine Griezmann", "pos": "FW", "club": "Atlético de Madrid", "league": "La Liga"},
+        {"name": "Ousmane Dembele", "pos": "FW", "club": "PSG", "league": "Ligue 1"},
+        {"name": "Marcus Thuram", "pos": "FW", "club": "Inter Milan", "league": "Serie A"},
+        {"name": "Kingsley Coman", "pos": "FW", "club": "Bayern Munich", "league": "Bundesliga"},
+        {"name": "Bradley Barcola", "pos": "FW", "club": "PSG", "league": "Ligue 1"},
+        {"name": "N'Golo Kante", "pos": "MF", "club": "Al-Ittihad", "league": "Saudi Pro League"},
+        {"name": "Aurelien Tchouameni", "pos": "MF", "club": "Real Madrid", "league": "La Liga"},
+        {"name": "Adrien Rabiot", "pos": "MF", "club": "Juventus", "league": "Serie A"},
+        {"name": "Eduardo Camavinga", "pos": "MF", "club": "Real Madrid", "league": "La Liga"},
+        {"name": "Youssouf Fofana", "pos": "MF", "club": "AC Milan", "league": "Serie A"},
+        {"name": "William Saliba", "pos": "DF", "club": "Arsenal", "league": "Premier League"},
+        {"name": "Raphael Varane", "pos": "DF", "club": "Como", "league": "Serie A"},
+        {"name": "Dayot Upamecano", "pos": "DF", "club": "Bayern Munich", "league": "Bundesliga"},
+        {"name": "Jules Kounde", "pos": "DF", "club": "Barcelona", "league": "La Liga"},
+        {"name": "Theo Hernandez", "pos": "DF", "club": "AC Milan", "league": "Serie A"},
+        {"name": "Mike Maignan", "pos": "GK", "club": "AC Milan", "league": "Serie A"},
+        {"name": "Alphonse Areola", "pos": "GK", "club": "West Ham", "league": "Premier League"}
+      ]
+    },
+    "England": {
+      "fifa_code": "ENG",
+      "players": [
+        {"name": "Harry Kane", "pos": "FW", "club": "Bayern Munich", "league": "Bundesliga"},
+        {"name": "Phil Foden", "pos": "FW", "club": "Manchester City", "league": "Premier League"},
+        {"name": "Bukayo Saka", "pos": "FW", "club": "Arsenal", "league": "Premier League"},
+        {"name": "Marcus Rashford", "pos": "FW", "club": "Manchester United", "league": "Premier League"},
+        {"name": "Jude Bellingham", "pos": "MF", "club": "Real Madrid", "league": "La Liga"},
+        {"name": "Declan Rice", "pos": "MF", "club": "Arsenal", "league": "Premier League"},
+        {"name": "Kobbie Mainoo", "pos": "MF", "club": "Manchester United", "league": "Premier League"},
+        {"name": "Jordan Henderson", "pos": "MF", "club": "Ajax", "league": "Eredivisie"},
+        {"name": "Trent Alexander-Arnold", "pos": "DF", "club": "Real Madrid", "league": "La Liga"},
+        {"name": "Kyle Walker", "pos": "DF", "club": "Manchester City", "league": "Premier League"},
+        {"name": "John Stones", "pos": "DF", "club": "Manchester City", "league": "Premier League"},
+        {"name": "Marc Guehi", "pos": "DF", "club": "Crystal Palace", "league": "Premier League"},
+        {"name": "Luke Shaw", "pos": "DF", "club": "Manchester United", "league": "Premier League"},
+        {"name": "Jordan Pickford", "pos": "GK", "club": "Everton", "league": "Premier League"},
+        {"name": "Aaron Ramsdale", "pos": "GK", "club": "Southampton", "league": "Premier League"}
+      ]
+    },
+    "Germany": {
+      "fifa_code": "GER",
+      "players": [
+        {"name": "Florian Wirtz", "pos": "FW", "club": "Bayer Leverkusen", "league": "Bundesliga"},
+        {"name": "Jamal Musiala", "pos": "FW", "club": "Bayern Munich", "league": "Bundesliga"},
+        {"name": "Kai Havertz", "pos": "FW", "club": "Arsenal", "league": "Premier League"},
+        {"name": "Leroy Sane", "pos": "FW", "club": "Bayern Munich", "league": "Bundesliga"},
+        {"name": "Serge Gnabry", "pos": "FW", "club": "Bayern Munich", "league": "Bundesliga"},
+        {"name": "Thomas Muller", "pos": "FW", "club": "Bayern Munich", "league": "Bundesliga"},
+        {"name": "Joshua Kimmich", "pos": "MF", "club": "Bayern Munich", "league": "Bundesliga"},
+        {"name": "Toni Kroos", "pos": "MF", "club": "Real Madrid", "league": "La Liga"},
+        {"name": "Leon Goretzka", "pos": "MF", "club": "Bayern Munich", "league": "Bundesliga"},
+        {"name": "Ilkay Gundogan", "pos": "MF", "club": "Manchester City", "league": "Premier League"},
+        {"name": "Antonio Rudiger", "pos": "DF", "club": "Real Madrid", "league": "La Liga"},
+        {"name": "Nico Schlotterbeck", "pos": "DF", "club": "Borussia Dortmund", "league": "Bundesliga"},
+        {"name": "Benjamin Pavard", "pos": "DF", "club": "Inter Milan", "league": "Serie A"},
+        {"name": "David Raum", "pos": "DF", "club": "RB Leipzig", "league": "Bundesliga"},
+        {"name": "Manuel Neuer", "pos": "GK", "club": "Bayern Munich", "league": "Bundesliga"},
+        {"name": "Marc-Andre ter Stegen", "pos": "GK", "club": "Barcelona", "league": "La Liga"}
+      ]
+    },
+    "Spain": {
+      "fifa_code": "ESP",
+      "players": [
+        {"name": "Pedri", "pos": "MF", "club": "Barcelona", "league": "La Liga"},
+        {"name": "Gavi", "pos": "MF", "club": "Barcelona", "league": "La Liga"},
+        {"name": "Rodri", "pos": "MF", "club": "Manchester City", "league": "Premier League"},
+        {"name": "Fabian Ruiz", "pos": "MF", "club": "PSG", "league": "Ligue 1"},
+        {"name": "Mikel Merino", "pos": "MF", "club": "Arsenal", "league": "Premier League"},
+        {"name": "Nico Williams", "pos": "FW", "club": "Athletic Bilbao", "league": "La Liga"},
+        {"name": "Lamine Yamal", "pos": "FW", "club": "Barcelona", "league": "La Liga"},
+        {"name": "Alvaro Morata", "pos": "FW", "club": "AC Milan", "league": "Serie A"},
+        {"name": "Ferran Torres", "pos": "FW", "club": "Barcelona", "league": "La Liga"},
+        {"name": "Dani Olmo", "pos": "FW", "club": "Barcelona", "league": "La Liga"},
+        {"name": "Aymeric Laporte", "pos": "DF", "club": "Al-Nassr", "league": "Saudi Pro League"},
+        {"name": "Robin Le Normand", "pos": "DF", "club": "Atlético de Madrid", "league": "La Liga"},
+        {"name": "Daniel Carvajal", "pos": "DF", "club": "Real Madrid", "league": "La Liga"},
+        {"name": "Marc Cucurella", "pos": "DF", "club": "Chelsea", "league": "Premier League"},
+        {"name": "Alejandro Grimaldo", "pos": "DF", "club": "Bayer Leverkusen", "league": "Bundesliga"},
+        {"name": "Unai Simon", "pos": "GK", "club": "Athletic Bilbao", "league": "La Liga"},
+        {"name": "David Raya", "pos": "GK", "club": "Arsenal", "league": "Premier League"}
+      ]
+    },
+    "Portugal": {
+      "fifa_code": "POR",
+      "players": [
+        {"name": "Cristiano Ronaldo", "pos": "FW", "club": "Al-Nassr", "league": "Saudi Pro League"},
+        {"name": "Rafael Leao", "pos": "FW", "club": "AC Milan", "league": "Serie A"},
+        {"name": "Bernardo Silva", "pos": "MF", "club": "Manchester City", "league": "Premier League"},
+        {"name": "Bruno Fernandes", "pos": "MF", "club": "Manchester United", "league": "Premier League"},
+        {"name": "Joao Neves", "pos": "MF", "club": "PSG", "league": "Ligue 1"},
+        {"name": "Vitinha", "pos": "MF", "club": "PSG", "league": "Ligue 1"},
+        {"name": "Joao Cancelo", "pos": "DF", "club": "Barcelona", "league": "La Liga"},
+        {"name": "Ruben Dias", "pos": "DF", "club": "Manchester City", "league": "Premier League"},
+        {"name": "Pepe", "pos": "DF", "club": "Porto", "league": "Primeira Liga"},
+        {"name": "Diogo Dalot", "pos": "DF", "club": "Manchester United", "league": "Premier League"},
+        {"name": "Nuno Mendes", "pos": "DF", "club": "PSG", "league": "Ligue 1"},
+        {"name": "Diogo Costa", "pos": "GK", "club": "Porto", "league": "Primeira Liga"},
+        {"name": "Rui Patricio", "pos": "GK", "club": "Roma", "league": "Serie A"}
+      ]
+    },
+    "Netherlands": {
+      "fifa_code": "NED",
+      "players": [
+        {"name": "Virgil van Dijk", "pos": "DF", "club": "Liverpool", "league": "Premier League"},
+        {"name": "Frenkie de Jong", "pos": "MF", "club": "Barcelona", "league": "La Liga"},
+        {"name": "Cody Gakpo", "pos": "FW", "club": "Liverpool", "league": "Premier League"},
+        {"name": "Memphis Depay", "pos": "FW", "club": "Atletico de Madrid", "league": "La Liga"},
+        {"name": "Xavi Simons", "pos": "MF", "club": "RB Leipzig", "league": "Bundesliga"},
+        {"name": "Tijjani Reijnders", "pos": "MF", "club": "AC Milan", "league": "Serie A"},
+        {"name": "Nathan Ake", "pos": "DF", "club": "Manchester City", "league": "Premier League"},
+        {"name": "Denzel Dumfries", "pos": "DF", "club": "Inter Milan", "league": "Serie A"},
+        {"name": "Stefan de Vrij", "pos": "DF", "club": "Inter Milan", "league": "Serie A"},
+        {"name": "Davy Klaassen", "pos": "MF", "club": "Ajax", "league": "Eredivisie"},
+        {"name": "Bart Verbruggen", "pos": "GK", "club": "Brighton", "league": "Premier League"},
+        {"name": "Mark Flekken", "pos": "GK", "club": "Brentford", "league": "Premier League"}
+      ]
+    },
+    "Italy": {
+      "fifa_code": "ITA",
+      "players": [
+        {"name": "Federico Chiesa", "pos": "FW", "club": "Liverpool", "league": "Premier League"},
+        {"name": "Giacomo Raspadori", "pos": "FW", "club": "Napoli", "league": "Serie A"},
+        {"name": "Sandro Tonali", "pos": "MF", "club": "Newcastle", "league": "Premier League"},
+        {"name": "Nicolo Barella", "pos": "MF", "club": "Inter Milan", "league": "Serie A"},
+        {"name": "Jorginho", "pos": "MF", "club": "Arsenal", "league": "Premier League"},
+        {"name": "Lorenzo Pellegrini", "pos": "MF", "club": "Roma", "league": "Serie A"},
+        {"name": "Ciro Immobile", "pos": "FW", "club": "Lazio", "league": "Serie A"},
+        {"name": "Alessandro Bastoni", "pos": "DF", "club": "Inter Milan", "league": "Serie A"},
+        {"name": "Giovanni Di Lorenzo", "pos": "DF", "club": "Napoli", "league": "Serie A"},
+        {"name": "Federico Dimarco", "pos": "DF", "club": "Inter Milan", "league": "Serie A"},
+        {"name": "Gianluigi Donnarumma", "pos": "GK", "club": "PSG", "league": "Ligue 1"},
+        {"name": "Alessandro Meret", "pos": "GK", "club": "Napoli", "league": "Serie A"}
+      ]
+    },
+    "Morocco": {
+      "fifa_code": "MAR",
+      "players": [
+        {"name": "Hakim Ziyech", "pos": "FW", "club": "Galatasaray", "league": "Super Lig"},
+        {"name": "Youssef En-Nesyri", "pos": "FW", "club": "Fenerbahce", "league": "Super Lig"},
+        {"name": "Sofiane Boufal", "pos": "FW", "club": "Southampton", "league": "Championship"},
+        {"name": "Abderrazak Hamdallah", "pos": "FW", "club": "Al-Ittihad", "league": "Saudi Pro League"},
+        {"name": "Azzedine Ounahi", "pos": "MF", "club": "Marseille", "league": "Ligue 1"},
+        {"name": "Selim Amallah", "pos": "MF", "club": "Standard Liège", "league": "Jupiler Pro League"},
+        {"name": "Sofyan Amrabat", "pos": "MF", "club": "Manchester United", "league": "Premier League"},
+        {"name": "Noussair Mazraoui", "pos": "DF", "club": "Manchester United", "league": "Premier League"},
+        {"name": "Achraf Hakimi", "pos": "DF", "club": "PSG", "league": "Ligue 1"},
+        {"name": "Romain Saiss", "pos": "DF", "club": "Besiktas", "league": "Super Lig"},
+        {"name": "Nayef Aguerd", "pos": "DF", "club": "West Ham", "league": "Premier League"},
+        {"name": "Yassine Bounou", "pos": "GK", "club": "Al-Hilal", "league": "Saudi Pro League"}
+      ]
+    },
+    "Japan": {
+      "fifa_code": "JPN",
+      "players": [
+        {"name": "Takumi Minamino", "pos": "FW", "club": "Monaco", "league": "Ligue 1"},
+        {"name": "Daichi Kamada", "pos": "MF", "club": "Lazio", "league": "Serie A"},
+        {"name": "Wataru Endo", "pos": "MF", "club": "Liverpool", "league": "Premier League"},
+        {"name": "Hidemasa Morita", "pos": "MF", "club": "Sporting CP", "league": "Primeira Liga"},
+        {"name": "Ritsu Doan", "pos": "FW", "club": "Freiburg", "league": "Bundesliga"},
+        {"name": "Kaoru Mitoma", "pos": "FW", "club": "Brighton", "league": "Premier League"},
+        {"name": "Ayase Ueda", "pos": "FW", "club": "Feyenoord", "league": "Eredivisie"},
+        {"name": "Takehiro Tomiyasu", "pos": "DF", "club": "Arsenal", "league": "Premier League"},
+        {"name": "Ko Itakura", "pos": "DF", "club": "Borussia M'gladbach", "league": "Bundesliga"},
+        {"name": "Maya Yoshida", "pos": "DF", "club": "LA Galaxy", "league": "MLS"},
+        {"name": "Shuichi Gonda", "pos": "GK", "club": "Shimizu S-Pulse", "league": "J-League"}
+      ]
+    },
+    "USA": {
+      "fifa_code": "USA",
+      "players": [
+        {"name": "Christian Pulisic", "pos": "FW", "club": "AC Milan", "league": "Serie A"},
+        {"name": "Gio Reyna", "pos": "FW", "club": "Borussia Dortmund", "league": "Bundesliga"},
+        {"name": "Josh Sargent", "pos": "FW", "club": "Norwich City", "league": "Championship"},
+        {"name": "Tim Weah", "pos": "FW", "club": "Juventus", "league": "Serie A"},
+        {"name": "Weston McKennie", "pos": "MF", "club": "Juventus", "league": "Serie A"},
+        {"name": "Tyler Adams", "pos": "MF", "club": "Bournemouth", "league": "Premier League"},
+        {"name": "Yunus Musah", "pos": "MF", "club": "AC Milan", "league": "Serie A"},
+        {"name": "Sergiño Dest", "pos": "DF", "club": "PSV Eindhoven", "league": "Eredivisie"},
+        {"name": "Joe Scally", "pos": "DF", "club": "Borussia M'gladbach", "league": "Bundesliga"},
+        {"name": "Cameron Carter-Vickers", "pos": "DF", "club": "Celtic", "league": "Scottish Premiership"},
+        {"name": "Matt Turner", "pos": "GK", "club": "Nottingham Forest", "league": "Premier League"},
+        {"name": "Zack Steffen", "pos": "GK", "club": "Colorado Rapids", "league": "MLS"}
+      ]
+    },
+    "Mexico": {
+      "fifa_code": "MEX",
+      "players": [
+        {"name": "Hirving Lozano", "pos": "FW", "club": "PSV Eindhoven", "league": "Eredivisie"},
+        {"name": "Raul Jimenez", "pos": "FW", "club": "Fulham", "league": "Premier League"},
+        {"name": "Henry Martin", "pos": "FW", "club": "Club América", "league": "Liga MX"},
+        {"name": "Alexis Vega", "pos": "FW", "club": "Toluca", "league": "Liga MX"},
+        {"name": "Orbelin Pineda", "pos": "MF", "club": "AEK Athens", "league": "Super League Greece"},
+        {"name": "Edson Alvarez", "pos": "MF", "club": "West Ham", "league": "Premier League"},
+        {"name": "Hector Herrera", "pos": "MF", "club": "Houston Dynamo", "league": "MLS"},
+        {"name": "Andres Guardado", "pos": "MF", "club": "Real Betis", "league": "La Liga"},
+        {"name": "Jorge Sanchez", "pos": "DF", "club": "Ajax", "league": "Eredivisie"},
+        {"name": "Cesar Montes", "pos": "DF", "club": "Espanyol", "league": "La Liga"},
+        {"name": "Hector Moreno", "pos": "DF", "club": "Monterrey", "league": "Liga MX"},
+        {"name": "Guillermo Ochoa", "pos": "GK", "club": "Salernitana", "league": "Serie B"}
+      ]
+    },
+    "Canada": {
+      "fifa_code": "CAN",
+      "players": [
+        {"name": "Alphonso Davies", "pos": "DF", "club": "Bayern Munich", "league": "Bundesliga"},
+        {"name": "Jonathan David", "pos": "FW", "club": "Lille", "league": "Ligue 1"},
+        {"name": "Cyle Larin", "pos": "FW", "club": "Club Brugge", "league": "Jupiler Pro League"},
+        {"name": "Tajon Buchanan", "pos": "FW", "club": "Inter Milan", "league": "Serie A"},
+        {"name": "Atiba Hutchinson", "pos": "MF", "club": "Besiktas", "league": "Super Lig"},
+        {"name": "Stephen Eustaquio", "pos": "MF", "club": "Porto", "league": "Primeira Liga"},
+        {"name": "Liam Millar", "pos": "FW", "club": "FC Basel", "league": "Swiss Super League"},
+        {"name": "Alistair Johnston", "pos": "DF", "club": "Celtic", "league": "Scottish Premiership"},
+        {"name": "Kamal Miller", "pos": "DF", "club": "DC United", "league": "MLS"},
+        {"name": "Milan Borjan", "pos": "GK", "club": "Red Star Belgrade", "league": "Serbian SuperLiga"}
+      ]
+    },
+    "Uruguay": {
+      "fifa_code": "URU",
+      "players": [
+        {"name": "Federico Valverde", "pos": "MF", "club": "Real Madrid", "league": "La Liga"},
+        {"name": "Darwin Nunez", "pos": "FW", "club": "Liverpool", "league": "Premier League"},
+        {"name": "Luis Suarez", "pos": "FW", "club": "Inter Miami", "league": "MLS"},
+        {"name": "Rodrigo Bentancur", "pos": "MF", "club": "Tottenham", "league": "Premier League"},
+        {"name": "Fede Garcia", "pos": "MF", "club": "Betis", "league": "La Liga"},
+        {"name": "Ronald Araujo", "pos": "DF", "club": "Barcelona", "league": "La Liga"},
+        {"name": "Jose Maria Gimenez", "pos": "DF", "club": "Atletico de Madrid", "league": "La Liga"},
+        {"name": "Mathias Olivera", "pos": "DF", "club": "Napoli", "league": "Serie A"},
+        {"name": "Nahitan Nandez", "pos": "MF", "club": "Cagliari", "league": "Serie A"},
+        {"name": "Sebastian Coates", "pos": "DF", "club": "Sporting CP", "league": "Primeira Liga"},
+        {"name": "Sebastian Caceres", "pos": "GK", "club": "Club Nacional", "league": "Primera División Uruguay"}
+      ]
+    },
+    "Colombia": {
+      "fifa_code": "COL",
+      "players": [
+        {"name": "James Rodriguez", "pos": "MF", "club": "Rayo Vallecano", "league": "La Liga"},
+        {"name": "Luis Diaz", "pos": "FW", "club": "Liverpool", "league": "Premier League"},
+        {"name": "Falcao", "pos": "FW", "club": "Millonarios", "league": "Liga BetPlay"},
+        {"name": "Rafael Santos Borre", "pos": "FW", "club": "Werder Bremen", "league": "Bundesliga"},
+        {"name": "Juan Cuadrado", "pos": "MF", "club": "Juventus", "league": "Serie A"},
+        {"name": "Mateus Uribe", "pos": "MF", "club": "Porto", "league": "Primeira Liga"},
+        {"name": "Jhon Arias", "pos": "MF", "club": "Fluminense", "league": "Brasileirao"},
+        {"name": "Davinson Sanchez", "pos": "DF", "club": "Galatasaray", "league": "Super Lig"},
+        {"name": "Jhon Lucumi", "pos": "DF", "club": "Bologna", "league": "Serie A"},
+        {"name": "Daniel Munoz", "pos": "DF", "club": "Crystal Palace", "league": "Premier League"},
+        {"name": "Camilo Vargas", "pos": "GK", "club": "Atlas", "league": "Liga MX"}
+      ]
+    },
+    "Ecuador": {
+      "fifa_code": "ECU",
+      "players": [
+        {"name": "Enner Valencia", "pos": "FW", "club": "Fenerbahce", "league": "Super Lig"},
+        {"name": "Moises Caicedo", "pos": "MF", "club": "Chelsea", "league": "Premier League"},
+        {"name": "Jeremy Sarmiento", "pos": "FW", "club": "Brighton", "league": "Premier League"},
+        {"name": "Jhegson Mendez", "pos": "MF", "club": "LA Galaxy", "league": "MLS"},
+        {"name": "Gonzalo Plata", "pos": "FW", "club": "Sporting CP", "league": "Primeira Liga"},
+        {"name": "Pervis Estupinan", "pos": "DF", "club": "Brighton", "league": "Premier League"},
+        {"name": "Piero Hincapie", "pos": "DF", "club": "Bayer Leverkusen", "league": "Bundesliga"},
+        {"name": "Felix Torres", "pos": "DF", "club": "Santos Laguna", "league": "Liga MX"},
+        {"name": "Hernan Galindez", "pos": "GK", "club": "Aucas", "league": "LigaPro Ecuador"}
+      ]
+    },
+    "Senegal": {
+      "fifa_code": "SEN",
+      "players": [
+        {"name": "Sadio Mane", "pos": "FW", "club": "Al-Nassr", "league": "Saudi Pro League"},
+        {"name": "Ismaila Sarr", "pos": "FW", "club": "Crystal Palace", "league": "Premier League"},
+        {"name": "Iliman Ndiaye", "pos": "FW", "club": "Everton", "league": "Premier League"},
+        {"name": "Habib Diallo", "pos": "FW", "club": "Strasbourg", "league": "Ligue 1"},
+        {"name": "Pape Matar Sarr", "pos": "MF", "club": "Tottenham", "league": "Premier League"},
+        {"name": "Cheikhou Kouyate", "pos": "MF", "club": "Nottingham Forest", "league": "Premier League"},
+        {"name": "Nampalys Mendy", "pos": "MF", "club": "Nice", "league": "Ligue 1"},
+        {"name": "Kalidou Koulibaly", "pos": "DF", "club": "Al-Hilal", "league": "Saudi Pro League"},
+        {"name": "Abdou Diallo", "pos": "DF", "club": "RB Leipzig", "league": "Bundesliga"},
+        {"name": "Edouard Mendy", "pos": "GK", "club": "Al-Ahli", "league": "Saudi Pro League"}
+      ]
+    },
+    "Australia": {
+      "fifa_code": "AUS",
+      "players": [
+        {"name": "Mathew Ryan", "pos": "GK", "club": "Real Sociedad", "league": "La Liga"},
+        {"name": "Harry Souttar", "pos": "DF", "club": "Leicester City", "league": "Championship"},
+        {"name": "Milos Degenek", "pos": "DF", "club": "Columbus Crew", "league": "MLS"},
+        {"name": "Mitchell Duke", "pos": "FW", "club": "Fagiano Okayama", "league": "J-League 2"},
+        {"name": "Ajdin Hrustic", "pos": "MF", "club": "Hellas Verona", "league": "Serie A"},
+        {"name": "Aaron Mooy", "pos": "MF", "club": "Celtic", "league": "Scottish Premiership"},
+        {"name": "Martin Boyle", "pos": "FW", "club": "Hibernian", "league": "Scottish Premiership"},
+        {"name": "Riley McGree", "pos": "MF", "club": "Middlesbrough", "league": "Championship"}
+      ]
+    },
+    "Saudi Arabia": {
+      "fifa_code": "KSA",
+      "players": [
+        {"name": "Salem Al-Dawsari", "pos": "FW", "club": "Al-Hilal", "league": "Saudi Pro League"},
+        {"name": "Saleh Al-Shehri", "pos": "FW", "club": "Al-Hilal", "league": "Saudi Pro League"},
+        {"name": "Mohammed Al-Owais", "pos": "GK", "club": "Al-Hilal", "league": "Saudi Pro League"},
+        {"name": "Abdulelah Al-Malki", "pos": "MF", "club": "Al-Shabab", "league": "Saudi Pro League"},
+        {"name": "Ali Al-Bulaihi", "pos": "DF", "club": "Al-Hilal", "league": "Saudi Pro League"},
+        {"name": "Yasser Al-Shahrani", "pos": "DF", "club": "Al-Hilal", "league": "Saudi Pro League"}
+      ]
+    },
+    "Qatar": {
+      "fifa_code": "QAT",
+      "players": [
+        {"name": "Akram Afif", "pos": "FW", "club": "Al-Sadd", "league": "QSL"},
+        {"name": "Almoez Ali", "pos": "FW", "club": "Al-Duhail", "league": "QSL"},
+        {"name": "Hassan Al-Haydos", "pos": "MF", "club": "Al-Sadd", "league": "QSL"},
+        {"name": "Pedro Miguel", "pos": "DF", "club": "Al-Sadd", "league": "QSL"},
+        {"name": "Meshaal Barsham", "pos": "GK", "club": "Al-Sadd", "league": "QSL"}
+      ]
+    },
+    "Switzerland": {
+      "fifa_code": "SUI",
+      "players": [
+        {"name": "Granit Xhaka", "pos": "MF", "club": "Bayer Leverkusen", "league": "Bundesliga"},
+        {"name": "Xherdan Shaqiri", "pos": "FW", "club": "Basel", "league": "Swiss Super League"},
+        {"name": "Haris Seferovic", "pos": "FW", "club": "Galatasaray", "league": "Super Lig"},
+        {"name": "Manuel Akanji", "pos": "DF", "club": "Manchester City", "league": "Premier League"},
+        {"name": "Nico Elvedi", "pos": "DF", "club": "Borussia M'gladbach", "league": "Bundesliga"},
+        {"name": "Ricardo Rodriguez", "pos": "DF", "club": "Torino", "league": "Serie A"},
+        {"name": "Yann Sommer", "pos": "GK", "club": "Inter Milan", "league": "Serie A"}
+      ]
+    },
+    "Belgium": {
+      "fifa_code": "BEL",
+      "players": [
+        {"name": "Kevin De Bruyne", "pos": "MF", "club": "Manchester City", "league": "Premier League"},
+        {"name": "Romelu Lukaku", "pos": "FW", "club": "Roma", "league": "Serie A"},
+        {"name": "Eden Hazard", "pos": "FW", "club": "Real Madrid", "league": "La Liga"},
+        {"name": "Dries Mertens", "pos": "FW", "club": "Galatasaray", "league": "Super Lig"},
+        {"name": "Yannick Carrasco", "pos": "FW", "club": "Atletico de Madrid", "league": "La Liga"},
+        {"name": "Axel Witsel", "pos": "MF", "club": "Atletico de Madrid", "league": "La Liga"},
+        {"name": "Leandro Trossard", "pos": "FW", "club": "Arsenal", "league": "Premier League"},
+        {"name": "Toby Alderweireld", "pos": "DF", "club": "Royal Antwerp", "league": "Jupiler Pro League"},
+        {"name": "Jan Vertonghen", "pos": "DF", "club": "Anderlecht", "league": "Jupiler Pro League"},
+        {"name": "Thibaut Courtois", "pos": "GK", "club": "Real Madrid", "league": "La Liga"}
+      ]
+    },
+    "Croatia": {
+      "fifa_code": "CRO",
+      "players": [
+        {"name": "Luka Modric", "pos": "MF", "club": "Real Madrid", "league": "La Liga"},
+        {"name": "Ivan Perisic", "pos": "FW", "club": "Hajduk Split", "league": "HNL"},
+        {"name": "Ante Rebic", "pos": "FW", "club": "AC Milan", "league": "Serie A"},
+        {"name": "Marcelo Brozovic", "pos": "MF", "club": "Al-Nassr", "league": "Saudi Pro League"},
+        {"name": "Mateo Kovacic", "pos": "MF", "club": "Manchester City", "league": "Premier League"},
+        {"name": "Josko Gvardiol", "pos": "DF", "club": "Manchester City", "league": "Premier League"},
+        {"name": "Dejan Lovren", "pos": "DF", "club": "Zenit St. Petersburg", "league": "RPL"},
+        {"name": "Sime Vrsaljko", "pos": "DF", "club": "Atletico de Madrid", "league": "La Liga"},
+        {"name": "Dominik Livakovic", "pos": "GK", "club": "Fenerbahce", "league": "Super Lig"}
+      ]
+    },
+    "Denmark": {
+      "fifa_code": "DEN",
+      "players": [
+        {"name": "Christian Eriksen", "pos": "MF", "club": "Manchester United", "league": "Premier League"},
+        {"name": "Pierre-Emile Hojbjerg", "pos": "MF", "club": "Tottenham", "league": "Premier League"},
+        {"name": "Kasper Dolberg", "pos": "FW", "club": "Sevilla", "league": "La Liga"},
+        {"name": "Andreas Skov Olsen", "pos": "FW", "club": "Club Brugge", "league": "Jupiler Pro League"},
+        {"name": "Simon Kjaer", "pos": "DF", "club": "AC Milan", "league": "Serie A"},
+        {"name": "Andreas Christensen", "pos": "DF", "club": "Barcelona", "league": "La Liga"},
+        {"name": "Kasper Schmeichel", "pos": "GK", "club": "Nice", "league": "Ligue 1"}
+      ]
+    },
+    "Poland": {
+      "fifa_code": "POL",
+      "players": [
+        {"name": "Robert Lewandowski", "pos": "FW", "club": "Barcelona", "league": "La Liga"},
+        {"name": "Piotr Zielinski", "pos": "MF", "club": "Napoli", "league": "Serie A"},
+        {"name": "Arkadiusz Milik", "pos": "FW", "club": "Juventus", "league": "Serie A"},
+        {"name": "Grzegorz Krychowiak", "pos": "MF", "club": "Al-Shabab", "league": "Saudi Pro League"},
+        {"name": "Matty Cash", "pos": "DF", "club": "Aston Villa", "league": "Premier League"},
+        {"name": "Wojciech Szczesny", "pos": "GK", "club": "Barcelona", "league": "La Liga"}
+      ]
+    },
+    "Serbia": {
+      "fifa_code": "SRB",
+      "players": [
+        {"name": "Dusan Vlahovic", "pos": "FW", "club": "Juventus", "league": "Serie A"},
+        {"name": "Dusan Tadic", "pos": "MF", "club": "Fenerbahce", "league": "Super Lig"},
+        {"name": "Aleksandar Mitrovic", "pos": "FW", "club": "Al-Hilal", "league": "Saudi Pro League"},
+        {"name": "Nemanja Matic", "pos": "MF", "club": "Lyon", "league": "Ligue 1"},
+        {"name": "Sergej Milinkovic-Savic", "pos": "MF", "club": "Al-Hilal", "league": "Saudi Pro League"},
+        {"name": "Predrag Rajkovic", "pos": "GK", "club": "Atletico de Madrid", "league": "La Liga"}
+      ]
+    },
+    "Cameroon": {
+      "fifa_code": "CMR",
+      "players": [
+        {"name": "Vincent Aboubakar", "pos": "FW", "club": "Besiktas", "league": "Super Lig"},
+        {"name": "Eric Maxim Choupo-Moting", "pos": "FW", "club": "Bayern Munich", "league": "Bundesliga"},
+        {"name": "Andre Onana", "pos": "GK", "club": "Manchester United", "league": "Premier League"},
+        {"name": "Nicolas Nkoulou", "pos": "DF", "club": "Parma", "league": "Serie A"},
+        {"name": "Anguissa", "pos": "MF", "club": "Napoli", "league": "Serie A"}
+      ]
+    },
+    "Ghana": {
+      "fifa_code": "GHA",
+      "players": [
+        {"name": "Thomas Partey", "pos": "MF", "club": "Arsenal", "league": "Premier League"},
+        {"name": "Jordan Ayew", "pos": "FW", "club": "Crystal Palace", "league": "Premier League"},
+        {"name": "Andre Ayew", "pos": "FW", "club": "Le Havre", "league": "Ligue 1"},
+        {"name": "Mohammed Kudus", "pos": "MF", "club": "West Ham", "league": "Premier League"},
+        {"name": "Lawrence Ati-Zigi", "pos": "GK", "club": "St. Gallen", "league": "Swiss Super League"}
+      ]
+    },
+    "South Korea": {
+      "fifa_code": "KOR",
+      "players": [
+        {"name": "Son Heung-min", "pos": "FW", "club": "Tottenham", "league": "Premier League"},
+        {"name": "Lee Kang-in", "pos": "MF", "club": "PSG", "league": "Ligue 1"},
+        {"name": "Hwang Hee-chan", "pos": "FW", "club": "Wolverhampton", "league": "Premier League"},
+        {"name": "Kim Min-jae", "pos": "DF", "club": "Bayern Munich", "league": "Bundesliga"},
+        {"name": "Hwang In-beom", "pos": "MF", "club": "Feyenoord", "league": "Eredivisie"},
+        {"name": "Kim Seung-gyu", "pos": "GK", "club": "Al-Shabab", "league": "Saudi Pro League"}
+      ]
+    },
+    "Iran": {
+      "fifa_code": "IRN",
+      "players": [
+        {"name": "Sardar Azmoun", "pos": "FW", "club": "Bayer Leverkusen", "league": "Bundesliga"},
+        {"name": "Mehdi Taremi", "pos": "FW", "club": "Inter Milan", "league": "Serie A"},
+        {"name": "Alireza Jahanbakhsh", "pos": "FW", "club": "Feyenoord", "league": "Eredivisie"},
+        {"name": "Saman Ghoddos", "pos": "MF", "club": "Brentford", "league": "Premier League"},
+        {"name": "Alireza Beiranvand", "pos": "GK", "club": "Antwerp", "league": "Jupiler Pro League"}
+      ]
+    },
+    "Ivory Coast": {
+      "fifa_code": "CIV",
+      "players": [
+        {"name": "Didier Drogba", "pos": "FW", "club": "Retired", "league": "—"},
+        {"name": "Franck Kessie", "pos": "MF", "club": "Barcelona", "league": "La Liga"},
+        {"name": "Nicolas Pepe", "pos": "FW", "club": "Nice", "league": "Ligue 1"},
+        {"name": "Jean-Philippe Krasso", "pos": "FW", "club": "Saint-Étienne", "league": "Ligue 1"},
+        {"name": "Sebastien Haller", "pos": "FW", "club": "Borussia Dortmund", "league": "Bundesliga"},
+        {"name": "Serge Aurier", "pos": "DF", "club": "Villarreal", "league": "La Liga"},
+        {"name": "Odilon Kossounou", "pos": "DF", "club": "Bayer Leverkusen", "league": "Bundesliga"},
+        {"name": "Fiacre Nubel", "pos": "GK", "club": "Monaco", "league": "Ligue 1"}
+      ]
+    }
+  }
+}

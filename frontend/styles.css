@@ -364,6 +364,8 @@ input[type="date"] {
 .score .vs { color: var(--muted); font-size: 12px; font-weight: 600; }
 .mc-bottom { margin-top: 10px; color: var(--muted); font-size: 11px; display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
 .mc-bottom .ko { color: var(--text); font-weight: 600; }
+.mc-bottom .mc-canal { background: rgba(34,197,94,0.12); color: var(--accent); border: 1px solid rgba(34,197,94,0.25); border-radius: 6px; padding: 2px 8px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.3px; }
+.mc-bottom .mc-venue { color: var(--muted); font-size: 10.5px; }
 .empty, .error-box {
   text-align: center; color: var(--muted); padding: 44px 18px; font-size: 14px;
   border: 1px dashed var(--line); border-radius: 14px;
@@ -602,6 +604,35 @@ code { font-family: "Cascadia Code", Consolas, monospace; }
   background: rgba(255, 209, 102, 0.07); border: 1px solid rgba(255, 209, 102, 0.25);
 }
 .bet-disclaimer { margin-top: 8px; font-size: 10.5px; color: var(--muted); line-height: 1.45; }
+
+/* ── Mercados alternativos (córners, amarillas, faltas) ── */
+.alt-combos-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 4px; }
+@media (max-width: 560px) { .alt-combos-wrap { grid-template-columns: 1fr; } }
+.alt-combo-card {
+  border-radius: 13px; padding: 12px 13px; border: 1px solid var(--line);
+  background: var(--panel-2); display: flex; flex-direction: column; gap: 6px;
+}
+.alt-combo-card.alt-secure { border-color: rgba(99, 179, 237, 0.4); background: rgba(99, 179, 237, 0.06); }
+.alt-combo-card.alt-parlay { border-color: rgba(255, 180, 50, 0.35); background: rgba(255, 180, 50, 0.06); }
+.alt-combo-head {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font-size: 12.5px; margin-bottom: 1px;
+}
+.alt-combo-pct {
+  font-size: 12px; font-weight: 800; padding: 1px 8px; border-radius: 20px;
+  background: rgba(10, 17, 30, 0.5); border: 1px solid var(--line); margin-left: auto;
+}
+.alt-combo-odds { font-size: 11px; color: var(--muted); }
+.alt-combo-note { font-size: 10.5px; color: var(--muted); line-height: 1.4; margin-bottom: 2px; }
+.alt-combo-leg {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  font-size: 12px; line-height: 1.4; padding: 6px 9px;
+  background: rgba(10, 17, 30, 0.35); border-radius: 9px;
+}
+.alt-leg-label { flex: 1; }
+.alt-leg-prob { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--accent); flex-shrink: 0; }
+.alt-combo-card.alt-parlay .alt-leg-prob { color: #f5c842; }
+
 .doradobet-warn {
   background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.3);
   border-radius: 8px; padding: 8px 12px; font-size: 12px; color: #fbbf24;
@@ -614,6 +645,12 @@ code { font-family: "Cascadia Code", Consolas, monospace; }
   font-size: 10px; font-weight: 600; letter-spacing: .3px; color: var(--accent);
   background: rgba(46,230,166,.13); border: 1px solid rgba(46,230,166,.22);
   border-radius: 20px; padding: 2px 8px; margin-left: 7px; vertical-align: middle;
+  text-transform: lowercase;
+}
+.est-badge {
+  font-size: 10px; font-weight: 600; letter-spacing: .3px; color: #f5a623;
+  background: rgba(245,166,35,.12); border: 1px solid rgba(245,166,35,.28);
+  border-radius: 20px; padding: 2px 7px; margin-left: 5px; vertical-align: middle;
   text-transform: lowercase;
 }
 .local-read {
@@ -1881,6 +1918,17 @@ code { font-family: "Cascadia Code", Consolas, monospace; }
 .sr-source-col ul { margin: 6px 0 0; padding-left: 16px; font-size: 12px; line-height: 1.7; color: var(--muted); }
 .sr-source-title { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
 .small-btn { font-size: 12px; padding: 5px 10px; }
+/* ── Model Health Dashboard ─────────────────────────────────────────────── */
+.mh-curve-wrap { display: flex; flex-direction: column; gap: 5px; margin: 10px 0 16px; }
+.mh-bucket { display: grid; grid-template-columns: 60px 1fr 44px 30px; gap: 8px; align-items: center; font-size: 12px; }
+.mh-bucket-range { color: var(--muted); font-size: 11px; }
+.mh-bucket-bar { height: 10px; background: var(--panel-2); border-radius: 5px; overflow: hidden; }
+.mh-bucket-fill { height: 100%; border-radius: 5px; transition: width .3s; }
+.mh-bucket-gap { font-weight: 700; font-size: 11px; text-align: right; }
+.mh-bucket-n { font-size: 10px; color: var(--muted); }
+.mh-bias-item { background: var(--panel-2); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; font-size: 13px; line-height: 1.5; }
+.mh-source-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.mh-source-row:last-child { border-bottom: none; }
 /* ── Champion prediction banner ─────────────────────────────────────────── */
 .q-champ-banner {
   background: linear-gradient(135deg, #0f172a 0%, #0a1610 100%);
@@ -2200,3 +2248,72 @@ code { font-family: "Cascadia Code", Consolas, monospace; }
 .pmr-accuracy-bar { height: 4px; background: rgba(255,255,255,.08); margin: 0 16px 4px; border-radius: 2px; overflow: hidden; }
 .pmr-accuracy-fill { height: 100%; border-radius: 2px; transition: width .6s ease; }
 .pmr-accuracy-label { text-align: right; font-size: 11px; font-weight: 700; padding: 0 16px 12px; }
+
+/* ── Market Consensus Block ──────────────────────────────────── */
+.consensus-block { margin: 12px 0 16px; padding: 12px 14px; border-radius: 12px; border-left: 4px solid; }
+.consensus-high   { background: rgba(74,222,128,.07); border-color: #4ade80; }
+.consensus-medium { background: rgba(250,204,21,.07);  border-color: #facc15; }
+.consensus-low    { background: rgba(248,113,113,.07); border-color: #f87171; }
+.consensus-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.consensus-badge  { font-size: 12.5px; font-weight: 700; }
+.consensus-delta  { font-size: 11px; color: var(--muted); background: rgba(255,255,255,.07); padding: 2px 7px; border-radius: 5px; }
+.consensus-row    { display: flex; gap: 14px; }
+.consensus-col    { flex: 1; background: rgba(255,255,255,.04); border-radius: 8px; padding: 8px 10px; }
+.consensus-col-label { font-size: 10.5px; color: var(--muted); margin-bottom: 3px; }
+.consensus-col-val   { font-size: 14px; font-weight: 700; color: var(--text); }
+.consensus-odds   { margin-top: 8px; font-size: 11px; color: var(--muted); text-align: center; letter-spacing: .03em; }
+
+/* ── Análisis por tiempos (byHalves) ────────────────────────────────────── */
+.bh-container { display: flex; flex-direction: column; gap: 14px; margin-bottom: 6px; }
+.bh-half { background: rgba(255,255,255,.03); border-radius: 12px; padding: 12px 14px; border: 1px solid rgba(255,255,255,.06); }
+.bh-half-title { font-size: 12px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+.bh-stats-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.bh-stat { flex: 1; background: rgba(255,255,255,.04); border-radius: 8px; padding: 7px 8px; text-align: center; }
+.bh-stat-lbl { display: block; font-size: 9.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 3px; }
+.bh-stat-val { font-size: 15px; font-weight: 700; color: var(--text); }
+.bh-stat-val.bh-pct { color: #4ade80; }
+.bh-markafirst { font-size: 11.5px; color: var(--muted); margin-bottom: 10px; }
+.bh-markafirst strong { color: var(--text); }
+.bh-bars { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+.bh-bar-row { display: flex; align-items: center; gap: 7px; }
+.bh-bar-lbl { font-size: 10px; color: var(--muted); width: 34px; flex-shrink: 0; }
+.bh-bar-track { flex: 1; height: 6px; background: rgba(255,255,255,.08); border-radius: 3px; overflow: hidden; }
+.bh-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #17c389); border-radius: 3px; transition: width .4s ease; }
+.bh-bar-val { font-size: 10px; color: var(--muted); width: 44px; flex-shrink: 0; text-align: right; }
+.bh-break-bar .bh-bar-lbl { color: #facc15; }
+.bh-break-bar .bh-bar-fill { background: linear-gradient(90deg, #facc15, #f59e0b); }
+.bh-break-tag { font-size: 9px; font-weight: 700; color: #f59e0b; background: rgba(245,158,11,.13); padding: 1px 5px; border-radius: 4px; }
+.bh-break-info { font-size: 11px; color: var(--muted); border-top: 1px solid rgba(255,255,255,.06); padding-top: 8px; }
+.bh-break-info strong { color: #facc15; }
+.bh-divider { height: 1px; background: rgba(255,255,255,.05); }
+
+/* ── byHalves v2 — extended layout ─────────────────────────────────────── */
+.bh-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px; }
+.bh-pct-g { color: #4ade80; }
+.bh-market-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.bh-market { flex: 1; display: flex; align-items: flex-start; gap: 8px; background: rgba(255,255,255,.04); border-radius: 8px; padding: 8px 10px; }
+.bh-mkt-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.bh-mkt-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.bh-mkt-label { font-size: 9.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+.bh-mkt-total { font-size: 18px; font-weight: 800; color: var(--text); line-height: 1; }
+.bh-mkt-sub { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bh-score1st { font-size: 11.5px; color: var(--muted); margin-bottom: 8px; }
+.bh-score1st strong { color: var(--text); }
+.bh-ht-row { display: flex; align-items: center; gap: 6px; font-size: 11px; background: rgba(255,255,255,.04); border-radius: 6px; padding: 6px 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.bh-ht-label { font-size: 9.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; flex-shrink: 0; }
+.bh-ht-seg { font-weight: 700; }
+.bh-seg-h { color: var(--accent); }
+.bh-seg-d { color: #94a3b8; }
+.bh-seg-a { color: var(--accent-2); }
+.bh-ht-sep { color: rgba(255,255,255,.2); }
+.bh-bars-header { display: grid; grid-template-columns: 38px 1fr 1fr 1fr; gap: 4px; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 4px; padding: 0 2px; }
+.bh-bh-tramo { }
+.bh-bh-col { text-align: center; }
+.bh-bar-row { display: flex; align-items: center; gap: 5px; }
+.bh-bar-wrap { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; }
+.bh-bar-track { flex: 1; height: 5px; background: rgba(255,255,255,.08); border-radius: 3px; overflow: hidden; }
+.bh-fill-goal { background: linear-gradient(90deg, var(--accent), #17c389); height: 100%; border-radius: 3px; transition: width .4s; }
+.bh-fill-corner { background: linear-gradient(90deg, #60a5fa, #3b82f6); height: 100%; border-radius: 3px; transition: width .4s; }
+.bh-fill-card { background: linear-gradient(90deg, #fbbf24, #f59e0b); height: 100%; border-radius: 3px; transition: width .4s; }
+.bh-bar-val { font-size: 9.5px; color: var(--muted); width: 30px; flex-shrink: 0; text-align: right; }
+.bh-break-bar .bh-bar-lbl { color: #facc15; font-weight: 700; }

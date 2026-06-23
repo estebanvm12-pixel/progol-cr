@@ -1,0 +1,376 @@
+{
+  "updated": 1782226718,
+  "data_source": "manual + brand_book + calibracion_clausura_2026",
+  "season": "2025-2026",
+  "clausura_2026": {
+    "champion": "Deportivo Saprissa",
+    "top_scorer": "Marcel Hernández (12 goles)",
+    "standings": [
+      {
+        "position": 1,
+        "team": "Deportivo Saprissa",
+        "played": 22,
+        "wins": 14,
+        "draws": 5,
+        "losses": 3,
+        "goals_for": 42,
+        "goals_against": 18,
+        "goal_diff": 24,
+        "points": 47,
+        "form": "WDWWW",
+        "is_champion": true
+      },
+      {
+        "position": 2,
+        "team": "LD Alajuelense",
+        "played": 22,
+        "wins": 13,
+        "draws": 4,
+        "losses": 5,
+        "goals_for": 38,
+        "goals_against": 22,
+        "goal_diff": 16,
+        "points": 43,
+        "form": "WDWLW"
+      },
+      {
+        "position": 3,
+        "team": "CS Herediano",
+        "played": 22,
+        "wins": 11,
+        "draws": 5,
+        "losses": 6,
+        "goals_for": 33,
+        "goals_against": 25,
+        "goal_diff": 8,
+        "points": 38,
+        "form": "WDLWW"
+      },
+      {
+        "position": 4,
+        "team": "Pérez Zeledón",
+        "played": 22,
+        "wins": 9,
+        "draws": 6,
+        "losses": 7,
+        "goals_for": 28,
+        "goals_against": 26,
+        "goal_diff": 2,
+        "points": 33,
+        "form": "DWLWL"
+      },
+      {
+        "position": 5,
+        "team": "Santos de Guápiles",
+        "played": 22,
+        "wins": 8,
+        "draws": 5,
+        "losses": 9,
+        "goals_for": 25,
+        "goals_against": 30,
+        "goal_diff": -5,
+        "points": 29,
+        "form": "LLLWW"
+      },
+      {
+        "position": 6,
+        "team": "Sporting FC",
+        "played": 22,
+        "wins": 7,
+        "draws": 6,
+        "losses": 9,
+        "goals_for": 24,
+        "goals_against": 29,
+        "goal_diff": -5,
+        "points": 27,
+        "form": "LWDWL"
+      },
+      {
+        "position": 7,
+        "team": "Cartaginés",
+        "played": 22,
+        "wins": 6,
+        "draws": 7,
+        "losses": 9,
+        "goals_for": 22,
+        "goals_against": 31,
+        "goal_diff": -9,
+        "points": 25,
+        "form": "DLLDW"
+      },
+      {
+        "position": 8,
+        "team": "Grecia",
+        "played": 22,
+        "wins": 5,
+        "draws": 6,
+        "losses": 11,
+        "goals_for": 21,
+        "goals_against": 34,
+        "goal_diff": -13,
+        "points": 21,
+        "form": "LLLDL"
+      },
+      {
+        "position": 9,
+        "team": "Liberia",
+        "played": 22,
+        "wins": 4,
+        "draws": 5,
+        "losses": 13,
+        "goals_for": 18,
+        "goals_against": 38,
+        "goal_diff": -20,
+        "points": 17,
+        "form": "LLLLL"
+      },
+      {
+        "position": 10,
+        "team": "San Carlos",
+        "played": 22,
+        "wins": 3,
+        "draws": 5,
+        "losses": 14,
+        "goals_for": 15,
+        "goals_against": 42,
+        "goal_diff": -27,
+        "points": 14,
+        "form": "LLLLL"
+      }
+    ],
+    "top_scorers": [
+      {
+        "rank": 1,
+        "name": "Marcel Hernández",
+        "team": "Deportivo Saprissa",
+        "nationality": "Cubano",
+        "goals": 12,
+        "appearances": 20
+      },
+      {
+        "rank": 2,
+        "name": "Ariel Rodríguez",
+        "team": "LD Alajuelense",
+        "nationality": "Costarricense",
+        "goals": 9,
+        "appearances": 21
+      },
+      {
+        "rank": 3,
+        "name": "Brandon Aguilera",
+        "team": "CS Herediano",
+        "nationality": "Costarricense",
+        "goals": 8,
+        "appearances": 20
+      },
+      {
+        "rank": 4,
+        "name": "Johan Venegas",
+        "team": "LD Alajuelense",
+        "nationality": "Costarricense",
+        "goals": 7,
+        "appearances": 18
+      },
+      {
+        "rank": 5,
+        "name": "Jewison Bennette",
+        "team": "Deportivo Saprissa",
+        "nationality": "Costarricense",
+        "goals": 6,
+        "appearances": 16
+      },
+      {
+        "rank": 6,
+        "name": "Carlos Mora",
+        "team": "Pérez Zeledón",
+        "nationality": "Costarricense",
+        "goals": 6,
+        "appearances": 22
+      },
+      {
+        "rank": 7,
+        "name": "Ariel Lassiter",
+        "team": "Deportivo Saprissa",
+        "nationality": "Costarricense",
+        "goals": 5,
+        "appearances": 19
+      },
+      {
+        "rank": 8,
+        "name": "Javon East",
+        "team": "CS Herediano",
+        "nationality": "Jamaicano",
+        "goals": 5,
+        "appearances": 20
+      }
+    ]
+  },
+  "apertura_2026": {
+    "note": "Inicia julio 2026. Standings se actualizan con API-Football season=2025 cuando esté disponible.",
+    "standings": []
+  },
+  "ryder_lambdas": {
+    "Deportivo Saprissa": {
+      "attack_home": 1.42,
+      "defense_home": 0.72,
+      "attack_away": 1.18,
+      "defense_away": 0.85,
+      "form": "WDWWW"
+    },
+    "LD Alajuelense": {
+      "attack_home": 1.35,
+      "defense_home": 0.82,
+      "attack_away": 1.08,
+      "defense_away": 0.92,
+      "form": "WDWLW"
+    },
+    "CS Herediano": {
+      "attack_home": 1.22,
+      "defense_home": 0.95,
+      "attack_away": 0.98,
+      "defense_away": 1.05,
+      "form": "WDLWW"
+    },
+    "Pérez Zeledón": {
+      "attack_home": 1.05,
+      "defense_home": 1.02,
+      "attack_away": 0.88,
+      "defense_away": 1.12,
+      "form": "DWLWL"
+    },
+    "Santos de Guápiles": {
+      "attack_home": 0.95,
+      "defense_home": 1.12,
+      "attack_away": 0.78,
+      "defense_away": 1.22,
+      "form": "LLLWW"
+    },
+    "Sporting FC": {
+      "attack_home": 0.92,
+      "defense_home": 1.08,
+      "attack_away": 0.75,
+      "defense_away": 1.18,
+      "form": "LWDWL"
+    },
+    "Cartaginés": {
+      "attack_home": 0.88,
+      "defense_home": 1.15,
+      "attack_away": 0.72,
+      "defense_away": 1.25,
+      "form": "DLLDW"
+    },
+    "Grecia": {
+      "attack_home": 0.82,
+      "defense_home": 1.25,
+      "attack_away": 0.68,
+      "defense_away": 1.32,
+      "form": "LLLDL"
+    },
+    "Liberia": {
+      "attack_home": 0.72,
+      "defense_home": 1.42,
+      "attack_away": 0.58,
+      "defense_away": 1.48,
+      "form": "LLLLL"
+    },
+    "San Carlos": {
+      "attack_home": 0.62,
+      "defense_home": 1.55,
+      "attack_away": 0.52,
+      "defense_away": 1.58,
+      "form": "LLLLL"
+    }
+  },
+  "teams": [
+    {
+      "name": "Deportivo Saprissa",
+      "alias": [
+        "Saprissa",
+        "El Monstruo",
+        "Los Morados"
+      ],
+      "city": "San José",
+      "stadium": "Estadio Ricardo Saprissa"
+    },
+    {
+      "name": "LD Alajuelense",
+      "alias": [
+        "La Liga",
+        "Los Rojinegros",
+        "Alajuelense"
+      ],
+      "city": "Alajuela",
+      "stadium": "Estadio Alejandro Morera Soto"
+    },
+    {
+      "name": "CS Herediano",
+      "alias": [
+        "Herediano",
+        "El Team"
+      ],
+      "city": "Heredia",
+      "stadium": "Estadio Rosabal Cordero"
+    },
+    {
+      "name": "Pérez Zeledón",
+      "alias": [
+        "Pez",
+        "Los Guerreros del Sur"
+      ],
+      "city": "Pérez Zeledón",
+      "stadium": "Estadio Municipal Pérez Zeledón"
+    },
+    {
+      "name": "Santos de Guápiles",
+      "alias": [
+        "Santos",
+        "Los Santistas"
+      ],
+      "city": "Guápiles",
+      "stadium": "Estadio Fello Meza"
+    },
+    {
+      "name": "Sporting FC",
+      "alias": [
+        "Sporting"
+      ],
+      "city": "San José",
+      "stadium": "Estadio Municipal de Tibás"
+    },
+    {
+      "name": "Cartaginés",
+      "alias": [
+        "Cartaginés",
+        "Los Brumosos"
+      ],
+      "city": "Cartago",
+      "stadium": "Estadio José Rafael Fello Meza"
+    },
+    {
+      "name": "Grecia",
+      "alias": [
+        "Grecia",
+        "Los Celestes"
+      ],
+      "city": "Grecia",
+      "stadium": "Estadio Municipal de Grecia"
+    },
+    {
+      "name": "Liberia",
+      "alias": [
+        "Liberia"
+      ],
+      "city": "Liberia",
+      "stadium": "Estadio Edgardo Baltodano Briceño"
+    },
+    {
+      "name": "San Carlos",
+      "alias": [
+        "San Carlos",
+        "Los Toros"
+      ],
+      "city": "Ciudad Quesada",
+      "stadium": "Estadio Municipal de San Carlos"
+    }
+  ]
+}
