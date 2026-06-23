@@ -1253,6 +1253,7 @@ async function openInsights(m) {
     }
     // Auto-trigger Scout agent analysis
     setTimeout(() => runDeepDive(m, pred), 700);
+    fetchCouncilPanel(m);
     // Trigger live score sync (script tags in innerHTML don't execute)
     setTimeout(() => syncLiveScore(m.home, m.away), 500);
   } catch (e) {
@@ -1829,6 +1830,8 @@ function renderInsights(p, m) {
   </div>`;
   })()}
 
+  <div id="councilPanelMount" class="council-panel-wrap"></div>
+
   <div class="scout-agent-out" id="deepdiveOut">
     <div class="scout-agent-loading">
       <span class="scout-spinner">⚽</span>
@@ -2160,6 +2163,68 @@ async function _localScoutFallback(m, out) {
     }
   } catch (_) {}
   return false;
+}
+
+
+// ── Panel del Consejo Ryder × Cleo × Lucas ────────────────────────────────
+async function fetchCouncilPanel(m) {
+  const mount = $("councilPanelMount");
+  if (!mount) return;
+  mount.innerHTML = `<div class="council-loading"><span class="council-spinner">🎲</span><span class="muted small">Ryder × Cleo × Lucas analizando…</span></div>`;
+  try {
+    const url = `/api/council?home=${encodeURIComponent(m.home)}&away=${encodeURIComponent(m.away)}&n=1000`;
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (data.error) { mount.innerHTML = ""; return; }
+    mount.innerHTML = renderCouncilPanel(data, m);
+  } catch(e) {
+    mount.innerHTML = "";
+  }
+}
+
+function renderCouncilPanel(d, m) {
+  const r = d.ryder, l = d.lucas, c = d.consensus;
+  const ops = (d.cleo && d.cleo.opportunities) || [];
+
+  const bar = (ph, pd, pa, label) => `
+    <div class="council-agent-label">${label}</div>
+    <div class="council-bar">
+      <div class="council-seg council-h" style="width:${ph}%">${ph >= 10 ? Math.round(ph)+"%" : ""}</div>
+      <div class="council-seg council-d" style="width:${pd}%">${pd >= 10 ? Math.round(pd)+"%" : ""}</div>
+      <div class="council-seg council-a" style="width:${pa}%">${pa >= 10 ? Math.round(pa)+"%" : ""}</div>
+    </div>`;
+
+  const topScores = (l.top_scorelines || []).slice(0,3).map(([sc, pct]) =>
+    `<span class="council-score-tag">${escapeHtml(sc)} <em>${pct}%</em></span>`
+  ).join("");
+
+  const bestPick = c.ph >= c.pa && c.ph >= c.pd ? `[1] ${escapeHtml(m.home)}`
+                 : c.pa > c.ph && c.pa >= c.pd ? `[2] ${escapeHtml(m.away)}`
+                 : `[X] Empate`;
+  const bestConf = Math.max(c.ph, c.pd, c.pa);
+  const confClass = bestConf >= 65 ? "council-conf-high" : bestConf >= 52 ? "council-conf-mid" : "council-conf-low";
+
+  const cleoHtml = ops.length ? `
+    <div class="council-cleo-ops">
+      <span class="council-cleo-label">📊 Cleo detectó:</span>
+      ${ops.map(op => `<span class="council-op-tag">${escapeHtml(op.platform||"")}: EV ${op.ev_pct > 0 ? "+" : ""}${(op.ev_pct||0).toFixed(1)}%</span>`).join("")}
+    </div>` : "";
+
+  return `
+  <div class="council-panel">
+    <div class="council-header">
+      <span class="council-title">⚖️ Consejo — Ryder × Cleo × Lucas</span>
+      <span class="council-badge ${confClass}">${bestPick} · ${Math.round(bestConf)}%</span>
+    </div>
+    <div class="council-legend">
+      <span>🟢 ${escapeHtml(m.home)}</span><span>⬜ X</span><span>🔵 ${escapeHtml(m.away)}</span>
+    </div>
+    ${bar(r.ph, r.pd, r.pa, "📐 Ryder (Dixon-Coles + Elo)")}
+    ${bar(l.ph, l.pd, l.pa, `🎲 Lucas (${(l.n||1000).toLocaleString()} simulaciones MC)`)}
+    ${bar(c.ph, c.pd, c.pa, "🤝 Consenso (40% Ryder + 60% Lucas)")}
+    ${topScores ? `<div class="council-scores-row"><span class="council-scores-label">Marcadores:</span>${topScores}</div>` : ""}
+    ${cleoHtml}
+  </div>`;
 }
 
 async function runDeepDive(m, p) {

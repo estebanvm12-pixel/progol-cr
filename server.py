@@ -4607,6 +4607,61 @@ class Handler(BaseHTTPRequestHandler):
                 "skippedDead": skipped_dead,
             })
 
+
+        if route == "/api/council":
+            home = (qs.get("home") or [""])[0]
+            away = (qs.get("away") or [""])[0]
+            n    = int((qs.get("n") or ["1000"])[0])
+            if not home or not away:
+                return self._send_json({"error": "home and away required"}, 400)
+            try:
+                import council as _cmod
+                r = _cmod.deliberate(home, away, n_simulations=n)
+                ryder = r.get("ryder", {}).get("probs", {})
+                lucas = r.get("lucas", {})
+                cleo  = r.get("cleo", {})
+
+                # Consenso Ryder(40%) + Lucas(60%)
+                ph_r = ryder.get("home", 0)
+                pd_r = ryder.get("draw", 0)
+                pa_r = ryder.get("away", 0)
+                ph_l = lucas.get("p_home", ph_r)
+                pd_l = lucas.get("p_draw", pd_r)
+                pa_l = lucas.get("p_away", pa_r)
+                ph = round(0.4*ph_r + 0.6*ph_l, 4)
+                pd = round(0.4*pd_r + 0.6*pd_l, 4)
+                pa = round(0.4*pa_r + 0.6*pa_l, 4)
+
+                top_sc = lucas.get("top_scorelines", []) if lucas else []
+                opps   = cleo.get("opportunities", []) if cleo else []
+
+                return self._send_json({
+                    "home": home, "away": away,
+                    "ryder": {
+                        "ph": round(ph_r*100, 1),
+                        "pd": round(pd_r*100, 1),
+                        "pa": round(pa_r*100, 1),
+                    },
+                    "lucas": {
+                        "ph": round(ph_l*100, 1),
+                        "pd": round(pd_l*100, 1),
+                        "pa": round(pa_l*100, 1),
+                        "n": lucas.get("n", n),
+                        "top_scorelines": [[s[0], round(s[1]*100,1)] for s in top_sc[:5]],
+                    },
+                    "cleo": {
+                        "opportunities": opps[:3],
+                        "markets": {k: v for k,v in (cleo.get("markets") or {}).items() if v.get("available")},
+                    },
+                    "consensus": {
+                        "ph": round(ph*100, 1),
+                        "pd": round(pd*100, 1),
+                        "pa": round(pa*100, 1),
+                    },
+                })
+            except Exception as e:
+                return self._send_json({"error": str(e)}, 500)
+
         if route == "/api/predict":
             home = (qs.get("home") or [""])[0]
             away = (qs.get("away") or [""])[0]
