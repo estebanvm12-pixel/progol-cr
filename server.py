@@ -170,7 +170,7 @@ try:
     sys.stdout.reconfigure(line_buffering=True)
 except Exception:
     pass
-HOST = "0.0.0.0"  # all interfaces — Tailscale handles external access securely
+HOST = "127.0.0.1"  # localhost only — cloudflared handles external access
 PORT = 8765
 _TUNNEL_URL = None  # set when cloudflared/localtunnel is active
 
@@ -398,19 +398,96 @@ def _verify_pw(password: str, stored: str) -> bool:
     except Exception:
         return False
 
+# ── SQLite-backed user storage (race-condition safe) ──────────────────────────
+import sqlite3 as _sqlite3
+import threading as _threading
+_db_lock = _threading.Lock()
+DB_PATH  = os.path.join(HERE, "data", "progol.db")
+
+def _db_conn():
+    conn = _sqlite3.connect(DB_PATH, check_same_thread=False)
+    conn.row_factory = _sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("""CREATE TABLE IF NOT EXISTS users (
+        username    TEXT PRIMARY KEY,
+        password    TEXT NOT NULL,
+        role        TEXT NOT NULL DEFAULT 'free',
+        email       TEXT DEFAULT '',
+        telegram_id TEXT DEFAULT '',
+        active      INTEGER NOT NULL DEFAULT 1,
+        created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+        last_login  TEXT
+    )""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS feedback (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        ts         TEXT NOT NULL,
+        nombre     TEXT,
+        tipo       TEXT,
+        opinion    TEXT NOT NULL,
+        processed  INTEGER NOT NULL DEFAULT 0
+    )""")
+    conn.commit()
+    return conn
+
 def _load_users():
-    if os.path.exists(USERS_PATH):
+    """Load all users from SQLite as {username: {password, role, ...}} dict."""
+    with _db_lock:
         try:
-            with open(USERS_PATH, "r", encoding="utf-8") as f:
-                return json.load(f)
+            conn = _db_conn()
+            rows = conn.execute("SELECT * FROM users").fetchall()
+            conn.close()
+            return {r["username"]: {
+                "password":        r["password"],
+                "role":            r["role"],
+                "email":           r["email"] or "",
+                "telegram_chat_id": r["telegram_id"] or "",
+                "active":          bool(r["active"]),
+            } for r in rows}
         except Exception:
-            pass
-    return {}
+            # Fallback to JSON if DB unavailable
+            if os.path.exists(USERS_PATH):
+                try:
+                    with open(USERS_PATH, "r", encoding="utf-8") as f:
+                        return json.load(f)
+                except Exception:
+                    pass
+            return {}
 
 def _save_users(users):
-    os.makedirs(os.path.dirname(USERS_PATH), exist_ok=True)
-    with open(USERS_PATH, "w", encoding="utf-8") as f:
-        json.dump(users, f, indent=2)
+    """Upsert all users into SQLite (atomic, no race conditions)."""
+    with _db_lock:
+        try:
+            conn = _db_conn()
+            for username, data in users.items():
+                conn.execute("""INSERT INTO users (username, password, role, email, telegram_id, active)
+                    VALUES (?,?,?,?,?,?)
+                    ON CONFLICT(username) DO UPDATE SET
+                        password=excluded.password, role=excluded.role,
+                        email=excluded.email, telegram_id=excluded.telegram_id,
+                        active=excluded.active""",
+                    (username, data.get("password",""), data.get("role","free"),
+                     data.get("email",""), data.get("telegram_chat_id",""),
+                     int(data.get("active", True))))
+            conn.commit()
+            conn.close()
+        except Exception as _e:
+            # Fallback: write JSON so data isn't lost
+            os.makedirs(os.path.dirname(USERS_PATH), exist_ok=True)
+            with open(USERS_PATH, "w", encoding="utf-8") as f:
+                json.dump(users, f, indent=2)
+
+def _save_feedback_sqlite(ts, nombre, tipo, opinion):
+    """Insert a feedback entry into SQLite (thread-safe)."""
+    with _db_lock:
+        try:
+            conn = _db_conn()
+            conn.execute("INSERT INTO feedback (ts, nombre, tipo, opinion) VALUES (?,?,?,?)",
+                         (ts, nombre, tipo, opinion))
+            conn.commit()
+            conn.close()
+            return True
+        except Exception:
+            return False
 
 def _init_users():
     users = _load_users()
@@ -3556,6 +3633,8 @@ STATIC_FILES = {
     "/brand/progol-cr-brand.html": ("docs/progol-cr-brand.html", "text/html; charset=utf-8"),
     "/tos": ("frontend/tos.html", "text/html; charset=utf-8"),
     "/tos.html": ("frontend/tos.html", "text/html; charset=utf-8"),
+    "/pagos": ("frontend/pagos.html", "text/html; charset=utf-8"),
+    "/pagos.html": ("frontend/pagos.html", "text/html; charset=utf-8"),
     "/privacy": ("frontend/privacy.html", "text/html; charset=utf-8"),
     "/privacy.html": ("frontend/privacy.html", "text/html; charset=utf-8"),
 }
@@ -4211,7 +4290,7 @@ class Handler(BaseHTTPRequestHandler):
         qs = urllib.parse.parse_qs(parsed.query)
 
         # Public assets needed by login page — no auth required
-        PUBLIC_ROUTES = {"/login", "/landing", "/landing.html", "/brand/mascota.jpg", "/brand/mascota.svg", "/tos", "/tos.html", "/privacy", "/privacy.html", "/api/feedback",
+        PUBLIC_ROUTES = {"/login", "/landing", "/landing.html", "/brand/mascota.jpg", "/brand/mascota.svg", "/tos", "/tos.html", "/privacy", "/privacy.html", "/api/feedback", "/pagos", "/pagos.html",
                           "/manifest.json", "/sw.js"}
         # PWA icons — public
         if route.startswith("/icons/"):
@@ -4666,6 +4745,8 @@ class Handler(BaseHTTPRequestHandler):
             existing.append(entry)
             with open(fb_path, "w") as _fbf:
                 json.dump(existing, _fbf, ensure_ascii=False, indent=2)
+            # Also write to SQLite (primary store, JSON is backup)
+            _save_feedback_sqlite(entry["ts"], nombre, tipo, opinion)
 
             # Reenviar a Telegram
             cfg = load_config()
@@ -5208,6 +5289,7 @@ class Handler(BaseHTTPRequestHandler):
             existing.append(entry)
             with open(fb_path, "w") as _fbf:
                 json.dump(existing, _fbf, ensure_ascii=False, indent=2)
+            _save_feedback_sqlite(entry["ts"], nombre, tipo, opinion)
             cfg = load_config()
             token_tg = cfg.get("telegram_bot_token", "")
             chat_id  = cfg.get("telegram_chat_id", "")

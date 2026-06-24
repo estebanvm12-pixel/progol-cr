@@ -36,6 +36,56 @@ HISTORY_PATH    = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data
 
 VERSION = "1.0.0"
 
+# ── Odds API Quota Guard ───────────────────────────────────────────────────────
+_QUOTA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "odds_api_quota.json")
+_QUOTA_LIMIT = 450  # stop at 450/500 to keep 50 as buffer
+
+def _quota_check() -> bool:
+    """Returns True if we can still call the Odds API this month."""
+    import datetime as _dt
+    now = _dt.datetime.utcnow()
+    month_key = now.strftime("%Y-%m")
+    try:
+        with open(_QUOTA_FILE) as f:
+            q = json.load(f)
+    except Exception:
+        q = {}
+    if q.get("month") != month_key:
+        q = {"month": month_key, "calls": 0}
+    return q.get("calls", 0) < _QUOTA_LIMIT
+
+def _quota_increment():
+    """Increment the call counter for this month."""
+    import datetime as _dt
+    now = _dt.datetime.utcnow()
+    month_key = now.strftime("%Y-%m")
+    try:
+        with open(_QUOTA_FILE) as f:
+            q = json.load(f)
+    except Exception:
+        q = {}
+    if q.get("month") != month_key:
+        q = {"month": month_key, "calls": 0}
+    q["calls"] = q.get("calls", 0) + 1
+    with open(_QUOTA_FILE, "w") as f:
+        json.dump(q, f)
+    if q["calls"] >= 440:
+        logger.warning(f"[cleo] AVISO: Odds API quota {q['calls']}/{_QUOTA_LIMIT} — queda poco margen")
+
+def _quota_remaining() -> int:
+    import datetime as _dt
+    now = _dt.datetime.utcnow()
+    month_key = now.strftime("%Y-%m")
+    try:
+        with open(_QUOTA_FILE) as f:
+            q = json.load(f)
+    except Exception:
+        q = {}
+    if q.get("month") != month_key:
+        return _QUOTA_LIMIT
+    return max(0, _QUOTA_LIMIT - q.get("calls", 0))
+
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # UTILIDADES MATEMÁTICAS
@@ -693,6 +743,11 @@ def fetch_odds_api(home: str, away: str, sport: str = "soccer") -> dict:
         logger.warning("[cleo] odds_api_key no configurada")
         return {"available": False, "error": "no_key"}
 
+    if not _quota_check():
+        logger.warning(f"[cleo] Odds API quota agotada ({_QUOTA_LIMIT}/mes) — reset el 1 del mes")
+        return {"available": False, "error": "quota_exhausted"}
+    _quota_increment()
+
     import urllib.parse as _up
 
     def _name_match(team_name: str, candidate: str) -> bool:
@@ -811,6 +866,11 @@ def fetch_all_football_matches(max_sports: int = 20) -> list:
 
     if not api_key:
         return []
+
+    if not _quota_check():
+        logger.warning(f"[cleo] Odds API quota agotada ({_QUOTA_LIMIT}/mes)")
+        return []
+    _quota_increment()
 
     import urllib.parse as _up
     import datetime as _dt
