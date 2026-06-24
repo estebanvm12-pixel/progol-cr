@@ -4424,3 +4424,34 @@ document.addEventListener('DOMContentLoaded', function() {
   checkAuthState();
 });
 
+
+function openFeedback() {
+  document.getElementById('feedbackModal').style.display = 'flex';
+  document.getElementById('fbMsg').textContent = '';
+}
+function closeFeedback() {
+  document.getElementById('feedbackModal').style.display = 'none';
+}
+function submitFeedback() {
+  var nombre  = (document.getElementById('fbNombre').value || 'Anonimo').trim();
+  var tipo    = document.getElementById('fbTipo').value;
+  var opinion = document.getElementById('fbOpinion').value.trim();
+  var msg     = document.getElementById('fbMsg');
+  if (!opinion) { msg.style.color='#ef4444'; msg.textContent='Escribe tu mensaje antes de enviar.'; return; }
+  msg.style.color='#94a3b8'; msg.textContent='Enviando…';
+  fetch('/api/feedback', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({nombre: nombre, tipo: tipo, opinion: opinion})
+  }).then(function(r){ return r.json(); }).then(function(d) {
+    if (d.ok) {
+      msg.style.color='#22c55e'; msg.textContent='✓ ' + d.message;
+      document.getElementById('fbOpinion').value = '';
+      setTimeout(closeFeedback, 2000);
+    } else {
+      msg.style.color='#ef4444'; msg.textContent = d.error || 'Error al enviar';
+    }
+  }).catch(function() {
+    msg.style.color='#ef4444'; msg.textContent='Error de red. Intenta de nuevo.';
+  });
+}

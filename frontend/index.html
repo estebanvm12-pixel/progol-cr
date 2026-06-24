@@ -574,6 +574,47 @@
   </div>
 </div>
 
+
+<!-- Feedback FAB + Modal -->
+<button id="feedbackFab" onclick="openFeedback()" title="Enviar opinión / reportar bug" style="
+  position:fixed;bottom:72px;right:16px;z-index:900;
+  width:44px;height:44px;border-radius:50%;
+  background:#f5c842;color:#0a0f1e;font-size:20px;
+  border:none;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.4);
+  display:flex;align-items:center;justify-content:center;
+">💬</button>
+
+<div id="feedbackModal" style="display:none;position:fixed;inset:0;z-index:2000;
+  background:rgba(0,0,0,.6);align-items:center;justify-content:center;">
+  <div style="background:#111827;border:1px solid rgba(255,255,255,.1);border-radius:14px;
+    padding:24px;width:min(380px,92vw);box-shadow:0 8px 32px rgba(0,0,0,.5)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="color:#f5c842;font-size:15px;margin:0">Opinión / Soporte</h3>
+      <button onclick="closeFeedback()" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer">×</button>
+    </div>
+    <input id="fbNombre" placeholder="Tu nombre (opcional)" style="
+      width:100%;background:#1e2a3a;border:1px solid rgba(255,255,255,.12);
+      border-radius:8px;padding:9px 12px;color:#e2e8f0;font-size:13px;
+      margin-bottom:10px;box-sizing:border-box">
+    <select id="fbTipo" style="
+      width:100%;background:#1e2a3a;border:1px solid rgba(255,255,255,.12);
+      border-radius:8px;padding:9px 12px;color:#e2e8f0;font-size:13px;
+      margin-bottom:10px;box-sizing:border-box">
+      <option value="opinion">💬 Opinión general</option>
+      <option value="bug">🐛 Reportar bug</option>
+      <option value="sugerencia">💡 Sugerencia</option>
+    </select>
+    <textarea id="fbOpinion" placeholder="¿Qué quieres decirnos?" rows="4" style="
+      width:100%;background:#1e2a3a;border:1px solid rgba(255,255,255,.12);
+      border-radius:8px;padding:9px 12px;color:#e2e8f0;font-size:13px;
+      margin-bottom:14px;box-sizing:border-box;resize:vertical"></textarea>
+    <div id="fbMsg" style="font-size:12px;margin-bottom:10px;min-height:16px"></div>
+    <button onclick="submitFeedback()" style="
+      width:100%;background:#f5c842;color:#0a0f1e;border:none;border-radius:8px;
+      padding:10px;font-weight:700;font-size:13px;cursor:pointer">Enviar</button>
+  </div>
+</div>
+
 <script src="app.js"></script>
 </body>
 </html>

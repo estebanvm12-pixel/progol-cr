@@ -4211,7 +4211,7 @@ class Handler(BaseHTTPRequestHandler):
         qs = urllib.parse.parse_qs(parsed.query)
 
         # Public assets needed by login page — no auth required
-        PUBLIC_ROUTES = {"/login", "/landing", "/landing.html", "/brand/mascota.jpg", "/brand/mascota.svg", "/tos", "/tos.html", "/privacy", "/privacy.html",
+        PUBLIC_ROUTES = {"/login", "/landing", "/landing.html", "/brand/mascota.jpg", "/brand/mascota.svg", "/tos", "/tos.html", "/privacy", "/privacy.html", "/api/feedback",
                           "/manifest.json", "/sw.js"}
         # PWA icons — public
         if route.startswith("/icons/"):
@@ -4633,6 +4633,71 @@ class Handler(BaseHTTPRequestHandler):
                 "skippedDead": skipped_dead,
             })
 
+
+
+        if route == "/api/feedback":
+            if self.command != "POST":
+                return self._send_json({"error": "POST only"}, 405)
+            try:
+                length = int(self.headers.get("Content-Length", 0))
+                body   = json.loads(self.rfile.read(length))
+            except Exception:
+                return self._send_json({"error": "invalid json"}, 400)
+
+            nombre  = str(body.get("nombre", "Anonimo"))[:60]
+            opinion = str(body.get("opinion", ""))[:500]
+            tipo    = str(body.get("tipo", "opinion"))  # opinion / bug / sugerencia
+            if not opinion.strip():
+                return self._send_json({"error": "opinion requerida"}, 400)
+
+            # Guardar en archivo
+            import datetime as _fdt
+            entry = {
+                "ts":      _fdt.datetime.utcnow().isoformat(),
+                "nombre":  nombre,
+                "tipo":    tipo,
+                "opinion": opinion,
+            }
+            fb_path = os.path.join(HERE, "data", "feedback.json")
+            try:
+                existing = json.loads(open(fb_path).read()) if os.path.exists(fb_path) else []
+            except Exception:
+                existing = []
+            existing.append(entry)
+            with open(fb_path, "w") as _fbf:
+                json.dump(existing, _fbf, ensure_ascii=False, indent=2)
+
+            # Reenviar a Telegram
+            cfg = load_config()
+            token   = cfg.get("telegram_bot_token", "")
+            chat_id = cfg.get("telegram_chat_id", "")
+            icons   = {'opinion': '💬', 'bug': '🐛', 'sugerencia': '💡'}
+            icon    = icons.get(tipo, '📩')
+            lines   = [icon + ' FEEDBACK ProGol CR', 'Tipo: ' + tipo.upper(), 'De: ' + nombre, '='*28, opinion]
+            tg_msg  = chr(10).join(lines)
+            if token and chat_id:
+                try:
+                    import urllib.request as _ureq
+                    _data = json.dumps({"chat_id": chat_id, "text": tg_msg}).encode()
+                    _req  = _ureq.Request(
+                        f"https://api.telegram.org/bot{token}/sendMessage",
+                        data=_data, headers={"Content-Type": "application/json"}
+                    )
+                    with _ureq.urlopen(_req, timeout=8):
+                        pass
+                except Exception as _tge:
+                    print(f"[feedback] telegram error: {_tge}")
+
+            return self._send_json({"ok": True, "message": "Gracias por tu opinion!"})
+
+        if route == "/api/feedback" and self.command == "GET":
+            # Solo owner puede ver el historial
+            fb_path = os.path.join(HERE, "data", "feedback.json")
+            try:
+                data = json.loads(open(fb_path).read()) if os.path.exists(fb_path) else []
+            except Exception:
+                data = []
+            return self._send_json({"feedback": data, "total": len(data)})
 
         if route == "/api/council":
             home = (qs.get("home") or [""])[0]
@@ -5125,6 +5190,44 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(body)
             return
+
+        if route == "/api/feedback":
+            nombre  = str(data.get("nombre", "Anonimo"))[:60]
+            opinion = str(data.get("opinion", ""))[:500]
+            tipo    = str(data.get("tipo", "opinion"))
+            if not opinion.strip():
+                return self._send_json({"error": "opinion requerida"}, 400)
+            import datetime as _fdt
+            import os as _os
+            entry = {"ts": _fdt.datetime.utcnow().isoformat(), "nombre": nombre, "tipo": tipo, "opinion": opinion}
+            fb_path = _os.path.join(HERE, "data", "feedback.json")
+            try:
+                existing = json.loads(open(fb_path).read()) if _os.path.exists(fb_path) else []
+            except Exception:
+                existing = []
+            existing.append(entry)
+            with open(fb_path, "w") as _fbf:
+                json.dump(existing, _fbf, ensure_ascii=False, indent=2)
+            cfg = load_config()
+            token_tg = cfg.get("telegram_bot_token", "")
+            chat_id  = cfg.get("telegram_chat_id", "")
+            icons   = {"opinion": "\U0001f4ac", "bug": "\U0001f41b", "sugerencia": "\U0001f4a1"}
+            icon    = icons.get(tipo, "\U0001f4e9")
+            lines   = [icon + " FEEDBACK ProGol CR", "Tipo: " + tipo.upper(), "De: " + nombre, "="*28, opinion]
+            tg_msg  = "\n".join(lines)
+            if token_tg and chat_id:
+                try:
+                    import urllib.request as _ureq
+                    _tdata = json.dumps({"chat_id": chat_id, "text": tg_msg}).encode()
+                    _req   = _ureq.Request(
+                        "https://api.telegram.org/bot" + token_tg + "/sendMessage",
+                        data=_tdata, headers={"Content-Type": "application/json"}
+                    )
+                    with _ureq.urlopen(_req, timeout=8):
+                        pass
+                except Exception as _tge:
+                    print("[feedback] telegram error:", _tge)
+            return self._send_json({"ok": True, "message": "Gracias por tu opinion!"})
 
         # ── All other POST routes require auth ────────────────────────────────
         user = self._get_user()
